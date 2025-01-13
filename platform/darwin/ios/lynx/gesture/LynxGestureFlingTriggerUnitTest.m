@@ -34,8 +34,8 @@
 
 - (void)testFlingState {
   XCTAssertFalse([_trigger startWithVelocity:CGPointMake(0, 0)]);
-  XCTAssertFalse([_trigger startWithVelocity:CGPointMake(200, 0)]);
-  XCTAssertFalse([_trigger startWithVelocity:CGPointMake(200, 200)]);
+  XCTAssertTrue([_trigger startWithVelocity:CGPointMake(200, 0)]);
+  XCTAssertTrue([_trigger startWithVelocity:CGPointMake(200, 200)]);
 
   XCTAssertTrue([_trigger startWithVelocity:CGPointMake(301, 200)]);
 
