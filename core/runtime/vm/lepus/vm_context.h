@@ -159,6 +159,7 @@ class VMContext : public Context {
    public:
     virtual ~DebugDelegate() = default;
     virtual void UpdateCurrentPC(int32_t current_pc) = 0;
+    virtual void OnRootFunctionReady() = 0;
     virtual int32_t GenerateDebuggerFrameId() { return 0; }
   };
   void SetDebugDelegate(const std::shared_ptr<DebugDelegate>& debug_delegate) {

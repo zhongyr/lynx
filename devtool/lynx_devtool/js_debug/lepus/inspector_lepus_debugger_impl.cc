@@ -58,7 +58,6 @@ void InspectorLepusDebuggerImpl::OnInspectorInited(
 
   delegate->OnTargetCreated();
   delegate->DispatchInitMessage(kDefaultViewID, false);
-  delegate->SetStopAtEntry(true, kDefaultViewID);
 }
 
 void InspectorLepusDebuggerImpl::OnContextDestroyed(const std::string &name) {
@@ -66,6 +65,14 @@ void InspectorLepusDebuggerImpl::OnContextDestroyed(const std::string &name) {
   auto it = delegates_.find(name);
   if (it != delegates_.end()) {
     it->second->OnTargetDestroyed();
+  }
+}
+
+void InspectorLepusDebuggerImpl::PrepareForScriptEval(const std::string &name) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  auto it = delegates_.find(name);
+  if (it != delegates_.end()) {
+    it->second->SetStopAtEntry(true, kDefaultViewID);
   }
 }
 

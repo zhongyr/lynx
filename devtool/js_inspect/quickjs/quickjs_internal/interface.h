@@ -63,8 +63,11 @@ struct queue *GetDebuggerMessageQueue(struct LEPUSDebuggerInfo *info);
 
 void SetDebuggerSourceCode(LEPUSContext *ctx, char *source_code);
 
-void AddDebuggerScript(LEPUSContext *ctx, char *script_source,
-                       int32_t source_len, int32_t end_line_num);
+LEPUSScriptSource *AddDebuggerScript(LEPUSContext *ctx, char *script_source,
+                                     char *filename, int32_t source_len,
+                                     int32_t end_line_num);
+void InitDebuggerScript(LEPUSContext *ctx, LEPUSScriptSource *script);
+
 // pause on debugger keyword
 void PauseOnDebuggerKeyword(LEPUSDebuggerInfo *info, const uint8_t *cur_pc);
 
@@ -109,6 +112,8 @@ const char *GetFunctionDebugSource(LEPUSContext *ctx, LEPUSFunctionBytecode *b);
 
 void SetFunctionDebugSource(LEPUSContext *ctx, LEPUSFunctionBytecode *b,
                             const char *source, int32_t source_len);
+
+void SetFunctionScript(LEPUSFunctionBytecode *b, LEPUSScriptSource *script);
 
 int64_t GetFunctionDebugColumnNum(LEPUSContext *ctx,
                                   struct LEPUSFunctionBytecode *b);

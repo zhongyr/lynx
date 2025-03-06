@@ -854,6 +854,9 @@ bool QuickContext::DeSerialize(const ContextBundle& bundle, bool reuse_context,
     LOGE("QuickContext deserialize error " << msg);
     return false;
   }
+  if (inspector_manager_ && inspector_manager_->IsDebugEnabled()) {
+    SetFunctionFileName(val, file_name);
+  }
   SetTopLevelFunction(val);
   return true;
 }
@@ -960,7 +963,6 @@ void QuickContext::ApplyConfig(
     const tasm::CompileOptions& options) {
   SetEnableStrictCheck(page_config->GetEnableLepusStrictCheck());
   SetStackSize(page_config->GetLepusQuickjsStackSize());
-  SetDebugInfoURL(options.template_debug_url_);
 
   if (options.lepusng_debuginfo_outside_) {
     set_debuginfo_outside(true);

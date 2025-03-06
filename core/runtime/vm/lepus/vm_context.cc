@@ -1501,6 +1501,14 @@ bool VMContext::MoveContextBundle(VMContextBundle& bundle) {
 
   root_function_.swap(bundle.lepus_root_function_);
   top_level_variables_.swap(bundle.lepus_top_variables_);
+
+  if (is_debug_enabled_) {
+    auto debug_delegate = debug_delegate_.lock();
+    if (debug_delegate != nullptr) {
+      debug_delegate->OnRootFunctionReady();
+    }
+  }
+
   return true;
 }
 
@@ -1522,7 +1530,6 @@ void VMContext::ApplyConfig(
           : page_config->GetDataStrictMode();
   SetEnableTopVarStrictMode(data_strict_mode);
   SetNullPropAsUndef(page_config->GetEnableLepusNullPropAsUndef());
-  SetDebugInfoURL(options.template_debug_url_);
   return;
 }
 

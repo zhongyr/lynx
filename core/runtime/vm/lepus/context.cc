@@ -424,15 +424,12 @@ void Context::OnBTSConsoleEvent(const std::string& func_name,
 }
 
 void Context::InitInspector(
-    const std::shared_ptr<InspectorLepusObserver>& observer) {
+    const std::shared_ptr<InspectorLepusObserver>& observer,
+    const std::string& context_name) {
   if (observer != nullptr) {
-    // Context may be reused, so do not recreate inspector_manager_ if it is not
-    // null.
-    if (inspector_manager_ == nullptr) {
-      inspector_manager_ = observer->CreateLepusInspectorManager();
-    }
+    inspector_manager_ = observer->CreateLepusInspectorManager();
     if (inspector_manager_ != nullptr) {
-      inspector_manager_->InitInspector(this, observer);
+      inspector_manager_->InitInspector(this, observer, context_name);
     }
   }
 }
@@ -440,6 +437,14 @@ void Context::InitInspector(
 void Context::DestroyInspector() {
   if (inspector_manager_ != nullptr) {
     inspector_manager_->DestroyInspector();
+  }
+}
+
+void Context::SetDebugInfoURL(const std::string& url,
+                              const std::string& file_name) {
+  debug_info_url_ = url;  // TODO(lqy): change to map
+  if (inspector_manager_ != nullptr) {
+    inspector_manager_->SetDebugInfo(debug_info_url_, file_name);
   }
 }
 

@@ -71,6 +71,9 @@ LepusInspectorNGImpl::LepusInspectorNGImpl(lynx::lepus::Context* context,
     : client_(client) {
   context_ =
       LepusInspectedContextProvider::GetInspectedContext(context, this, name);
+  if (context_ != nullptr) {
+    context_->Init();
+  }
 }
 
 std::unique_ptr<LepusInspectorSessionNG> LepusInspectorNGImpl::Connect(
@@ -83,7 +86,9 @@ std::unique_ptr<LepusInspectorSessionNG> LepusInspectorNGImpl::Connect(
 
 void LepusInspectorNGImpl::SetDebugInfo(const std::string& url,
                                         const std::string& debug_info) {
-  context_->SetDebugInfo(url, debug_info);
+  if (context_ != nullptr) {
+    context_->SetDebugInfo(url, debug_info);
+  }
 }
 
 // LepusInspectorNGImpl ends.

@@ -90,5 +90,12 @@ void InspectorLepusObserverImpl::OnConsoleEvent(const std::string &level,
   }
 }
 
+void InspectorLepusObserverImpl::PrepareForScriptEval(const std::string &name) {
+  auto sp = debugger_wp_.lock();
+  if (sp != nullptr) {
+    sp->PrepareForScriptEval(name);
+  }
+}
+
 }  // namespace devtool
 }  // namespace lynx

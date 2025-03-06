@@ -43,6 +43,8 @@ class InspectorLepusObserverImpl : public lepus::InspectorLepusObserver {
   void OnConsoleEvent(const std::string& func_name,
                       const std::string& args) override;
 
+  void PrepareForScriptEval(const std::string& name) override;
+
  private:
   std::weak_ptr<InspectorLepusDebuggerImpl> debugger_wp_;
   std::weak_ptr<LynxDevToolMediator> mediator_ptr_;

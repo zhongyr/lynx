@@ -24,6 +24,8 @@ class LepusNGInspectedContextImpl
                               const std::string& name);
   ~LepusNGInspectedContextImpl() override = default;
 
+  void Init() override;
+
   void SetDebugInfo(const std::string& url,
                     const std::string& debug_info) override;
   void ProcessMessage(const std::string& message) override;

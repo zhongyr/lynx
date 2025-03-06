@@ -6,6 +6,7 @@
 #define CORE_INSPECTOR_LEPUS_INSPECTOR_MANAGER_H_
 
 #include <memory>
+#include <string>
 
 namespace lynx {
 namespace lepus {
@@ -16,9 +17,13 @@ class LepusInspectorManager {
  public:
   virtual ~LepusInspectorManager() = default;
 
+  virtual bool IsDebugEnabled() { return false; }
+
   virtual void InitInspector(
-      Context* context,
-      const std::shared_ptr<InspectorLepusObserver>& observer) = 0;
+      Context* context, const std::shared_ptr<InspectorLepusObserver>& observer,
+      const std::string& context_name) = 0;
+  virtual void SetDebugInfo(const std::string& debug_info_url,
+                            const std::string& file_name) = 0;
   virtual void DestroyInspector() = 0;
 };
 

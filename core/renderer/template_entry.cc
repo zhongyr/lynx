@@ -107,6 +107,14 @@ bool TemplateEntry::ConstructContext(TemplateAssembler* assembler,
 #endif
   RegisterBuiltin(assembler);
   std::string file_name = GenerateLepusJSFileName(name_);
+
+  // InitInspector() and SetDebugInfoURL() should be called before calling
+  // DeSerialize().
+  vm_context_->InitInspector(lepus_observer_.lock(),
+                             is_card_ ? DEFAULT_ENTRY_NAME : name_);
+  vm_context_->SetDebugInfoURL(compile_options().template_debug_url_,
+                               file_name);
+
   // the context from local pool has no need to DeSerialize
   return source_type == LepusContextSourceType::kFromLocalPool ||
          vm_context_->DeSerialize(context_bundle, false, nullptr,
@@ -149,7 +157,7 @@ void TemplateEntry::SetTemplateBundle(LynxTemplateBundle template_bundle) {
 
 std::string TemplateEntry::GenerateLepusJSFileName(const std::string& name) {
   static const char* kLepusFilePrefix = "file://";
-  static const char* kLepusFileSuffix = "/lepus.js";
+  static const char* kLepusFileSuffix = "/main-thread.js";
   return kLepusFilePrefix + name + kLepusFileSuffix;
 }
 
@@ -195,12 +203,6 @@ bool TemplateEntry::InitWithPageConfigger(
 
   ApplyConfigsToLepusContext(page_config);
 
-  if (is_card_) {
-    // ApplyConfigsToLepusContext() will set template_debug_url_ to vm_context_,
-    // InitInspector() must be called after that.
-    vm_context_->InitInspector(lepus_observer_.lock());
-  }
-
   if (page_config->GetEnableBindICU()) {
     SetEnableBindICU(true);
 #if ENABLE_LEPUSNG_WORKLET
@@ -240,6 +242,8 @@ bool TemplateEntry::InitLepusContext(
     }
     SetVm(page_context);
     std::string file_name = GenerateLepusJSFileName(name_);
+    vm_context_->SetDebugInfoURL(compile_options().template_debug_url_,
+                                 file_name);
     if (!vm_context_->DeSerialize(*template_bundle().context_bundle_, true,
                                   &binary_eval_result_, file_name.c_str())) {
       constexpr char kContextDeSerializeFailed[] = "Context DeSerialize failed";

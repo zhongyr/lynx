@@ -31,6 +31,8 @@ class InspectorLepusDebuggerImpl : public JavaScriptDebuggerNG {
       const std::shared_ptr<devtool::InspectorClientNG>& client);
   void OnContextDestroyed(const std::string& name);
 
+  void PrepareForScriptEval(const std::string& name);
+
   void DispatchMessage(const std::string& message,
                        const std::string& session_id) override;
 

@@ -156,7 +156,8 @@ class Context {
 
   virtual void CleanClosuresInCycleReference() {}
 
-  void InitInspector(const std::shared_ptr<InspectorLepusObserver>& observer);
+  void InitInspector(const std::shared_ptr<InspectorLepusObserver>& observer,
+                     const std::string& context_name);
   void DestroyInspector();
 
   base::StringTable* string_table() { return &string_table_; }
@@ -228,7 +229,7 @@ class Context {
     return lepus::Value();
   }
 
-  void SetDebugInfoURL(const std::string& url) { debug_info_url_ = url; }
+  void SetDebugInfoURL(const std::string& url, const std::string& file_name);
 
   const std::string& GetDebugInfoURL() { return debug_info_url_; }
 

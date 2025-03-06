@@ -17,11 +17,14 @@ LepusNGInspectedContextImpl::LepusNGInspectedContextImpl(
   RegisterCallbacks();
 }
 
-void LepusNGInspectedContextImpl::SetDebugInfo(const std::string& url,
-                                               const std::string& debug_info) {
+void LepusNGInspectedContextImpl::Init() {
   context_->SetDebugDelegate(
       std::static_pointer_cast<LepusNGInspectedContextImpl>(
           shared_from_this()));
+}
+
+void LepusNGInspectedContextImpl::SetDebugInfo(const std::string& url,
+                                               const std::string& debug_info) {
   debugger_->SetDebugInfo(url, debug_info);
 }
 

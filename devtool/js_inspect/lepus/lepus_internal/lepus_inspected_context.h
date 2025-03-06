@@ -16,11 +16,11 @@ class LepusInspectedContext
   LepusInspectedContext() = default;
   virtual ~LepusInspectedContext() = default;
 
+  virtual void Init() = 0;
+
   virtual void SetDebugInfo(const std::string& url,
                             const std::string& debug_info) = 0;
   virtual void ProcessMessage(const std::string& message) = 0;
-
- private:
 };
 
 }  // namespace lepus_inspector

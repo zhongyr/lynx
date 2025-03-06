@@ -83,7 +83,6 @@ TEST_F(InspectorLepusDebuggerImplTest, OnInspectorInited) {
             "{\"id\":0,\"method\":\"Debugger.enable\"}");
   EXPECT_EQ(client1->message_queue_.back(),
             "{\"id\":0,\"method\":\"Profiler.enable\"}");
-  EXPECT_EQ(client1->stop_at_entry_, true);
 
   std::shared_ptr<lynx::testing::InspectorClientNGMock> client2 =
       std::make_shared<lynx::testing::InspectorClientNGMock>();
@@ -108,6 +107,16 @@ TEST_F(InspectorLepusDebuggerImplTest, OnContextDestroyed) {
   debugger_->delegates_.begin()->second->target_created_ = false;
 
   debugger_->OnContextDestroyed("test");
+}
+
+TEST_F(InspectorLepusDebuggerImplTest, PrepareForScriptEval) {
+  std::shared_ptr<lynx::testing::InspectorClientNGMock> client =
+      std::make_shared<lynx::testing::InspectorClientNGMock>();
+  debugger_->OnInspectorInited(kKeyEngineLepus, kKeyEngineLepus, client);
+  debugger_->PrepareForScriptEval("test");
+  EXPECT_EQ(client->stop_at_entry_, false);
+  debugger_->PrepareForScriptEval(kKeyEngineLepus);
+  EXPECT_EQ(client->stop_at_entry_, true);
 }
 
 }  // namespace testing

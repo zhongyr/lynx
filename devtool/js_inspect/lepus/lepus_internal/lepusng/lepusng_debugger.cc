@@ -32,14 +32,7 @@ void LepusNGDebugger::DebuggerSendResponse(int32_t message_id,
 
 void LepusNGDebugger::SetDebugInfo(const std::string& url,
                                    const std::string& debug_info) {
-  const auto& top_level_function =
-      context_->GetContext()->GetTopLevelFunction();
-  if (LEPUS_IsUndefined(top_level_function)) {
-    debug_info_[url] = {false, debug_info};
-  } else {
-    debug_info_[url] = {true, debug_info};
-    PrepareDebugInfo(top_level_function, url, debug_info);
-  }
+  debug_info_[url] = {false, debug_info};
 }
 
 static void FillFunctionBytecodeDebugInfo(
@@ -113,43 +106,65 @@ static void FillFunctionBytecodeDebugInfo(
 static void SetTemplateDebugInfo(LEPUSContext* ctx, const std::string& url,
                                  const std::string& debug_info_json,
                                  LEPUSValue obj) {
+  if (LEPUS_IsUndefined(obj)) {
+    return;
+  }
   rapidjson::Document document;
   document.Parse(debug_info_json.c_str());
-  if (document.HasMember("lepusNG_debug_info")) {
-    auto debug_info = document["lepusNG_debug_info"].GetObject();
-    if (!LEPUS_IsUndefined(obj) && debug_info.HasMember("function_number")) {
-      uint32_t func_size = 0;
-      auto* function_list = GetDebuggerAllFunction(ctx, obj, &func_size);
-      uint32_t function_num = debug_info["function_number"].GetUint();
-      if (function_num != func_size) {
-        LOGE("error in set lepusNG debuginfo");
-        if (!LEPUS_IsGCMode(ctx)) lepus_free(ctx, function_list);
-        return;
-      }
-      if (function_list) {
-        for (uint32_t i = 0; i < func_size; i++) {
-          auto* b = function_list[i];
-          if (b) {
-            FillFunctionBytecodeDebugInfo(ctx, b, debug_info);
-          }
-        }
-      } else {
-        LOGE("lepusng debug: get all function fail");
-      }
-      if (!LEPUS_IsGCMode(ctx)) lepus_free(ctx, function_list);
-    }
+  if (!document.HasMember("lepusNG_debug_info")) {
+    return;
+  }
 
-    if (debug_info.HasMember("function_source") &&
-        debug_info.HasMember("end_line_num")) {
-      std::string source = debug_info["function_source"].GetString();
-      char* source_str = const_cast<char*>(source.c_str());
-      SetDebuggerSourceCode(ctx, source_str);
-      int32_t end_line_num = debug_info["end_line_num"].GetInt();
-      SetDebuggerEndLineNum(ctx, end_line_num);
-      AddDebuggerScript(ctx, source_str, static_cast<int32_t>(source.length()),
-                        end_line_num);  // TODO(lqy): use param url as filename
+  uint32_t func_size = 0;
+  LEPUSFunctionBytecode** function_list =
+      GetDebuggerAllFunction(ctx, obj, &func_size);
+  if (function_list == nullptr) {
+    LOGE("lepusng debug: get all function fail");
+    return;
+  }
+
+  auto debug_info = document["lepusNG_debug_info"].GetObject();
+  bool has_function_info = debug_info.HasMember("function_number");
+  if (has_function_info) {
+    uint32_t function_num = debug_info["function_number"].GetUint();
+    if (function_num != func_size) {
+      LOGE("error in set lepusNG debuginfo");
+      if (!LEPUS_IsGCMode(ctx)) lepus_free(ctx, function_list);
+      return;
     }
   }
+
+  LEPUSScriptSource* script = nullptr;
+  if (debug_info.HasMember("function_source") &&
+      debug_info.HasMember("end_line_num")) {
+    std::string source = debug_info["function_source"].GetString();
+    char* source_str = const_cast<char*>(source.c_str());
+    SetDebuggerSourceCode(ctx, source_str);
+    int32_t end_line_num = debug_info["end_line_num"].GetInt();
+    SetDebuggerEndLineNum(ctx, end_line_num);
+    script =
+        AddDebuggerScript(ctx, source_str, const_cast<char*>(url.c_str()),
+                          static_cast<int32_t>(source.length()), end_line_num);
+  }
+
+  if (script == nullptr) {
+    LOGE("lepusng debug: parse function_source error");
+    if (!LEPUS_IsGCMode(ctx)) lepus_free(ctx, function_list);
+    return;
+  }
+
+  for (uint32_t i = 0; i < func_size; i++) {
+    auto* b = function_list[i];
+    if (b) {
+      if (has_function_info) {
+        FillFunctionBytecodeDebugInfo(ctx, b, debug_info);
+      }
+      SetFunctionScript(b, script);
+    }
+  }
+  InitDebuggerScript(ctx, script);
+
+  if (!LEPUS_IsGCMode(ctx)) lepus_free(ctx, function_list);
 }
 
 void LepusNGDebugger::PrepareDebugInfo() {
@@ -158,8 +173,9 @@ void LepusNGDebugger::PrepareDebugInfo() {
   if (LEPUS_IsUndefined(top_level_function)) {
     return;
   }
-  for (const auto& item : debug_info_) {
+  for (auto& item : debug_info_) {
     if (!item.second.first) {
+      item.second.first = true;
       PrepareDebugInfo(top_level_function, item.first, item.second.second);
     }
   }
@@ -212,8 +228,8 @@ void LepusNGDebugger::PrepareDebugInfo(const LEPUSValue& top_level_function,
     const std::string source = "debug-info.json download fail, please check!";
     AddDebuggerScript(context_->GetLepusContext(),
                       const_cast<char*>(source.c_str()),
-                      static_cast<int32_t>(source.length()),
-                      0);  // TODO(lqy): use param url as filename
+                      const_cast<char*>(url.c_str()),
+                      static_cast<int32_t>(source.length()), 0);
     return;
   }
 

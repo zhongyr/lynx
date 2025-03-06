@@ -36,6 +36,8 @@ class InspectorLepusObserver {
 
   virtual void OnConsoleEvent(const std::string& func_name,
                               const std::string& args) = 0;
+
+  virtual void PrepareForScriptEval(const std::string& name) = 0;
 };
 
 }  // namespace lepus

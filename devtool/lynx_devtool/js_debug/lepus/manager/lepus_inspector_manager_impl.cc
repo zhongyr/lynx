@@ -11,31 +11,46 @@
 namespace lynx {
 namespace lepus {
 
+bool LepusInspectorManagerImpl::IsDebugEnabled() {
+  auto sp = observer_wp_.lock();
+  if (sp == nullptr) {
+    return false;
+  }
+  return sp->IsDebugEnabled();
+}
+
 void LepusInspectorManagerImpl::InitInspector(
-    Context* context, const std::shared_ptr<InspectorLepusObserver>& observer) {
-  const std::string& debug_info_url = context->GetDebugInfoURL();
-  if (!observer->IsDebugEnabled()) {
-    observer->SetDebugInfoUrl(debug_info_url);
+    Context* context, const std::shared_ptr<InspectorLepusObserver>& observer,
+    const std::string& context_name) {
+  // Do not support debugging lazy components of non-LepusNG.
+  if (!observer->IsDebugEnabled() ||
+      (!context->IsLepusNGContext() &&
+       context_name != devtool::kLepusDefaultContextName)) {
     return;
   }
 
-  // If reuse Lepus context, do not recreate inspector_client_, but need to
-  // download debug-info.json.
-  if (inspector_client_ == nullptr) {
-    observer_wp_ = observer;
-    inspector_name_ = GenerateInspectorName(context->name());
+  observer_wp_ = observer;
+  inspector_name_ = GenerateInspectorName(context_name);
 
-    inspector_client_ =
-        devtool::LepusInspectorClientProvider::GetInspectorClient();
+  inspector_client_ =
+      devtool::LepusInspectorClientProvider::GetInspectorClient();
 
-    inspector_client_->InitInspector(context, inspector_name_);
-    inspector_client_->ConnectSession();
-  }
-  inspector_client_->SetDebugInfo(debug_info_url,
-                                  observer->GetDebugInfo(debug_info_url));
+  inspector_client_->InitInspector(context, inspector_name_);
+  inspector_client_->ConnectSession();
 
   observer->OnInspectorInited(devtool::kKeyEngineLepus, inspector_name_,
                               inspector_client_);
+}
+
+void LepusInspectorManagerImpl::SetDebugInfo(const std::string& debug_info_url,
+                                             const std::string& file_name) {
+  auto sp = observer_wp_.lock();
+  if (sp == nullptr || inspector_client_ == nullptr) {
+    return;
+  }
+
+  inspector_client_->SetDebugInfo(file_name, sp->GetDebugInfo(debug_info_url));
+  sp->PrepareForScriptEval(inspector_name_);
 }
 
 void LepusInspectorManagerImpl::DestroyInspector() {
@@ -51,8 +66,8 @@ void LepusInspectorManagerImpl::DestroyInspector() {
 
 std::string LepusInspectorManagerImpl::GenerateInspectorName(
     const std::string& name) {
-  // default entry or reused lepus context: inspector_name_ is "Main"
-  // lazy component: inspector_name_ is "Main:${lazy component url}"
+  // default context: inspector_name_ is "Main"
+  // other context: inspector_name_ is "Main:${context name}"
   return name == devtool::kLepusDefaultContextName
              ? devtool::kTargetLepus
              : devtool::kTargetLepusPrefix + name;
