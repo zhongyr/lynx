@@ -148,11 +148,21 @@
 }
 
 - (void)createArkActionManager {
+  CGSize navBarArea = self.navigationController.navigationBar.frame.size;
+  if (_fullScreen) {
+    navBarArea = CGSizeMake(0, 0);
+  }
+  CGPoint origin = UIApplication.sharedApplication.statusBarFrame.origin;
+  origin.y += UIApplication.sharedApplication.statusBarFrame.size.height;
+  if (!_fullScreen) {
+    origin = CGPointMake(0, 0);
+  }
+
   [_manager startWithUrl:_url
                   inView:self.view
-              withOrigin:CGPointMake(0, 0)
+              withOrigin:origin
             replayConfig:[[TestBenchReplayConfig alloc] initWithProductUrl:_url]
-                  NavBar:self.navigationController.navigationBar.frame.size];
+                  NavBar:navBarArea];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {

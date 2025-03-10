@@ -524,10 +524,8 @@ static const int kVirtual = 1 << 2;
           [[LynxConfig alloc] initWithProvider:LynxConfig.globalConfig.templateProvider];
       [builder.config registerModule:[TestBenchReplayDataModule class]];
       [builder.config registerModule:[TestBenchOpenUrlModule class]];
-      [builder
-          setFrame:CGRectMake(strongSelf->_origin.x, strongSelf->_origin.y,
-                              [UIScreen mainScreen].bounds.size.width - strongSelf->_origin.x,
-                              [UIScreen mainScreen].bounds.size.height - strongSelf->_origin.y)];
+      [builder setFrame:CGRectMake(strongSelf->_origin.x, strongSelf->_origin.y,
+                                   strongSelf->_screenSize.width, strongSelf->_screenSize.height)];
       NSInteger schema_thread_strategy = [self.replayConfig thread_mode];
       [builder setThreadStrategyForRender:
                    [self getThreadStrategy:(int32_t)schema_thread_strategy
