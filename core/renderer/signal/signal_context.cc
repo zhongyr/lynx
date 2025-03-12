@@ -33,11 +33,16 @@ void SignalContext::PushComputation(Computation* computation) {
 
 void SignalContext::PopComputation() { computation_stack_.pop_back(); }
 
+void SignalContext::MarkUnTrack(bool enable_un_track) {
+  if (enable_un_track) {
+    PushComputation(nullptr);
+  } else {
+    PopComputation();
+  }
+}
+
 Computation* SignalContext::GetTopComputation() {
   if (computation_stack_.empty()) {
-    return nullptr;
-  }
-  if (enable_un_track_) {
     return nullptr;
   }
   return computation_stack_.back();

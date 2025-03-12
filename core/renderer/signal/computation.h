@@ -47,6 +47,8 @@ class Computation : public BaseScope {
 
   const lepus::Value& GetValue() { return value_; }
 
+  void RemoveSignal(Signal* signal);
+
  private:
   lepus::Value closure_;
   lepus::Value value_;

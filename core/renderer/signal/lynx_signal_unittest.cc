@@ -39,6 +39,7 @@ TEST_P(SignalTest, TestSetValue) {
                            lepus::Value(), true, nullptr);
 
   signal0.computation_list_.emplace_back(&computation0);
+  computation0.PushSignal(&signal0);
   signal0.SetValue(lepus::Value(3));
 
   Signal signal1(nullptr, lepus::Value(1));
@@ -48,6 +49,7 @@ TEST_P(SignalTest, TestSetValue) {
   signal1.SetValue(lepus::Value(2));
 
   signal1.computation_list_.emplace_back(&computation0);
+  computation0.PushSignal(&signal1);
   signal1.SetValue(lepus::Value(3));
 }
 

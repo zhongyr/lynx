@@ -5065,7 +5065,7 @@ RENDERER_FUNCTION_CC(FiberCreateSignal) {
 
 RENDERER_FUNCTION_CC(FiberWriteSignal) {
   TRACE_EVENT(LYNX_TRACE_CATEGORY, "FiberWriteSignal");
-  CHECK_ARGC_GE(FiberCreateSignal, 1);
+  CHECK_ARGC_GE(FiberCreateSignal, 2);
   CONVERT_ARG(arg0, 0);  // signal or signal array
   CONVERT_ARG(arg1, 1);  // value or value array
 

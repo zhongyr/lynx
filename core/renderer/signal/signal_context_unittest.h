@@ -5,20 +5,73 @@
 #ifndef CORE_RENDERER_SIGNAL_SIGNAL_CONTEXT_UNITTEST_H_
 #define CORE_RENDERER_SIGNAL_SIGNAL_CONTEXT_UNITTEST_H_
 
+#include <memory>
+#include <string>
 #include <tuple>
+#include <utility>
 
 #include "core/renderer/signal/signal_context.h"
+#include "core/runtime/vm/lepus/context.h"
+#include "core/shell/testing/mock_tasm_delegate.h"
+#include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace lynx {
 namespace tasm {
-namespace testing {
+namespace test {
 
-class SignalContextTest : public ::testing::TestWithParam<std::tuple<bool>> {
-  // TODO(songshourui.null): impl this later.
+class BaseSignalTestMockTasmDelegate
+    : public ::testing::NiceMock<MockTasmDelegate> {
+ public:
+  BaseSignalTestMockTasmDelegate() : current_error_(0, "") {}
+  virtual ~BaseSignalTestMockTasmDelegate() override = default;
+
+  std::string DumpRenderFuncResult() { return render_func_ss_.str(); }
+
+  void ClearRenderFuncResult() {
+    render_func_ss_.str("");
+    render_func_ss_.clear();
+  }
+
+  void OnErrorOccurred(base::LynxError error) override {
+    current_error_ = std::move(error);
+  }
+
+  std::stringstream render_func_ss_;
+
+  base::LynxError current_error_;
 };
 
-}  // namespace testing
+class BaseSignalTest : public ::testing::TestWithParam<std::tuple<bool>> {
+ protected:
+  BaseSignalTest();
+  ~BaseSignalTest() override{};
+
+  void SetUp() override;
+  void TearDown() override {}
+
+  void Compile(const std::string& code, lepus::Context* ctx = nullptr);
+  bool Execute(lepus::Context* ctx = nullptr);
+  lepus::Value GetTopLevelVariableByName(const std::string& name);
+
+  std::unique_ptr<BaseSignalTestMockTasmDelegate> delegate_;
+  std::shared_ptr<lynx::tasm::LayoutContext> layout_context_;
+  std::shared_ptr<TemplateAssembler> tasm_;
+
+  std::shared_ptr<lepus::Context> ctx_;
+
+  bool enable_ng_;
+
+  std::tuple<bool> current_parameter_;
+};
+
+class SignalContextTest : public BaseSignalTest {
+ protected:
+  SignalContextTest();
+  ~SignalContextTest() override {}
+};
+
+}  // namespace test
 }  // namespace tasm
 }  // namespace lynx
 

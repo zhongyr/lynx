@@ -13,7 +13,15 @@ namespace tasm {
 Signal::Signal(SignalContext* context, const lepus::Value& init_value)
     : signal_context_(context), value_(init_value), computation_list_() {}
 
-Signal::~Signal() {}
+Signal::~Signal() {
+  for (auto computation : computation_list_) {
+    if (computation == nullptr) {
+      continue;
+    }
+    computation->RemoveSignal(this);
+  }
+  computation_list_.clear();
+}
 
 void Signal::SetValue(const lepus::Value& value) {
   if (value_.IsEqual(value)) {

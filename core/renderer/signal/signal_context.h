@@ -35,7 +35,7 @@ class SignalContext {
 
   Computation* GetTopComputation();
 
-  void MarkUnTrack(bool enable_un_track) { enable_un_track_ = enable_un_track; }
+  void MarkUnTrack(bool enable_un_track);
 
   void RunUpdates(std::function<void()>&& func);
 
@@ -61,8 +61,6 @@ class SignalContext {
   void EnsureMemoComputationList();
 
   bool IsScopeActiveComputation(BaseScope* scope);
-
-  bool enable_un_track_{false};
 
   int32_t exec_count_{0};
 

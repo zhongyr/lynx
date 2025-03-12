@@ -39,10 +39,21 @@ Computation::Computation(SignalContext* signal_context_ptr,
   SetState(ScopeState::kStateNone);
 }
 
-Computation::~Computation() {}
+Computation::~Computation() {
+  for (auto signal : signal_list_) {
+    if (signal == nullptr) {
+      continue;
+    }
+    signal->CleanComputation(this);
+  }
+  signal_list_.clear();
+}
 
 void Computation::CleanUp() {
   for (auto signal : signal_list_) {
+    if (signal == nullptr) {
+      continue;
+    }
     signal->CleanComputation(this);
   }
   signal_list_.clear();
@@ -91,6 +102,8 @@ void Computation::Invoke(int32_t time) {
     SetUpdatedTime(time);
   }
 }
+
+void Computation::RemoveSignal(Signal* signal) { signal_list_.remove(signal); }
 
 }  // namespace tasm
 }  // namespace lynx

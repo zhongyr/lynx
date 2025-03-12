@@ -2,12 +2,313 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
+#define private public
+#define protected public
+
 #include "core/renderer/signal/signal_context_unittest.h"
+
+#include "core/renderer/tasm/react/testing/mock_painting_context.h"
+#include "core/runtime/vm/lepus/bytecode_generator.h"
+#include "core/runtime/vm/lepus/quick_context.h"
+#include "core/runtime/vm/lepus/vm_context.h"
 
 namespace lynx {
 namespace tasm {
-namespace testing {
-// TODO(songshourui.null): impl this later.
-}  // namespace testing
+namespace test {
+
+const std::tuple<bool> test_params[] = {
+    std::make_tuple(true),   // ues lepus ng
+    std::make_tuple(false),  // use lepus
+};
+
+BaseSignalTest::BaseSignalTest() {
+  current_parameter_ = GetParam();
+  enable_ng_ = std::get<0>(current_parameter_);
+
+  static constexpr int32_t kWidth = 1024;
+  static constexpr int32_t kHeight = 768;
+  static constexpr float kDefaultLayoutsUnitPerPx = 1.f;
+  static constexpr double kDefaultPhysicalPixelsPerLayoutUnit = 1.f;
+
+  auto lynx_env_config =
+      LynxEnvConfig(kWidth, kHeight, kDefaultLayoutsUnitPerPx,
+                    kDefaultPhysicalPixelsPerLayoutUnit);
+  delegate_ = std::make_unique<BaseSignalTestMockTasmDelegate>();
+
+  auto manager =
+      std::make_unique<ElementManager>(std::make_unique<MockPaintingContext>(),
+                                       delegate_.get(), lynx_env_config);
+
+  tasm_ = std::make_shared<lynx::tasm::TemplateAssembler>(
+      *delegate_.get(), std::move(manager), 0);
+
+  CompileOptions options;
+  options.enable_fiber_arch_ = true;
+
+  auto default_entry = std::make_shared<TemplateEntry>();
+
+  default_entry->template_bundle_.compile_options_ = options;
+
+  tasm_->template_entries_[DEFAULT_ENTRY_NAME] = default_entry;
+
+  auto test_entry = std::make_shared<TemplateEntry>();
+
+  test_entry->template_bundle_.compile_options_ = options;
+
+  tasm_->template_entries_.insert({"test_entry", test_entry});
+}
+
+void BaseSignalTest::SetUp() {
+  if (enable_ng_) {
+    ctx_ = std::make_shared<lepus::QuickContext>();
+    ctx_->Initialize();
+  } else {
+    ctx_ = std::make_shared<lepus::VMContext>();
+    ctx_->Initialize();
+  }
+
+  tasm_->template_entries_[DEFAULT_ENTRY_NAME]->SetVm(ctx_);
+  tasm_->page_config_ = std::make_shared<PageConfig>();
+  tasm_->SetPageConfigClient();
+
+  if (enable_ng_) {
+    auto qctx = static_cast<lepus::QuickContext*>(ctx_.get());
+    Utils::RegisterNGBuiltin(qctx);
+    Renderer::RegisterNGBuiltin(qctx, ArchOption::FIBER_ARCH);
+  } else {
+    auto vm_ctx = static_cast<lepus::VMContext*>(ctx_.get());
+    Utils::RegisterBuiltin(vm_ctx);
+    Renderer::RegisterBuiltin(vm_ctx, ArchOption::FIBER_ARCH);
+  }
+
+  ctx_->SetGlobalData(
+      "$kTemplateAssembler",
+      lepus::Value(static_cast<lepus::Context::Delegate*>(tasm_.get())));
+  tasm_->page_config_->enable_fiber_arch_ = true;
+}
+
+void BaseSignalTest::Compile(const std::string& source, lepus::Context* ctx) {
+  if (ctx == nullptr) {
+    ctx = ctx_.get();
+  }
+
+  lepus::BytecodeGenerator::GenerateBytecode(ctx, source, ctx->GetSdkVersion());
+}
+
+bool BaseSignalTest::Execute(lepus::Context* ctx) {
+  if (ctx == nullptr) {
+    ctx = ctx_.get();
+  }
+
+  if (ctx->IsLepusNGContext()) {
+    auto qctx = static_cast<lepus::QuickContext*>(ctx);
+    return qctx->Execute();
+  } else {
+    auto vm_ctx = static_cast<lepus::VMContext*>(ctx);
+    vm_ctx->heap_ = lepus::Heap();
+    return vm_ctx->Execute();
+  }
+  return false;
+}
+
+lepus::Value BaseSignalTest::GetTopLevelVariableByName(
+    const std::string& name) {
+  lepus::Value result;
+  ctx_->GetTopLevelVariableByName(name, &result);
+  return result;
+}
+
+SignalContextTest::SignalContextTest() : BaseSignalTest() {}
+
+TEST_P(SignalContextTest, CreateAndReadASignal) {
+  std::string js_source = R"(
+       let signal = __CreateSignal(1);
+       let value = __ReadSignal(signal);
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.Number(), 1);
+}
+
+TEST_P(SignalContextTest, CreateAndReadAMemo0) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+         let memo = __CreateMemo(() => "hello", "none");
+         value = __ReadSignal(memo);
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "hello");
+}
+
+TEST_P(SignalContextTest, CreateAndReadAMemo1) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+         let memo = __CreateMemo(i => `${i} lynx`, "hello");
+         value = __ReadSignal(memo);
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "hello lynx");
+}
+
+TEST_P(SignalContextTest, CreateAEffectWithExplicitDeps0) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+        let signal = __CreateSignal("thoughts");
+        const fn = (pre) => {
+            let str = __ReadSignal(signal);
+            value = `impure ${str}`
+            return value;
+        };
+        __CreateComputation(fn, "init", true)
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "impure thoughts");
+}
+
+TEST_P(SignalContextTest, CreateAEffectWithExplicitDeps1) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+        let signal = __CreateSignal("thoughts");
+        const fn = (pre) => {
+            let str = __ReadSignal(signal);
+            value = `impure ${str}`
+            return value;
+        };
+        __CreateComputation(fn, "init", false)
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "impure thoughts");
+}
+
+TEST_P(SignalContextTest, CreateAEffectWithExplicitDeps2) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+        let signal = __CreateSignal("thoughts");
+        const fn = (pre) => {
+            let str = __ReadSignal(signal);
+            value = `impure ${str}`
+            return value;
+        };
+        __CreateComputation(fn, "init", false)
+        __WriteSignal(signal, "lynx")
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "impure lynx");
+}
+
+TEST_P(SignalContextTest, CreateAEffectWithExplicitDeps3) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+        __UnTrack(()=>{
+            let signal = __CreateSignal("thoughts");
+            const fn = (pre) => {
+                 let str = __ReadSignal(signal);
+                 value = `impure ${str}`
+                 return value;
+            };
+            __CreateComputation(fn, "init", false);
+            __WriteSignal(signal, "lynx");
+        }
+        );
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "impure lynx");
+}
+
+TEST_P(SignalContextTest, CreateAEffectWithExplicitDeps4) {
+  if (!enable_ng_) {
+    GTEST_SKIP();
+  }
+
+  std::string js_source = R"(
+    let value = "world";
+    __CreateScope(()=>{
+        let signal = __CreateSignal("thoughts");
+        const fn = (pre) => {
+            return __UnTrack(()=>{
+                let str = __ReadSignal(signal);
+                value = `impure ${str}`
+                return value;
+            });
+        };
+        __CreateComputation(fn, "init", false)
+        __WriteSignal(signal, "lynx")
+    });
+  )";
+
+  Compile(js_source);
+  EXPECT_TRUE(Execute());
+
+  lepus::Value value = GetTopLevelVariableByName("value");
+  EXPECT_EQ(value.StdString(), "impure thoughts");
+}
+
+INSTANTIATE_TEST_SUITE_P(SignalContextTestModule, SignalContextTest,
+                         ::testing::ValuesIn(test_params));
+
+}  // namespace test
 }  // namespace tasm
 }  // namespace lynx
