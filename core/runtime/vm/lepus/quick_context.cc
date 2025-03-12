@@ -122,6 +122,69 @@ RENDERER_FUNCTION(Console_Info) {
   return LEPUS_UNDEFINED;
 }
 
+RENDERER_FUNCTION(Console_Count) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("count", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_CountReset) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("countReset", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_Group) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("group", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_GroupCollapsed) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("groupCollapsed", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_GroupEnd) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("groupEnd", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_Time) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("time", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_TimeLog) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("timeLog", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_TimeEnd) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("timeEnd", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
+RENDERER_FUNCTION(Console_Table) {
+  lepus::Context* lctx = lepus::QuickContext::GetFromJsContext(ctx);
+  std::string result = GetPrintStr(ctx, argc, argv);
+  lctx->OnBTSConsoleEvent("table", "[main-thread.js] " + result);
+  return LEPUS_UNDEFINED;
+}
+
 void RegisterQuickCFun(QuickContext* ctx, LEPUSValue& obj, const char* name,
                        int argc, LEPUSCFunction* func) {
   LEPUSValue cf = LEPUS_NewCFunction(ctx->context(), func, name, argc);
@@ -141,6 +204,15 @@ void RegisterConsole(QuickContext* ctx) {
   RegisterQuickCFun(ctx, obj, "warn", 1, Console_Warn);
   RegisterQuickCFun(ctx, obj, "error", 1, Console_Error);
   RegisterQuickCFun(ctx, obj, "debug", 1, Console_Debug);
+  RegisterQuickCFun(ctx, obj, "count", 0, Console_Count);
+  RegisterQuickCFun(ctx, obj, "countReset", 0, Console_CountReset);
+  RegisterQuickCFun(ctx, obj, "group", 0, Console_Group);
+  RegisterQuickCFun(ctx, obj, "groupCollapsed", 0, Console_GroupCollapsed);
+  RegisterQuickCFun(ctx, obj, "groupEnd", 0, Console_GroupEnd);
+  RegisterQuickCFun(ctx, obj, "time", 0, Console_Time);
+  RegisterQuickCFun(ctx, obj, "timeLog", 0, Console_TimeLog);
+  RegisterQuickCFun(ctx, obj, "timeEnd", 0, Console_TimeEnd);
+  RegisterQuickCFun(ctx, obj, "table", 1, Console_Table);
   ctx->RegisterGlobalProperty("console", obj);
 }
 
