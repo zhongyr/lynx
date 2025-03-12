@@ -374,6 +374,9 @@ bool LynxBinaryConfigDecoder::DecodePageConfig(
 
   if (doc.HasMember(kEnableFixedNew) && doc[kEnableFixedNew].IsBool()) {
     page_config.get()->SetEnableFixedNew(doc[kEnableFixedNew].GetBool());
+  } else {
+    page_config.get()->SetEnableFixedNew(
+        LynxEnv::GetInstance().EnableFixedNew());
   }
 
   if (doc.HasMember(kAbsoluteInContentBound) &&

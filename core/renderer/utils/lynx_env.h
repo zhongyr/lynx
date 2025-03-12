@@ -83,6 +83,7 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
     ENABLE_FIBER_ELEMENT_FOR_RADON_DIFF,
     ENABLE_NATIVE_CREATE_VIEW_ASYNC,
     ENABLE_SIGNAL_API,
+    ENABLE_FIXED_NEW,
     ENABLE_MULTI_TOUCH,
     ENABLE_NEW_INTERSECTION_OBSERVER,
     // Please add new enum values above
@@ -173,6 +174,7 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
             {Key::ENABLE_NATIVE_CREATE_VIEW_ASYNC,
              "enable_native_create_view_async"},
             {Key::ENABLE_SIGNAL_API, "enable_signal_api"},
+            {Key::ENABLE_FIXED_NEW, "enable_lynx_new_fixed"},
             {Key::ENABLE_MULTI_TOUCH, "enable_multi_touch"},
             {Key::ENABLE_NEW_INTERSECTION_OBSERVER,
              "enable_new_intersection_observer"},
@@ -276,6 +278,7 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
   bool EnableUseContextPool();
   bool EnableNativeCreateViewAsync();
   bool EnableSignalAPI();
+  bool EnableFixedNew();
   bool EnableMultiTouch();
   bool EnableNewIntersectionObserver();
 

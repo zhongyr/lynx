@@ -377,6 +377,10 @@ bool LynxEnv::EnableSignalAPI() {
   return GetBoolEnv(Key::ENABLE_SIGNAL_API, false);
 }
 
+bool LynxEnv::EnableFixedNew() {
+  return GetBoolEnv(Key::ENABLE_FIXED_NEW, false);
+}
+
 bool LynxEnv::EnableMultiTouch() {
   return GetBoolEnv(Key::ENABLE_MULTI_TOUCH, false);
 }
@@ -384,5 +388,6 @@ bool LynxEnv::EnableMultiTouch() {
 bool LynxEnv::EnableNewIntersectionObserver() {
   return GetBoolEnv(Key::ENABLE_NEW_INTERSECTION_OBSERVER, false);
 }
+
 }  // namespace tasm
 }  // namespace lynx
