@@ -74,30 +74,30 @@ public class PageConfig {
   private static final String KEY_ENABLE_FLATTEN_TRANSLATE_Z = "enableFlattenTranslateZ";
   private static final String KEY_MAP_CONTAINER_TYPE = "mapContainerType";
 
-  private boolean autoExpose;
+  private boolean autoExpose = true;
   private boolean enableEventThrough;
   private boolean defaultOverflowVisible;
   private String pageVersion;
   private boolean asyncRedirect;
-  private boolean syncImageAttach;
-  private boolean enableCheckLocalImage;
+  private boolean syncImageAttach = true;
+  private boolean enableCheckLocalImage = true;
   private boolean enableAsyncRequestImage;
   private boolean useImagePostProcessor;
   private boolean enableLoadImageFromService;
   private String pageType;
   private String cliVersion;
   private String customData;
-  private boolean useNewSwiper;
+  private boolean useNewSwiper = true;
   private boolean mEnableAsyncInitTTVideoEngine;
   private String targetSdkVersion;
   private String lepusVersion;
-  private boolean enableLepusNG;
+  private boolean enableLepusNG = true;
   private String mTapSlop;
-  private boolean mEnableCreateViewAsync;
+  private boolean mEnableCreateViewAsync = true;
   private boolean mEnableVsyncAlignedFlush;
   private boolean mCssAlignWithLegacyW3c;
-  private boolean mEnableAccessibilityElement;
-  private boolean mEnableOverlapForAccessibilityElement;
+  private boolean mEnableAccessibilityElement = true;
+  private boolean mEnableOverlapForAccessibilityElement = true;
   private boolean mEnableNewAccessibility;
   private boolean mEnableA11yIDMutationObserver;
   private boolean mEnableA11y;
@@ -114,7 +114,6 @@ public class PageConfig {
   private boolean mEnableExposureWhenLayout = false;
   private boolean mEnableFlattenTranslateZ = false;
   private boolean mEnableNewGesture = false;
-
   private boolean mEnableNewIntersectionObserver = false;
   private boolean mEnableFiber = false;
   private boolean mEnableMultiTouch = false;
