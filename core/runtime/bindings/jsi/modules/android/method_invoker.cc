@@ -21,6 +21,7 @@
 #include "core/base/android/piper_data.h"
 #include "core/base/js_constants.h"
 #include "core/base/lynx_trace_categories.h"
+#include "core/base/trace/trace_event_def.h"
 #include "core/build/gen/lynx_sub_error_code.h"
 #include "core/runtime/bindings/jsi/modules/lynx_module.h"
 #include "core/runtime/common/utils.h"

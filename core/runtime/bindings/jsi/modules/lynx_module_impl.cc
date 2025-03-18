@@ -11,6 +11,7 @@
 
 #include "base/trace/native/trace_event.h"
 #include "core/base/lynx_trace_categories.h"
+#include "core/base/trace/trace_event_def.h"
 #include "core/renderer/utils/lynx_env.h"
 #include "core/runtime/bindings/jsi/interceptor/network_monitor.h"
 #include "core/runtime/bindings/jsi/modules/lynx_jsi_module_callback.h"
@@ -84,7 +85,7 @@ LynxModuleImpl::invokeMethod(const MethodMetadata& method, Runtime* rt,
                         }
                       });
 
-  TRACE_EVENT(LYNX_TRACE_CATEGORY_JSB, "CallJSB",
+  TRACE_EVENT(LYNX_TRACE_CATEGORY_JSB, INVOKE_NATIVE_MODULE,
               [&, self = shared_from_this()](lynx::perfetto::EventContext ctx) {
                 ctx.event()->add_debug_annotations("module_name", name_);
                 ctx.event()->add_debug_annotations("method_name", method.name);
