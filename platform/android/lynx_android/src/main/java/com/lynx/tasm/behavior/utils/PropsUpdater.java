@@ -15,6 +15,7 @@ import com.lynx.tasm.behavior.CSSPropertySetter;
 import com.lynx.tasm.behavior.StylesDiffMap;
 import com.lynx.tasm.behavior.shadow.ShadowNode;
 import com.lynx.tasm.behavior.ui.LynxBaseUI;
+import com.lynx.tasm.eventreport.LynxEventReporter;
 import com.lynx.tasm.utils.CallStackUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -86,6 +87,9 @@ public class PropsUpdater {
         }
         LLog.e("PropsUpdater", log);
         setter = new FallbackLynxUISetter<>(lynxUIClass);
+        LynxEventReporter.onEvent("lynxsdk_props_setter_fallback", new HashMap<String, Object>() {
+          { put("class_name", lynxUIClass.getName()); }
+        }, LynxEventReporter.INSTANCE_ID_UNKNOWN);
       }
       LYNX_UI_SETTER_MAP.put(lynxUIClass, setter);
     }
