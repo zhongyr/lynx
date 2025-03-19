@@ -4,6 +4,7 @@
 
 #import "LynxUIRenderer.h"
 
+#import <Lynx/LUIConfigAdapter.h>
 #import <Lynx/LynxEventHandler.h>
 #import <Lynx/LynxFontFaceManager.h>
 #import <Lynx/LynxGenericResourceFetcher.h>
@@ -133,55 +134,8 @@
 
   // Set config to LynxUIContext;
   LynxUIContext *uiContext = context.uiOwner.uiContext;
-  // TODO(renzhongyue): Add setPageConfig:(PageConfig) to a private extension of LynxUIContext.
-  // And add a init method to enable LynxUIOwner init with a PageConfig directly.
-  // Configs are not modifiable after initialization.
-  [uiContext setDefaultOverflowVisible:pageConfig->GetDefaultOverflowVisible()];
-  [uiContext setEnableTextRefactor:pageConfig->GetEnableTextRefactor()];
-  [uiContext setEnableTextOverflow:pageConfig->GetEnableTextOverflow()];
-  [uiContext setEnableNewClipMode:pageConfig->GetEnableNewClipMode()];
-  [uiContext setDefaultImplicitAnimation:pageConfig->GetGlobalImplicit()];
-  [uiContext setEnableEventRefactor:pageConfig->GetEnableEventRefactor()];
-  [uiContext setEnableA11yIDMutationObserver:pageConfig->GetEnableA11yIDMutationObserver()];
-
-  [uiContext setEnableEventThrough:pageConfig->GetEnableEventThrough()];
-  [uiContext setEnableBackgroundShapeLayer:pageConfig->GetEnableBackgroundShapeLayer()];
-  [uiContext setEnableExposureUIMargin:pageConfig->GetEnableExposureUIMargin()];
-  [uiContext setEnableTextLanguageAlignment:pageConfig->GetEnableTextLanguageAlignment()];
-  [uiContext setEnableXTextLayoutReused:pageConfig->GetEnableXTextLayoutReused()];
-  [uiContext setEnableFiberArch:pageConfig->GetEnableFiberArch()];
-  [uiContext setEnableNewGesture:pageConfig->GetEnableNewGesture()];
-  [uiContext setCSSAlignWithLegacyW3c:pageConfig->GetCSSAlignWithLegacyW3C()];
-  [uiContext
-      setTargetSdkVersion:[NSString
-                              stringWithUTF8String:pageConfig->GetTargetSDKVersion().c_str()]];
-
-  uiContext.imageMonitorEnabled =
-      [[LynxEnv sharedInstance] boolFromExternalEnv:LynxEnvEnableImageMonitor defaultValue:YES];
-  uiContext.devtoolEnabled = [[LynxEnv sharedInstance] devtoolEnabled];
-  uiContext.fixNewImageDownSampling =
-      [[LynxEnv sharedInstance] boolFromExternalEnv:LynxEnvFixNewImageDownSampling
-                                       defaultValue:YES];
-  // If EnableLynxFluency is configured, Lynx will determine whether to enable fluency
-  // metics based on this probability when creating a LynxView.
-  [[uiContext fluencyInnerListener]
-      setFluencyPageconfigProbability:pageConfig->GetEnableScrollFluencyMonitor()];
-  if (pageConfig->GetEnableTextLayerRender() == lynx::tasm::TernaryBool::UNDEFINE_VALUE) {
-    auto new_value = [[LynxEnv sharedInstance] boolFromExternalEnv:LynxEnvEnableTextLayerRender
-                                                      defaultValue:NO];
-    pageConfig->SetEnableTextLayerRender(new_value ? lynx::tasm::TernaryBool::TRUE_VALUE
-                                                   : lynx::tasm::TernaryBool::FALSE_VALUE);
-  }
-
-  [uiContext setEnableTextLayerRender:pageConfig->GetEnableTextLayerRender() ==
-                                      lynx::tasm::TernaryBool::TRUE_VALUE];
-
-  [uiContext setEnableTextNonContiguousLayout:pageConfig->GetEnableTextNonContiguousLayout()];
-  [uiContext setEnableImageDownsampling:pageConfig->GetEnableImageDownsampling()];
-  [uiContext setEnableNewImage:pageConfig->GetEnableNewImage()];
-  [uiContext
-      setTrailUseNewImage:pageConfig->GetTrailNewImage() == lynx::tasm::TernaryBool::TRUE_VALUE];
-  [uiContext setLogBoxImageSizeWarningThreshold:pageConfig->GetLogBoxImageSizeWarningThreshold()];
+  LUIConfigAdapter *configAdapter = [[LUIConfigAdapter alloc] initWithConfig:pageConfig.get()];
+  [uiContext setUIConfig:configAdapter];
 }
 
 - (BOOL)needPaintingContextProxy {

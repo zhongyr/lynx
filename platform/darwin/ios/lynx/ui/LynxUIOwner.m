@@ -37,6 +37,7 @@
 #import "LynxGestureArenaManager.h"
 #import "LynxTemplateRender+Internal.h"
 #import "LynxUI+Private.h"
+#import "LynxUIContext+Internal.h"
 #import "LynxUIIntersectionObserver.h"
 #import "LynxUIOwner+Accessibility.h"
 #import "LynxUIOwner+Private.h"
@@ -131,7 +132,8 @@ extern NSString* const kDefaultComponentID;
                        templateRender:(LynxTemplateRender*)templateRender
                     componentRegistry:(LynxComponentScopeRegistry*)registry
                         screenMetrics:(LynxScreenMetrics*)screenMetrics
-                         errorHandler:(id<LUIErrorHandling>)errorHandler {
+                         errorHandler:(id<LUIErrorHandling>)errorHandler
+                             uiConfig:(id<LUIConfig> _Nullable)uiConfig {
   LYNX_TRACE_SECTION(LYNX_TRACE_CATEGORY_WRAPPER, @"LynxUIOwner init")
   self = [super init];
   if (self) {
@@ -169,6 +171,9 @@ extern NSString* const kDefaultComponentID;
              object:nil];
 
     [self listenAccessibilityFocused];
+    if (uiConfig) {
+      [_uiContext setUIConfig:uiConfig];
+    }
   }
   LYNX_TRACE_END_SECTION(LYNX_TRACE_CATEGORY_WRAPPER)
   return self;
@@ -182,7 +187,8 @@ extern NSString* const kDefaultComponentID;
                       templateRender:templateRender
                    componentRegistry:registry
                        screenMetrics:screenMetrics
-                        errorHandler:containerView];
+                        errorHandler:containerView
+                            uiConfig:nil];
 }
 
 #pragma mark - A11y

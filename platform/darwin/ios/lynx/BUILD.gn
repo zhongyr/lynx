@@ -107,6 +107,8 @@ subspec_target("Framework") {
 
 subspec_target("lynx") {
   sources = [
+    "LUIConfigAdapter.h",
+    "LUIConfigAdapter.mm",
     "LynxBackgroundRuntime+Internal.h",
     "LynxBackgroundRuntime.mm",
     "LynxConfig+Internal.h",

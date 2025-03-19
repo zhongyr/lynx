@@ -201,6 +201,40 @@
 
 #pragma mark - Page configs
 
+- (void)setUIConfig:(id<LUIConfig>)config {
+  [self setDefaultOverflowVisible:config.defaultOverflowVisible];
+  [self setEnableTextRefactor:config.enableTextRefactor];
+  [self setEnableTextOverflow:config.enableTextOverflow];
+  [self setEnableNewClipMode:config.enableNewClipMode];
+  [self setDefaultImplicitAnimation:config.globalImplicit];
+  [self setEnableEventRefactor:config.enableEventRefactor];
+  [self setEnableA11yIDMutationObserver:config.enableA11yIDMutationObserver];
+  [self setEnableEventThrough:config.enableEventThrough];
+  [self setEnableBackgroundShapeLayer:config.enableBackgroundShapeLayer];
+  [self setEnableExposureUIMargin:config.enableExposureUIMargin];
+  [self setEnableTextLanguageAlignment:config.enableTextLanguageAlignment];
+  [self setEnableXTextLayoutReused:config.enableXTextLayoutReused];
+  [self setEnableFiberArch:config.enableFiberArch];
+  [self setEnableNewGesture:config.enableNewGesture];
+  [self setCSSAlignWithLegacyW3c:config.CSSAlignWithLegacyW3C];
+  [self setTargetSdkVersion:config.targetSdkVersion];
+
+  self.imageMonitorEnabled = config.imageMonitorEnabled;
+  self.devtoolEnabled = config.devtoolEnabled;
+  self.fixNewImageDownSampling = config.fixNewImageDownSampling;
+  // If EnableLynxFluency is configured, Lynx will determine whether to enable fluency
+  // metics based on this probability when creating a LynxView.
+  [self.fluencyInnerListener setFluencyPageconfigProbability:config.fluencyPageConfigProbability];
+
+  [self setEnableTextLayerRender:config.enableTextLayerRenderer];
+
+  [self setEnableTextNonContiguousLayout:config.enableTextNonContiguousLayout];
+  [self setEnableImageDownsampling:config.enableImageDownsampling];
+  [self setEnableNewImage:config.enableNewImage];
+  [self setTrailUseNewImage:config.trailUseNewImage];
+  [self setLogBoxImageSizeWarningThreshold:config.logBoxImageSizeWarningThreshold];
+}
+
 - (void)setDefaultOverflowVisible:(BOOL)enable {
   _defaultOverflowVisible = enable;
 }
