@@ -107,10 +107,14 @@ void TasmMediator::RemovePlatformCallback(
 void TasmMediator::OnPageConfigDecoded(
     const std::shared_ptr<tasm::PageConfig>& config) {
   tasm_platform_invoker_->OnPageConfigDecoded(config);
-  timing_actor_->Act(
-      [enable_air = config->GetEnableLynxAir()](auto& timing_handler) mutable {
-        timing_handler->SetEnableAirStrictMode(enable_air);
-      });
+  // default enableAirStrictMode in timing_handler is false,
+  // avoid using post task to send duplicate false value
+  if (config->GetEnableLynxAir()) {
+    timing_actor_->Act([enable_air = config->GetEnableLynxAir()](
+                           auto& timing_handler) mutable {
+      timing_handler->SetEnableAirStrictMode(enable_air);
+    });
+  }
 }
 
 void TasmMediator::SetTiming(tasm::Timing timing) {
