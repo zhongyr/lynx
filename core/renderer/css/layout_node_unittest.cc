@@ -225,7 +225,7 @@ TEST_F(LayoutNodeTests, ConcurrentAccess) {
     threads.emplace_back(test_task, ThreadArgs{&start_flag, kWantedProperty});
   }
 
-  start_flag = true;  // 统一触发线程执行
+  start_flag = true;
   for (auto& t : threads) t.join();
 }
 
