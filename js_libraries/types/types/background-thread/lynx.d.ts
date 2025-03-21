@@ -148,4 +148,10 @@ export interface Lynx extends CommonLynx {
    */ 
   queueMicrotask(callback: () => void): void;
 
+  /**
+   * @description Callback when an error occurs
+   * @since 1.0
+   */
+  onError?: (error: Error) => void;
+
 }
