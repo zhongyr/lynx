@@ -37,7 +37,8 @@ class VSyncMonitor : public std::enable_shared_from_this<VSyncMonitor> {
   void AsyncRequestVSync(Callback callback);
 
   // the callback is unique per id
-  void ScheduleVSyncSecondaryCallback(uintptr_t id, Callback callback);
+  void ScheduleVSyncSecondaryCallback(uintptr_t id, Callback callback,
+                                      bool should_on_ui_thread = false);
 
   // frame_start_time/frame_target_time is in nanoseconds
   void OnVSync(int64_t frame_start_time, int64_t frame_target_time);

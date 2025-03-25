@@ -86,6 +86,7 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
     ENABLE_FIXED_NEW,
     ENABLE_MULTI_TOUCH,
     ENABLE_NEW_INTERSECTION_OBSERVER,
+    ENABLE_ANIMATION_VSYNC_ON_UI_THREAD,
     MULTI_JS_THREAD_COUNT,
     FIX_FIBER_REMOVE_TWICE_BUG,
     OPT_PUSH_STYLE_TO_BUNDLE,
@@ -181,6 +182,8 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
             {Key::ENABLE_MULTI_TOUCH, "enable_multi_touch"},
             {Key::ENABLE_NEW_INTERSECTION_OBSERVER,
              "enable_new_intersection_observer"},
+            {Key::ENABLE_ANIMATION_VSYNC_ON_UI_THREAD,
+             "enable_animation_vsync_on_ui_thread"},
             {Key::MULTI_JS_THREAD_COUNT, "multi_js_thread_count"},
             {Key::FIX_FIBER_REMOVE_TWICE_BUG, "fix_fiber_remove_twice_bug"},
             {Key::OPT_PUSH_STYLE_TO_BUNDLE, "opt_push_style_to_bundle"},
@@ -273,6 +276,7 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
   bool EnableUIOpBatch();
   bool EnableCSSLazyImport();
   bool EnableNewAnimatorFiber();
+  bool EnableAnimationVsyncOnUIThread();
   bool IsVSyncTriggeredInUiThreadAndroid();
   bool IsVSyncPostTaskByEmergency();
   bool EnableUseMapBufferForUIProps();

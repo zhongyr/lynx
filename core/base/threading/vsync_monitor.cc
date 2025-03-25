@@ -36,7 +36,8 @@ void VSyncMonitor::AsyncRequestVSync(Callback callback) {
 }
 
 void VSyncMonitor::ScheduleVSyncSecondaryCallback(uintptr_t id,
-                                                  Callback callback) {
+                                                  Callback callback,
+                                                  bool should_on_ui_thread) {
   if (!callback) {
     return;
   }
@@ -52,7 +53,11 @@ void VSyncMonitor::ScheduleVSyncSecondaryCallback(uintptr_t id,
   }
 
   if (!requested_) {
-    RequestVSync();
+    if (should_on_ui_thread) {
+      RequestVSyncOnUIThread(std::move(callback));
+    } else {
+      RequestVSync();
+    }
     requested_ = true;
   }
 }
