@@ -11,8 +11,11 @@ import androidx.annotation.Nullable;
 import com.lynx.react.bridge.JavaOnlyArray;
 import com.lynx.react.bridge.JavaOnlyMap;
 import com.lynx.react.bridge.ReadableMap;
+import com.lynx.tasm.LynxView;
 import com.lynx.tasm.base.LLog;
+import com.lynx.tasm.behavior.LynxContext;
 import com.lynx.tasm.behavior.LynxObserverManager;
+import com.lynx.tasm.behavior.LynxUIOwner;
 import com.lynx.tasm.event.LynxDetailEvent;
 import com.lynx.tasm.utils.UIThreadUtils;
 import com.lynx.tasm.utils.UnitUtils;
@@ -29,6 +32,59 @@ public class UIExposure extends LynxObserverManager {
     void sendGlobalEvent(String name, JavaOnlyArray params);
 
     LynxBaseUI findNode(int sign);
+  }
+
+  public static class ExposureCallback implements UIExposure.ICallBack {
+    private final WeakReference<LynxContext> mWeakContext;
+
+    public ExposureCallback(WeakReference<LynxContext> weakContext) {
+      this.mWeakContext = weakContext;
+    }
+
+    @Override
+    public boolean canSendGlobalEvent() {
+      LynxContext context = mWeakContext.get();
+      if (context == null) {
+        LLog.e("UIExposure", "canSendGlobalEvent check failed since can not get LynxContext.");
+        return true;
+      }
+      LynxView view = context.getLynxView();
+      if (view == null) {
+        LLog.e("UIExposure", "canSendGlobalEvent check failed since can not get LynxView.");
+        return true;
+      }
+      return view.enableJSRuntime() || view.enableAirStrictMode();
+    }
+
+    @Override
+    public void sendGlobalEvent(String name, JavaOnlyArray params) {
+      LynxContext context = mWeakContext.get();
+      if (context == null) {
+        LLog.e("UIExposure", "sendGlobalEvent failed since can not get LynxContext.");
+        return;
+      }
+      LynxView view = context.getLynxView();
+      if (view == null) {
+        LLog.e("UIExposure", "sendGlobalEvent failed since can not get LynxView.");
+        return;
+      }
+      view.sendGlobalEvent(name, params);
+    }
+
+    @Override
+    public LynxBaseUI findNode(int sign) {
+      LynxContext context = mWeakContext.get();
+      if (context == null) {
+        LLog.e("UIExposure", "findNode failed since can not get LynxContext.");
+        return null;
+      }
+      LynxUIOwner owner = context.getLynxUIOwner();
+      if (owner == null) {
+        LLog.e("UIExposure", "findNode failed since can not get LynxUIOwner.");
+        return null;
+      }
+      return context.getLynxUIOwner().getNode(sign);
+    }
   }
 
   private static class CallBack implements Choreographer.FrameCallback {

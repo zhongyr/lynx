@@ -1160,56 +1160,8 @@ public abstract class LynxContext extends LynxBaseContext implements ExceptionHa
 
   private void initUIExposure() {
     mExposure = new UIExposure();
-
     final WeakReference<LynxContext> weakContext = new WeakReference<>(this);
-    mExposure.setCallback(new UIExposure.ICallBack() {
-      final WeakReference<LynxContext> mWeakContext = weakContext;
-
-      @Override
-      public boolean canSendGlobalEvent() {
-        LynxContext context = mWeakContext.get();
-        if (context == null) {
-          LLog.e(TAG, "canSendGlobalEvent check failed since can not get LynxContext.");
-          return true;
-        }
-        LynxView view = context.getLynxView();
-        if (view == null) {
-          LLog.e(TAG, "canSendGlobalEvent check failed since can not get LynxView.");
-          return true;
-        }
-        return view.enableJSRuntime() || view.enableAirStrictMode();
-      }
-
-      @Override
-      public void sendGlobalEvent(String name, JavaOnlyArray params) {
-        LynxContext context = mWeakContext.get();
-        if (context == null) {
-          LLog.e(TAG, "sendGlobalEvent failed since can not get LynxContext.");
-          return;
-        }
-        LynxView view = context.getLynxView();
-        if (view == null) {
-          LLog.e(TAG, "sendGlobalEvent failed since can not get LynxView.");
-          return;
-        }
-        view.sendGlobalEvent(name, params);
-      }
-
-      @Override
-      public LynxBaseUI findNode(int sign) {
-        LynxContext context = mWeakContext.get();
-        if (context == null) {
-          LLog.e(TAG, "findNode failed since can not get LynxContext.");
-          return null;
-        }
-        LynxUIOwner owner = context.getLynxUIOwner();
-        if (owner == null) {
-          LLog.e(TAG, "findNode failed since can not get LynxUIOwner.");
-          return null;
-        }
-        return context.getLynxUIOwner().getNode(sign);
-      }
-    });
+    mExposure.setCallback(new UIExposure.ExposureCallback(weakContext));
   }
 
   // This is a experimental API, it is unstable and may break at any time.
