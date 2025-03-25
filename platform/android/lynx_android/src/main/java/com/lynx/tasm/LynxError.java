@@ -188,7 +188,7 @@ public class LynxError extends LynxErrorCodeLegacy {
   }
 
   public String getRootCause() {
-    return mRootCause;
+    return mRootCause == null ? "" : mRootCause;
   }
 
   public void setUserDefineInfo(JSONObject object) {

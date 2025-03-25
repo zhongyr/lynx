@@ -72,7 +72,7 @@ public class BackgroundImageDrawable extends BackgroundLayerDrawable {
             && ui.getEvents().containsKey(BackgroundImageDrawable.EVENT_ERROR)) {
           LynxDetailEvent event =
               new LynxDetailEvent(ui.getSign(), BackgroundImageDrawable.EVENT_ERROR);
-          event.addDetail("errMsg", error.getSummaryMessage());
+          event.addDetail("errMsg", error.getSummaryMessage() + ": " + error.getRootCause());
           event.addDetail("url", url);
           event.addDetail(ImageErrorCodeUtils.LYNX_IMAGE_CATEGORIZED_CODE_KEY, categorizedCode);
           event.addDetail(ImageErrorCodeUtils.LYNX_IMAGE_ERROR_CODE_KEY, imageErrorCode);

@@ -1093,7 +1093,7 @@ public class LynxImageManager implements Drawable.Callback {
       lynxError.addCustomInfo("node_index", Integer.toString(mUI.getNodeIndex()));
       if (mEnableOnError) {
         LynxDetailEvent event = new LynxDetailEvent(mUI.getSign(), EVENT_ERROR);
-        event.addDetail("errMsg", lynxError.getSummaryMessage());
+        event.addDetail("errMsg", lynxError.getSummaryMessage() + ": " + lynxError.getRootCause());
         event.addDetail(ImageErrorCodeUtils.LYNX_IMAGE_CATEGORIZED_CODE_KEY, categorizedCode);
         event.addDetail(ImageErrorCodeUtils.LYNX_IMAGE_ERROR_CODE_KEY, imageErrorCode);
         mContext.getEventEmitter().sendCustomEvent(event);
