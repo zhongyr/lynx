@@ -126,6 +126,8 @@
     }
     _LogE(@"LynxView %p clearForDestroy not on ui thread, thread:%@", self,
           [NSThread currentThread]);
+  } else {
+    [_templateRender.lynxUIRenderer reset];
   }
 
   if (_templateRender) {
