@@ -4,10 +4,12 @@
 
 package com.lynx.tasm.service.security;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.lynx.tasm.LynxView;
 import com.lynx.tasm.service.IServiceProvider;
 
+@Keep
 public interface ILynxSecurityService extends IServiceProvider {
   /**
    * Get service class, DO NOT OVERRIDE THIS METHOD

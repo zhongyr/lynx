@@ -17,6 +17,7 @@ package com.lynx.tasm.service;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.view.View;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.lynx.react.bridge.ReadableMap;
@@ -29,6 +30,7 @@ import com.lynx.tasm.image.model.ImageRequestInfo;
  * Interface defining the Lynx image service with methods for image loading,
  * animation control, and resource management.
  */
+@Keep
 public interface ILynxImageService extends IServiceProvider {
   /**
    * Get service class, DO NOT OVERRIDE THIS METHOD

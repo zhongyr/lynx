@@ -4,9 +4,11 @@
 package com.lynx.tasm.service;
 
 import android.content.Context;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import java.util.Map;
 
+@Keep
 public interface ILynxTrailService extends IServiceProvider {
   /**
    * Get service class, DO NOT OVERRIDE THIS METHOD

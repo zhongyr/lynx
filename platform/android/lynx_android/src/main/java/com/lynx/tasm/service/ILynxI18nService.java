@@ -4,9 +4,11 @@
 
 package com.lynx.tasm.service;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.lynx.tasm.INativeLibraryLoader;
 
+@Keep
 public interface ILynxI18nService extends IServiceProvider {
   /**
    * Get service class, DO NOT OVERRIDE THIS METHOD

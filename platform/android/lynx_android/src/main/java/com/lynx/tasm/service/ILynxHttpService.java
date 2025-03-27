@@ -3,9 +3,11 @@
 // LICENSE file in the root directory of this source tree.
 package com.lynx.tasm.service;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.lynx.jsbridge.network.HttpRequest;
 
+@Keep
 public interface ILynxHttpService extends IServiceProvider {
   /**
    * Get service class, DO NOT OVERRIDE THIS METHOD

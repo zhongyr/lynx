@@ -4,6 +4,7 @@
 
 package com.lynx.tasm.service;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
 /*
@@ -14,6 +15,8 @@ import androidx.annotation.NonNull;
  * overload the function ILynxLogService::getDefaultWriteFunction, and return the address of the C++
  * layer log processing function via this function;
  * */
+
+@Keep
 public interface ILynxLogService extends IServiceProvider {
   public enum LogOutputChannelType { Native, Platform }
   /**

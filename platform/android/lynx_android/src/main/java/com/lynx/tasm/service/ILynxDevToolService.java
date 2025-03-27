@@ -6,6 +6,7 @@ package com.lynx.tasm.service;
 
 import android.content.Context;
 import android.view.ViewGroup;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.lynx.devtoolwrapper.LynxBaseInspectorOwnerNG;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import org.json.JSONObject;
 
+@Keep
 public interface ILynxDevToolService extends IServiceProvider {
   /**
    * Get service class, DO NOT OVERRIDE THIS METHOD
