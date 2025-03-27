@@ -517,7 +517,8 @@ void FiberElement::RemoveNode(const fml::RefPtr<Element> &raw_child,
   // removed from element tree here
   if (has_to_store_insert_remove_actions_) {
     action_param_list_.emplace_back(Action::kRemoveChildAct, this, child, index,
-                                    nullptr, child->is_fixed_);
+                                    nullptr, child->is_fixed_,
+                                    child->ZIndex() != 0);
   }
 
   // take care: NotifyNodeRemoved after removeAction inserted!
@@ -548,12 +549,36 @@ void FiberElement::RemovedFrom(FiberElement *insertion_point) {
   // they may be inserted to difference parent in UI/layout tree instead of dom
   // parent If the removed node's parent is the insertion_point, no need to do
   // any special action
+
+  if (LynxEnv::GetInstance().GetBoolEnv(
+          LynxEnv::Key::FIX_FIBER_REMOVE_TWICE_BUG, true)) {
+    if (IsDetached()) {
+      return;
+    }
+
+    if (!action_param_list_.empty()) {
+      auto iter = action_param_list_.begin();
+      while (iter != action_param_list_.end()) {
+        if (iter->type_ == Action::kRemoveIntergenerationAct ||
+            (iter->type_ == Action::kRemoveChildAct &&
+             (iter->is_fixed_ || iter->has_z_index_))) {
+          iter->type_ = Action::kRemoveIntergenerationAct;
+          insertion_point->action_param_list_.emplace_back(std::move(*iter));
+          iter = action_param_list_.erase(iter);
+        } else {
+          ++iter;
+        }
+      }
+    }
+  }
+
   if ((parent() != insertion_point) && (ZIndex() != 0 || is_fixed_)) {
     insertion_point->action_param_list_.emplace_back(
         Action::kRemoveIntergenerationAct, insertion_point,
         fml::RefPtr<FiberElement>(this), 0, nullptr, is_fixed_);
     MarkDirty(kDirtyReAttachContainer);
   }
+
   MarkDetached();
 }
 

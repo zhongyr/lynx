@@ -82,19 +82,22 @@ class FiberElement : public Element, public SelectorItem {
   struct ActionParam {
     ActionParam(Action type, FiberElement* parent,
                 const fml::RefPtr<FiberElement>& child, int from,
-                FiberElement* ref_node, bool is_fixed = false)
+                FiberElement* ref_node, bool is_fixed = false,
+                bool has_z_index = false)
         : type_(type),
           parent_(parent),
           child_(child),
           index_(from),
           ref_node_(ref_node),
-          is_fixed_(is_fixed) {}
+          is_fixed_(is_fixed),
+          has_z_index_(has_z_index) {}
     Action type_;
     FiberElement* parent_;  // do not add parent's refcount
     fml::RefPtr<FiberElement> child_;
     int index_;
     FiberElement* ref_node_;
     bool is_fixed_;
+    bool has_z_index_;
   };
 
   struct InheritedProperty {

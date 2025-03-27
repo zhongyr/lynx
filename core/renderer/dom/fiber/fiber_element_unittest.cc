@@ -6680,6 +6680,198 @@ TEST_P(FiberElementTest, RemoveIntergenerationalChild) {
   EXPECT_TRUE(page_children[1] == child22_painting_node);
 }
 
+TEST_P(FiberElementTest, RemoveIntergenerationalChild1) {
+  //===test fixed element =====//
+  // normal case
+  auto page = manager->CreateFiberPage("page", 11);
+  auto element0 = manager->CreateFiberView();
+  element0->MarkCanBeLayoutOnly(false);
+  page->InsertNode(element0);
+
+  auto element1 = manager->CreateFiberView();
+  element1->MarkCanBeLayoutOnly(false);
+  element0->InsertNode(element1);
+
+  auto wrapper = manager->CreateFiberWrapperElement();
+
+  auto child0 = manager->CreateFiberView();
+  child0->MarkCanBeLayoutOnly(false);
+  wrapper->InsertNode(child0);
+  element1->InsertNode(wrapper);
+
+  auto child1 = manager->CreateFiberView();
+  child1->MarkCanBeLayoutOnly(false);
+  child0->InsertNode(child1);
+
+  auto child2 = manager->CreateFiberView();
+  child2->MarkCanBeLayoutOnly(false);
+  child1->InsertNode(child2);
+
+  auto child3 = manager->CreateFiberView();
+  child3->MarkCanBeLayoutOnly(false);
+  child2->InsertNode(child3);
+
+  auto child = manager->CreateFiberView();
+  child->MarkCanBeLayoutOnly(false);
+  child->SetStyle(CSSPropertyID::kPropertyIDPosition, lepus::Value("fixed"));
+  child3->InsertNode(child);
+
+  auto painting_context =
+      static_cast<FiberMockPaintingContext*>(page->painting_context()->impl());
+  PipelineOptions options;
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+
+  auto* page_painting_node =
+      painting_context->node_map_.at(page->impl_id()).get();
+  EXPECT_EQ(page_painting_node->children_.size(), 2);
+
+  child2->RemoveNode(child3);
+  wrapper->RemoveNode(child0);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+
+  EXPECT_EQ(page_painting_node->children_.size(), 1);
+
+  child0->InsertNode(child);
+  wrapper->InsertNode(child0);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+}
+
+TEST_P(FiberElementTest, RemoveIntergenerationalChild2) {
+  //===test fixed element =====//
+  // normal case
+  auto page = manager->CreateFiberPage("page", 11);
+  auto element0 = manager->CreateFiberView();
+  element0->MarkCanBeLayoutOnly(false);
+  page->InsertNode(element0);
+
+  auto element1 = manager->CreateFiberView();
+  element1->MarkCanBeLayoutOnly(false);
+  element0->InsertNode(element1);
+
+  auto wrapper = manager->CreateFiberWrapperElement();
+
+  auto child0 = manager->CreateFiberView();
+  child0->MarkCanBeLayoutOnly(false);
+  wrapper->InsertNode(child0);
+  element1->InsertNode(wrapper);
+
+  auto child1 = manager->CreateFiberView();
+  child1->MarkCanBeLayoutOnly(false);
+  child0->InsertNode(child1);
+
+  auto child2 = manager->CreateFiberView();
+  child2->MarkCanBeLayoutOnly(false);
+  child1->InsertNode(child2);
+
+  auto child3 = manager->CreateFiberView();
+  child3->MarkCanBeLayoutOnly(false);
+  child2->InsertNode(child3);
+
+  auto child = manager->CreateFiberView();
+  child->MarkCanBeLayoutOnly(false);
+  child->SetStyle(CSSPropertyID::kPropertyIDPosition, lepus::Value("fixed"));
+  child3->InsertNode(child);
+
+  auto painting_context =
+      static_cast<FiberMockPaintingContext*>(page->painting_context()->impl());
+  PipelineOptions options;
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+
+  auto* page_painting_node =
+      painting_context->node_map_.at(page->impl_id()).get();
+  EXPECT_EQ(page_painting_node->children_.size(), 2);
+
+  child3->RemoveNode(child);
+  wrapper->RemoveNode(child0);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+
+  EXPECT_EQ(page_painting_node->children_.size(), 1);
+
+  child0->InsertNode(child);
+  wrapper->InsertNode(child0);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+}
+
+TEST_P(FiberElementTest, RemoveIntergenerationalChild3) {
+  //===test fixed element =====//
+  // normal case
+  auto page = manager->CreateFiberPage("page", 11);
+  auto element0 = manager->CreateFiberView();
+  element0->MarkCanBeLayoutOnly(false);
+  page->InsertNode(element0);
+
+  auto element1 = manager->CreateFiberView();
+  element1->MarkCanBeLayoutOnly(false);
+  element0->InsertNode(element1);
+
+  auto wrapper = manager->CreateFiberWrapperElement();
+
+  auto child0 = manager->CreateFiberView();
+  child0->MarkCanBeLayoutOnly(false);
+  wrapper->InsertNode(child0);
+  element1->InsertNode(wrapper);
+
+  auto child1 = manager->CreateFiberView();
+  child1->MarkCanBeLayoutOnly(false);
+  child0->InsertNode(child1);
+
+  auto child2 = manager->CreateFiberView();
+  child2->MarkCanBeLayoutOnly(false);
+  child1->InsertNode(child2);
+
+  auto child3 = manager->CreateFiberView();
+  child3->MarkCanBeLayoutOnly(false);
+  child2->InsertNode(child3);
+
+  auto child = manager->CreateFiberView();
+  child->MarkCanBeLayoutOnly(false);
+  child->SetStyle(CSSPropertyID::kPropertyIDZIndex, lepus::Value(999));
+  child3->InsertNode(child);
+
+  auto painting_context =
+      static_cast<FiberMockPaintingContext*>(page->painting_context()->impl());
+  PipelineOptions options;
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+
+  auto* page_painting_node =
+      painting_context->node_map_.at(page->impl_id()).get();
+  EXPECT_EQ(page_painting_node->children_.size(), 2);
+
+  child3->RemoveNode(child);
+  wrapper->RemoveNode(child0);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+
+  EXPECT_EQ(page_painting_node->children_.size(), 1);
+
+  child0->InsertNode(child);
+  wrapper->InsertNode(child0);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+  manager->catalyzer_->UpdateLayoutRecursively();
+}
+
 TEST_P(FiberElementTest, DumpStyleClass) {
   // constructor css fragment
   StyleMap indexAttributes;
