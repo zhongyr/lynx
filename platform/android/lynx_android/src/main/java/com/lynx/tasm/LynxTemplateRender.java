@@ -963,6 +963,8 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     onTraceEventBegin("LynxTemplateRender.renderSSRUrlInternal");
     String[] urls = processUrl(templateUrl);
     setUrl(urls[0]);
+    updateGenericInfoURL(urls[0]);
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
     LynxTemplateResourceFetcher templateFetcher = mLynxContext.getTemplateResourceFetcher();
     if (templateFetcher != null) {
       LynxResourceRequest request = new LynxResourceRequest(
@@ -1008,6 +1010,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     } else {
       legacyLoadTemplateWithProvider(templateUrl, callback);
     }
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
     onTraceEventEnd("LynxTemplateRender.renderTemplate");
   }
 
@@ -1070,6 +1073,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
     setUrl(baseUrl);
     renderTemplate(template, templateData);
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
   }
 
   public void renderTemplateWithBaseUrl(byte[] template, Map<String, Object> data, String baseUrl) {
@@ -1081,6 +1085,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
     setUrl(baseUrl);
     renderTemplate(template, templateData);
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
   }
 
   public void renderTemplateWithBaseUrl(byte[] template, String stringData, String baseUrl) {
@@ -1092,6 +1097,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
     setUrl(baseUrl);
     renderTemplate(template, templateData);
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
   }
 
   public void ssrHydrateWithBaseUrl(
@@ -1112,12 +1118,6 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     if (mLynxContext != null) {
       mLynxContext.setTemplateUrl(mUrl);
     }
-    updateGenericInfoURL(url);
-    if (mReportHelper != null) {
-      mReportHelper.reportLynxCrashContext(
-          LynxInfoReportHelper.KEY_LAST_LYNX_URL, mGenericInfo.getPropValueRelativePath());
-    }
-    LLog.i(TAG, formatLynxMessage("renderTemplate"));
   }
 
   private void prepareLynxEngineIfNeeded() {
@@ -1156,6 +1156,10 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
         if (relativePath != null) {
           LynxEventReporter.updateGenericInfo(
               LynxEventReporter.PROP_NAME_RELATIVE_PATH, relativePath, instanceId);
+          if (mReportHelper != null) {
+            mReportHelper.reportLynxCrashContext(
+                LynxInfoReportHelper.KEY_LAST_LYNX_URL, relativePath);
+          }
         }
       }
     }
@@ -1244,6 +1248,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
     setUrl(baseUrl);
     this.prepareLynxEngineIfNeeded();
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
     if (mNativePtr != 0) {
       loadTemplateBundle(bundle, baseUrl, templateData, false, false, new TASMCallback());
     }
@@ -1280,6 +1285,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
     setUrl(metaData.getUrl());
     renderWithLoadMeta(metaData);
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
     if (metaData.initialData != null) {
       postRenderOrUpdateData(metaData.initialData);
     }
@@ -1384,6 +1390,8 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
   public void prepareForRenderSSR(final byte[] ssr, final String url) {
     setUrl(url);
+    updateGenericInfoURL(url);
+    LLog.i(TAG, formatLynxMessage("renderTemplate"));
     if (!checkIfEnvPrepared()) {
       onErrorOccurred(
           LynxSubErrorCode.E_SSR_LOAD_UNINITIALIZED, "LynxEnv has not been prepared successfully!");
