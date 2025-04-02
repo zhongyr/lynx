@@ -73,7 +73,7 @@ ext.getFlavorNamesAndBuildTypes = { Project project ->
         buildTypes << buildType.name
     }
     def runTasks = gradle.startParameter.taskNames.toString().toLowerCase()
-    if (runTasks.contains("generateAllGnCmakeTargets")) {
+    if (runTasks.contains("generateAllGnCmakeTargets") || runTasks.contains("clean")) {
         return [flavorNames, buildTypes]
     }
     // To reduce the generation of cmake scripts, the following types that will
@@ -93,10 +93,6 @@ ext.writeGnArgs = { String gnArgs ->
         workingDir "../../"
         commandLine "python3", "tools/android_tools/write_gn_args.py", "--gn-args", gnArgs
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }
 
 if (buildLynxDebugSo) {
@@ -175,6 +171,18 @@ if (buildIntegrationDemo) {
         exec {
             workingDir "../../testing/integration_test/demo_pages"
             commandLine "bash","-c", "source ../../../tools/envsetup.sh && ./build_and_copy.sh"
+            println commandLine
+        }
+    }
+}
+
+task clean(type: Delete) {
+    dependsOn generateAllGnCmakeTargets
+    dependsOn subprojects*.tasks*.matching { it.name.contains('clean') }
+    doLast {
+        exec {
+            workingDir "../../"
+            commandLine "python3", "tools/android_tools/generate_cmake_scripts_by_gn.py", "--clean"
             println commandLine
         }
     }

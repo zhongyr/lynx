@@ -13,9 +13,11 @@ import sys
 import os
 import json
 import subprocess
+import shutil
 
 ANDROID_GN_ARGS_FILE_PATH = "out/android/gn_args"
 ANDROID_GN_ARGS_FILE_NAME = "gn_args.json"
+GN_OUT_DIR_PATH = "out/gn_to_cmake"
 
 
 def android_target_cpu(variant_type):
@@ -50,8 +52,36 @@ def clean_gn_project_json_file(gn_out_dir):
   if os.path.exists(project_json_file):
     os.remove(project_json_file)
 
+def clean_all_products(root_dir):
+  gn_args_file_dir = os.path.join(root_dir, ANDROID_GN_ARGS_FILE_PATH)
+  if os.path.exists(gn_args_file_dir):
+    shutil.rmtree(gn_args_file_dir)
+  gn_out_dir = os.path.join(root_dir, GN_OUT_DIR_PATH)
+  cmake_targets = []
+  if not os.path.exists(gn_out_dir):
+    return 0
+  for dir in os.listdir(gn_out_dir):
+    cmake_targets_dir = os.path.join(gn_out_dir, dir, 'cmake_targets')
+    for target in os.listdir(cmake_targets_dir):
+      if target in cmake_targets:
+        continue
+      cmake_targets.append(target)
+      cmake_target_path = os.path.join(cmake_targets_dir, target)
+      with open(cmake_target_path, 'r') as file:
+        cmake_target = file.readlines()[0].replace('\n', '')
+        CMakeLists_impl_dir = cmake_target.split(':')[0][2:]
+        CMakeLists_impl_path = os.path.join(root_dir, CMakeLists_impl_dir, 'CMakeLists_impl')
+        if os.path.exists(CMakeLists_impl_path):
+          shutil.rmtree(CMakeLists_impl_path)
+        file.close()
+  shutil.rmtree(gn_out_dir)
+  return 0
+
 def run_gn_script(args, root_dir, build_lynx_dylib=False):
   target = args.target
+  is_clean = args.clean
+  if is_clean:
+    return clean_all_products(root_dir)
   project_name = args.project_name if args.project_name else ''
   gn_args_file_path = os.path.join(root_dir, ANDROID_GN_ARGS_FILE_PATH, project_name, ANDROID_GN_ARGS_FILE_NAME)
   gn_args_map = {}
@@ -65,7 +95,7 @@ def run_gn_script(args, root_dir, build_lynx_dylib=False):
   
   r = 0
   gn_path = os.path.join(root_dir, 'lynx', 'tools', 'gn_tools', 'gn')
-  gn_out_dir = os.path.join(root_dir, 'out/gn_to_cmake')
+  gn_out_dir = os.path.join(root_dir, GN_OUT_DIR_PATH)
   for gn_args_key in gn_args_map.keys():
     gn_args = ""
     gn_args_list = gn_args_map[gn_args_key]
@@ -90,6 +120,7 @@ def main():
   parser = argparse.ArgumentParser(description='')
   parser.add_argument('-t', '--target', type=str, required=False, help='The GN name of the cmake target you want to generate automatically.')
   parser.add_argument('-n', '--project-name', type=str, required=False, help='Inject the project name to isolate GN args among different projects.')
+  parser.add_argument('--clean', action='store_true', required=False, help='Delete all products.')
   args, unknown = parser.parse_known_args()
   root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
   return run_gn_script(args, root_dir, build_lynx_dylib=True)
