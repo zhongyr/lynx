@@ -171,6 +171,7 @@ public class TestBenchActionManager {
   private boolean mEnableAirStrictMode;
   private LynxGroup mLynxGroup;
   private float mRawFontScale;
+  private String mSourceURL;
   private JSONObject mTemplateBundleParams;
   private TemplateBundle mTemplateBundle;
   private TemplateBundleOption mTemplateBundleOptions;
@@ -444,7 +445,7 @@ public class TestBenchActionManager {
     QueryMapUtils queryMap = new QueryMapUtils();
     queryMap.parse(url);
     mUrl = queryMap.getString("url");
-    String source = queryMap.getString("source");
+    mSourceURL = queryMap.getString("source");
     if (null == mUrl) {
       Log.e(TAG, "Testbench url is Null!");
       return;
@@ -465,19 +466,20 @@ public class TestBenchActionManager {
     mDisableUpdateViewport = queryMap.getBoolean("disableUpdateViewport", false);
 
     mStateView.setReplayState(TestBenchReplayStateView.DOWNLOAD_JSON_FILE);
-    if (null != source) {
-      LynxEnv.inst().getTemplateProvider().loadTemplate(source, new AbsTemplateProvider.Callback() {
-        @Override
-        public void onSuccess(byte[] template) {
-          mPreloadedTemplateSource = template;
-          downloadRecordedFile();
-        }
+    if (null != mSourceURL) {
+      LynxEnv.inst().getTemplateProvider().loadTemplate(
+          mSourceURL, new AbsTemplateProvider.Callback() {
+            @Override
+            public void onSuccess(byte[] template) {
+              mPreloadedTemplateSource = template;
+              downloadRecordedFile();
+            }
 
-        @Override
-        public void onFailed(String msg) {
-          Log.e(TAG, "Load source template js fail!");
-        }
-      });
+            @Override
+            public void onFailed(String msg) {
+              Log.e(TAG, "Load source template js fail!");
+            }
+          });
     } else {
       downloadRecordedFile();
     }
@@ -1069,7 +1071,22 @@ public class TestBenchActionManager {
       TemplateData old_data = mLoadTemplateData;
       mLoadTemplateData = mLoadTemplateData.deepClone();
       old_data.recycle();
-      mLynxView.renderTemplateWithBaseUrl(templateSource, mLoadTemplateData, mLoadTemplateURL);
+      if (null != mSourceURL) {
+        LynxEnv.inst().getTemplateProvider().loadTemplate(
+            mSourceURL, new AbsTemplateProvider.Callback() {
+              @Override
+              public void onSuccess(byte[] template) {
+                mLynxView.renderTemplateWithBaseUrl(template, mLoadTemplateData, mLoadTemplateURL);
+              }
+
+              @Override
+              public void onFailed(String msg) {
+                Log.e(TAG, "Load source template js fail!");
+              }
+            });
+      } else {
+        mLynxView.renderTemplateWithBaseUrl(templateSource, mLoadTemplateData, mLoadTemplateURL);
+      }
     }
   }
 

@@ -184,26 +184,14 @@ static const int kVirtual = 1 << 2;
   _dynamicComponentFetcher = [[TestBenchDynamicComponentFetcher alloc] init];
 
   if ([self.replayConfig sourceUrl] != nil) {
-    NSURLSessionConfiguration* configuration =
-        [NSURLSessionConfiguration defaultSessionConfiguration];
-    configuration.requestCachePolicy = self.replayConfig.requestCachePolicy;
-    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration];
     __weak typeof(self) _self = self;
-    NSURLSessionDataTask* dataTask =
-        [session dataTaskWithURL:[NSURL URLWithString:[self.replayConfig sourceUrl]]
-               completionHandler:^(NSData* _Nullable data, NSURLResponse* _Nullable response,
-                                   NSError* _Nullable error) {
-                 if (error != nil) {
-                   NSLog(@"[TestBench] Template.js(%@) is unavailable!: %@",
-                         [[error userInfo] objectForKey:@"NSErrorFailingURLKey"],
-                         [[error userInfo] objectForKey:@"NSLocalizedDescription"]);
-                   return;
-                 }
-                 __strong typeof(_self) strongSelf = _self;
-                 [strongSelf setPreloadedSource:data];
-                 [strongSelf downloadRecordFile];
-               }];
-    [dataTask resume];
+    [self getSourceAndContinue:[self.replayConfig sourceUrl]
+                   cachePolicy:self.replayConfig.requestCachePolicy
+                 continueBlock:^(NSData* data) {
+                   __strong typeof(_self) strongSelf = _self;
+                   [strongSelf setPreloadedSource:data];
+                   [strongSelf downloadRecordFile];
+                 }];
   } else {
     [self downloadRecordFile];
   }
@@ -835,9 +823,47 @@ static const int kVirtual = 1 << 2;
   return filePath;
 }
 
+- (void)getSourceAndContinue:(NSString*)url
+                 cachePolicy:(NSURLRequestCachePolicy)cachePolicy
+               continueBlock:(void (^)(NSData*))continueBlock {
+  NSURLSessionConfiguration* configuration =
+      [NSURLSessionConfiguration defaultSessionConfiguration];
+  configuration.requestCachePolicy = cachePolicy;
+  NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration];
+  NSURLSessionDataTask* dataTask =
+      [session dataTaskWithURL:[NSURL URLWithString:url]
+             completionHandler:^(NSData* _Nullable data, NSURLResponse* _Nullable response,
+                                 NSError* _Nullable error) {
+               if (error != nil) {
+                 NSLog(@"[TestBench] Template.js(%@) is unavailable!: %@",
+                       [[error userInfo] objectForKey:@"NSErrorFailingURLKey"],
+                       [[error userInfo] objectForKey:@"NSLocalizedDescription"]);
+                 return;
+               }
+               continueBlock(data);
+             }];
+  [dataTask resume];
+}
+
 - (void)reload {
   _loadTemplateInitData = [_loadTemplateInitData deepClone];
-  [_lynxView loadTemplate:_source withURL:_loadTemplateUrl initData:_loadTemplateInitData];
+  if ([self.replayConfig sourceUrl] != nil) {
+    __weak typeof(self) _self = self;
+    [self getSourceAndContinue:[self.replayConfig sourceUrl]
+                   cachePolicy:self.replayConfig.requestCachePolicy
+                 continueBlock:^(NSData* data) {
+                   dispatch_async(dispatch_get_main_queue(), ^{
+                     if (_self) {
+                       __strong typeof(_self) strongSelf = _self;
+                       [strongSelf.lynxView loadTemplate:data
+                                                 withURL:strongSelf.loadTemplateUrl
+                                                initData:strongSelf.loadTemplateInitData];
+                     }
+                   });
+                 }];
+  } else {
+    [_lynxView loadTemplate:_source withURL:_loadTemplateUrl initData:_loadTemplateInitData];
+  }
 }
 
 // when page reload, execute these functions in order
