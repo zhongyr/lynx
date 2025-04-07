@@ -22,6 +22,11 @@
       "value": "padding-box",
       "version": "1.0",
       "desc": ""
+    },
+    {
+      "value": "text",
+      "version": "1.0",
+      "desc": ""
     }
   ]
 }

@@ -51,6 +51,7 @@ TEST(CSSKeywords, TokenTypeCheck) {
       {"border-box", TokenType::BORDER_BOX},
       {"padding-box", TokenType::PADDING_BOX},
       {"content-box", TokenType::CONTENT_BOX},
+      {"text", TokenType::TEXT},
       {"linear-gradient", TokenType::LINEAR_GRADIENT},
       {"radial-gradient", TokenType::RADIAL_GRADIENT},
       {"closest-side", TokenType::CLOSEST_SIDE},

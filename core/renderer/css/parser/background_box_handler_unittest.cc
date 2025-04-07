@@ -13,58 +13,6 @@ namespace lynx {
 namespace tasm {
 namespace test {
 
-TEST(BackgroundClipHandler, Valid) {
-  CSSParserConfigs configs;
-  {
-    // content-box
-    auto raw = R"(content-box)";
-    CSSStringParser parser{raw, static_cast<uint32_t>(strlen(raw)), configs};
-    CSSValue box = parser.ParseBackgroundBox();
-    EXPECT_TRUE(box.IsArray());
-    EXPECT_NE(box.GetValue().Array().get()->size(), 0);
-    EXPECT_EQ(
-        box.GetValue().Array().get()->get(0).Number(),
-        static_cast<uint32_t>(starlight::BackgroundClipType::kContentBox));
-  }
-  {
-    // padding-box
-    auto raw = R"(padding-box)";
-    CSSStringParser parser{raw, static_cast<uint32_t>(strlen(raw)), configs};
-    CSSValue box = parser.ParseBackgroundBox();
-    EXPECT_TRUE(box.IsArray());
-    EXPECT_NE(box.GetValue().Array().get()->size(), 0);
-    EXPECT_EQ(
-        box.GetValue().Array().get()->get(0).Number(),
-        static_cast<uint32_t>(starlight::BackgroundClipType::kPaddingBox));
-  }
-  {
-    // border-box
-    auto raw = R"(border-box)";
-    CSSStringParser parser{raw, static_cast<uint32_t>(strlen(raw)), configs};
-    CSSValue box = parser.ParseBackgroundBox();
-    EXPECT_TRUE(box.IsArray());
-    EXPECT_NE(box.GetValue().Array().get()->size(), 0);
-    EXPECT_EQ(box.GetValue().Array().get()->get(0).Number(),
-              static_cast<uint32_t>(starlight::BackgroundClipType::kBorderBox));
-  }
-  {
-    // multiple value
-    auto raw = R"(border-box, padding-box, content-box)";
-    CSSStringParser parser{raw, static_cast<uint32_t>(strlen(raw)), configs};
-    CSSValue box = parser.ParseBackgroundBox();
-    EXPECT_TRUE(box.IsArray());
-    EXPECT_NE(box.GetValue().Array().get()->size(), 0);
-    EXPECT_EQ(box.GetValue().Array().get()->get(0).Number(),
-              static_cast<uint32_t>(starlight::BackgroundClipType::kBorderBox));
-    EXPECT_EQ(
-        box.GetValue().Array().get()->get(1).Number(),
-        static_cast<uint32_t>(starlight::BackgroundClipType::kPaddingBox));
-    EXPECT_EQ(
-        box.GetValue().Array().get()->get(2).Number(),
-        static_cast<uint32_t>(starlight::BackgroundClipType::kContentBox));
-  }
-}
-
 TEST(BackgroundOriginHandler, Valid) {
   CSSParserConfigs configs;
   {

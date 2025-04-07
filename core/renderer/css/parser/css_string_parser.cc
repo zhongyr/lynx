@@ -334,6 +334,11 @@ CSSValue CSSStringParser::ParseBackgroundBox() {
   return ConsumeCommaSeparatedList(&CSSStringParser::BackgroundBox);
 }
 
+CSSValue CSSStringParser::ParseBackgroundClip() {
+  Advance();
+  return ConsumeCommaSeparatedList(&CSSStringParser::BackgroundClip);
+}
+
 CSSValue CSSStringParser::ParseBackgroundRepeat() {
   Advance();
 
@@ -860,6 +865,14 @@ bool CSSStringParser::BackgroundImage() {
 lepus::Value CSSStringParser::BackgroundBox() {
   Token token;
   if (Box(token)) {
+    return lepus::Value(TokenTypeToENUM(token.type));
+  }
+  return lepus::Value();
+}
+
+lepus::Value CSSStringParser::BackgroundClip() {
+  Token token;
+  if (Box(token) || ConsumeAndSave(TokenType::TEXT, token)) {
     return lepus::Value(TokenTypeToENUM(token.type));
   }
   return lepus::Value();
@@ -2113,6 +2126,8 @@ uint32_t CSSStringParser::TokenTypeToENUM(TokenType token_type) {
     case TokenType::CONTENT_BOX:
       return static_cast<uint32_t>(
           starlight::BackgroundOriginType::kContentBox);
+    case TokenType::TEXT:
+      return static_cast<uint32_t>(starlight::BackgroundClipType::kText);
     case TokenType::LEFT:
       return POS_LEFT;
     case TokenType::RIGHT:

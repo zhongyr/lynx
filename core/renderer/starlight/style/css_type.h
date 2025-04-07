@@ -283,6 +283,7 @@ enum class BackgroundClipType : unsigned {
   kPaddingBox = 0,  // version:1.0
   kBorderBox = 1,   // version:1.0
   kContentBox = 2,  // version:1.0
+  kText = 3,        // version:1.0
 };
 
 enum class RadialGradientShapeType : unsigned {

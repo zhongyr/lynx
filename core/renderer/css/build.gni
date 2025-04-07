@@ -78,6 +78,8 @@ lynx_css_core_sources = [
   "parser/auto_font_size_preset_sizes_handler.h",
   "parser/background_box_handler.cc",
   "parser/background_box_handler.h",
+  "parser/background_clip_handler.cc",
+  "parser/background_clip_handler.h",
   "parser/background_image_handler.cc",
   "parser/background_image_handler.h",
   "parser/background_position_handler.cc",

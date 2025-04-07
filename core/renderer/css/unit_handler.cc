@@ -24,6 +24,7 @@
 #include "core/renderer/css/parser/auto_font_size_handler.h"
 #include "core/renderer/css/parser/auto_font_size_preset_sizes_handler.h"
 #include "core/renderer/css/parser/background_box_handler.h"
+#include "core/renderer/css/parser/background_clip_handler.h"
 #include "core/renderer/css/parser/background_image_handler.h"
 #include "core/renderer/css/parser/background_position_handler.h"
 #include "core/renderer/css/parser/background_repeat_handler.h"
@@ -230,6 +231,7 @@ UnitHandler::UnitHandler() {
   BorderRadiusHandler::Register(interceptors_);
   BackgroundShorthandHandler::Register(interceptors_);
   BackgroundBoxHandler::Register(interceptors_);
+  BackgroundClipHandler::Register(interceptors_);
   BackgroundImageHandler::Register(interceptors_);
   BackgroundPositionHandler::Register(interceptors_);
   BackgroundRepeatHandler::Register(interceptors_);

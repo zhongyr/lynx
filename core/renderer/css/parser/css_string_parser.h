@@ -154,8 +154,10 @@ class CSSStringParser final {
   /// <bg-size> [, <bg-size> ]*
   /// <bg-size> = [ <length-percentage> | auto ]{1,2} | cover | contain
   CSSValue ParseBackgroundSize();
-  /// <bg-origin>/<bg-clip> = <box> [, <box> ]*
+  /// <bg-origin> = <box> [, <box> ]*
   CSSValue ParseBackgroundBox();
+  /// <bg-clip> = <box> [, <box> ]*
+  CSSValue ParseBackgroundClip();
   /// <bg-repeat> [, <bg-repeat>]*
   /// <bg-repeat> = <repeat-style> = repeat-x | repeat-y | [ repeat | space |
   ///               round | no-repeat ]{1,2}
@@ -288,8 +290,10 @@ class CSSStringParser final {
   ///   <url> |
   ///   <gradient>
   bool BackgroundImage();
-  /// <bg-origin-box>/<bg-clip-box> = <box>
+  /// <bg-origin-box> = <box>
   lepus::Value BackgroundBox();
+  /// <bg-clip-box> = <box>
+  lepus::Value BackgroundClip();
   /// <box> = [ border-box | padding-box | content-box ]
   bool Box(Token& token);
   /// <bg-position-and-size> = <bg-position> [ / <bg-size>] ?
