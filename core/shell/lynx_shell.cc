@@ -135,7 +135,8 @@ void LynxShell::Destroy() {
 
   is_destroyed_ = true;
 
-  timing_actor_->Act([](auto& timing_handler) { timing_handler = nullptr; });
+  timing_actor_->ActAsync(
+      [](auto& timing_handler) { timing_handler = nullptr; });
 
   facade_actor_->Act([instance_id = instance_id_](auto& facade) {
     facade = nullptr;
@@ -1053,7 +1054,7 @@ void LynxShell::DetachEngineFromUIThread() {
 
 void LynxShell::OnThreadStrategyUpdated() {
   runners_.OnThreadStrategyUpdated(current_strategy_);
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [current_strategy = current_strategy_](auto& timing_handler) {
         timing_handler->SetThreadStrategy(current_strategy);
       });
@@ -1134,7 +1135,7 @@ void LynxShell::DispatchMessageEvent(runtime::MessageEvent event) {
 void LynxShell::SetTiming(uint64_t us_timestamp,
                           tasm::timing::TimestampKey timing_key,
                           tasm::PipelineID pipeline_id) const {
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [us_timestamp, timing_key = std::move(timing_key),
        pipeline_id = std::move(pipeline_id)](auto& timing_handler) mutable {
         timing_handler->SetTiming(timing_key, us_timestamp, pipeline_id);
@@ -1152,13 +1153,14 @@ BASE_EXPORT_FOR_DEVTOOL const lepus::Value LynxShell::GetAllTimingInfo() const {
 }
 
 void LynxShell::SetSSRTimingData(std::string url, uint64_t data_size) const {
-  timing_actor_->Act([url = std::move(url), data_size](auto& timing_actor) {
-    timing_actor->SetSSRTimingData(url, data_size);
-  });
+  timing_actor_->ActAsync(
+      [url = std::move(url), data_size](auto& timing_actor) {
+        timing_actor->SetSSRTimingData(url, data_size);
+      });
 }
 
 void LynxShell::ClearAllTimingInfo() const {
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [](auto& timing_handler) { timing_handler->ClearAllTimingInfo(); });
 }
 
@@ -1176,8 +1178,8 @@ void LynxShell::OnPipelineStart(
             "pipeline_start_timestamp",
             std::to_string(pipeline_start_timestamp));
       });
-  timing_actor_->Act([pipeline_id, pipeline_origin,
-                      pipeline_start_timestamp](auto& timing_handler) {
+  timing_actor_->ActAsync([pipeline_id, pipeline_origin,
+                           pipeline_start_timestamp](auto& timing_handler) {
     timing_handler->OnPipelineStart(pipeline_id, pipeline_origin,
                                     pipeline_start_timestamp);
   });

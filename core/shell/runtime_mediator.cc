@@ -33,7 +33,7 @@ void RuntimeMediator::AttachToLynxShell(
 
   // attach NativeFacadeActor to TimingActor, so the TmingHandler is fully
   // functional.
-  timing_actor_->Act([facade_actor](auto& timing) {
+  timing_actor_->ActAsync([facade_actor](auto& timing) {
     static_cast<lynx::tasm::timing::TimingMediator*>(timing->GetDelegate())
         ->SetFacadeActor(facade_actor);
   });
@@ -372,7 +372,7 @@ void RuntimeMediator::ReloadFromJS(runtime::UpdateDataTask task) {
 }
 
 void RuntimeMediator::SetTiming(tasm::Timing timing) {
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [timing = std::move(timing)](auto& timing_handler) mutable {
         timing_handler->SetTiming(std::move(timing));
       });
@@ -381,7 +381,7 @@ void RuntimeMediator::SetTiming(tasm::Timing timing) {
 void RuntimeMediator::SetTimingWithTimingFlag(
     const tasm::timing::TimingFlag& timing_flag,
     const std::string& timestamp_key, tasm::timing::TimestampUs timestamp) {
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [timing_flag, timestamp_key, timestamp](auto& timing_handler) {
         timing_handler->SetTimingWithTimingFlag(timing_flag, timestamp_key,
                                                 timestamp);
@@ -412,8 +412,8 @@ void RuntimeMediator::OnPipelineStart(
             "pipeline_start_timestamp",
             std::to_string(pipeline_start_timestamp));
       });
-  timing_actor_->Act([pipeline_id, pipeline_origin,
-                      pipeline_start_timestamp](auto& timing_actor) {
+  timing_actor_->ActAsync([pipeline_id, pipeline_origin,
+                           pipeline_start_timestamp](auto& timing_actor) {
     timing_actor->OnPipelineStart(pipeline_id, pipeline_origin,
                                   pipeline_start_timestamp);
   });
@@ -428,7 +428,7 @@ void RuntimeMediator::BindPipelineIDWithTimingFlag(
         ctx.event()->add_debug_annotations("pipeline_id", pipeline_id);
         ctx.event()->add_debug_annotations("timing_flag", timing_flag);
       });
-  timing_actor_->Act([pipeline_id, timing_flag](auto& timing_handler) {
+  timing_actor_->ActAsync([pipeline_id, timing_flag](auto& timing_handler) {
     timing_handler->BindPipelineIDWithTimingFlag(pipeline_id, timing_flag);
   });
 }

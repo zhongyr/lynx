@@ -111,14 +111,14 @@ void TasmMediator::OnPageConfigDecoded(
   // default enableAirStrictMode in timing_handler is false,
   // avoid using post task to send duplicate false value
   if (config->GetEnableLynxAir()) {
-    timing_actor_->Act([](auto& timing_handler) mutable {
+    timing_actor_->ActAsync([](auto& timing_handler) mutable {
       timing_handler->SetEnableAirStrictMode(true);
     });
   }
 }
 
 void TasmMediator::SetTiming(tasm::Timing timing) {
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [timing = std::move(timing)](auto& timing_handler) mutable {
         timing_handler->SetTiming(std::move(timing));
       });
@@ -133,7 +133,7 @@ void TasmMediator::BindPipelineIDWithTimingFlag(
         ctx.event()->add_debug_annotations("pipeline_id", pipeline_id);
         ctx.event()->add_debug_annotations("timing_flag", timing_flag);
       });
-  timing_actor_->Act([pipeline_id, timing_flag](auto& timing_handler) {
+  timing_actor_->ActAsync([pipeline_id, timing_flag](auto& timing_handler) {
     timing_handler->BindPipelineIDWithTimingFlag(pipeline_id, timing_flag);
   });
 }
@@ -152,8 +152,8 @@ void TasmMediator::OnPipelineStart(
             "pipeline_start_timestamp",
             std::to_string(pipeline_start_timestamp));
       });
-  timing_actor_->Act([pipeline_id, pipeline_origin,
-                      pipeline_start_timestamp](auto& timing_actor) {
+  timing_actor_->ActAsync([pipeline_id, pipeline_origin,
+                           pipeline_start_timestamp](auto& timing_actor) {
     timing_actor->OnPipelineStart(pipeline_id, pipeline_origin,
                                   pipeline_start_timestamp);
   });
@@ -162,7 +162,7 @@ void TasmMediator::OnPipelineStart(
 void TasmMediator::ResetTimingBeforeReload(const std::string& flag) {
   // TODO(kechenglong): Temporary API, will be removed after pipelineOptions
   // finished pre-created.
-  timing_actor_->Act([flag](auto& timing_handler) mutable {
+  timing_actor_->ActAsync([flag](auto& timing_handler) mutable {
     timing_handler->ResetTimingBeforeReload(flag);
   });
 }

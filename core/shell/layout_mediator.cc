@@ -236,7 +236,7 @@ void LayoutMediator::OnCalculatedViewportChanged(
 }
 
 void LayoutMediator::SetTiming(tasm::Timing timing) {
-  timing_actor_->Act(
+  timing_actor_->ActAsync(
       [timing = std::move(timing)](auto &timing_handler) mutable {
         timing_handler->SetTiming(std::move(timing));
       });
