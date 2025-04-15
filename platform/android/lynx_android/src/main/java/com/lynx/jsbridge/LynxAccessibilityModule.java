@@ -4,6 +4,7 @@
 
 package com.lynx.jsbridge;
 
+import android.os.Build;
 import com.lynx.react.bridge.Callback;
 import com.lynx.react.bridge.JavaOnlyMap;
 import com.lynx.react.bridge.ReadableMap;
@@ -57,7 +58,11 @@ public class LynxAccessibilityModule extends LynxContextModule {
     String content = params != null ? params.getString(MSG_CONTENT) : null;
     if (content != null) {
       if (mLynxContext != null && mLynxContext.getLynxView() != null) {
-        mLynxContext.getLynxView().announceForAccessibility(content);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+          mLynxContext.getLynxView().setAccessibilityPaneTitle(content);
+        } else {
+          mLynxContext.getLynxView().announceForAccessibility(content);
+        }
         res.putString(MSG, "Success");
       } else {
         res.putString(MSG, "Error: LynxView missing");
