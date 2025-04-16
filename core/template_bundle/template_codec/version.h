@@ -42,6 +42,7 @@ inline constexpr base::Version V_2_18(2, 18);
 inline constexpr base::Version V_3_0(3, 0);
 inline constexpr base::Version V_3_1(3, 1);
 inline constexpr base::Version V_3_2(3, 2);
+inline constexpr base::Version V_3_3(3, 3);
 
 }  // namespace tasm
 }  // namespace lynx
