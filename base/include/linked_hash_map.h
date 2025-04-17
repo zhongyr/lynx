@@ -182,26 +182,26 @@ class LinkedHashMap {
 
  public:
   /// The default initial pool size.
-  static constexpr size_t kInitialAllocationSize = 2;
+  static constexpr uint16_t kInitialAllocationSize = 2;
 
   /// @param initial_allocation_size Capacity for nodes memory for first
   /// allocation.
   explicit LinkedHashMap(
-      size_t initial_allocation_size = kInitialAllocationSize)
-      : pool_size_(static_cast<uint32_t>(initial_allocation_size)) {}
+      uint16_t initial_allocation_size = kInitialAllocationSize)
+      : pool_size_(initial_allocation_size) {}
 
   ~LinkedHashMap() {
 #if 0
     PrintElements("dtor");
 #endif
 
-    if (is_perfect_) {
+    if (is_imperfect_) {
+      list_clear();
+    } else {
       // Fast path
       for (size_t i = 0; i < count_; i++) {
         pool_[i].~Node();
       }
-    } else {
-      list_clear();
     }
 
     if (pool_ != nullptr) {
@@ -218,7 +218,7 @@ class LinkedHashMap {
     std::cout << tag << " " << scene << " " << (void*)this << " " << count_
               << " pool_size: " << pool_size_
               << " pool allocated: " << (pool_ != nullptr ? "1" : "0")
-              << " perfect: " << (is_perfect_ ? "1" : "0")
+              << " imperfect: " << (is_imperfect_ ? "1" : "0")
               << " has_map: " << (map_ != nullptr ? "1" : "0") << std::endl;
     if (count_ == 1) {
       auto p = begin().node_ptr();
@@ -318,8 +318,8 @@ class LinkedHashMap {
       end_.prev->next = end_as_link()->AsNode();
       other.end_.Reset();
 
-      is_perfect_ = other.is_perfect_;
-      other.is_perfect_ = true;
+      is_imperfect_ = other.is_imperfect_;
+      other.is_imperfect_ = 0;
     }
   }
 
@@ -347,7 +347,7 @@ class LinkedHashMap {
     }
     list_clear();
     count_ = 0;
-    is_perfect_ = true;
+    is_imperfect_ = 0;
 
     if (free_pool) {
       if (pool_ != nullptr) {
@@ -420,16 +420,16 @@ class LinkedHashMap {
   template <typename Callback, typename = std::enable_if_t<std::is_invocable_v<
                                    Callback, const Key&, const T&>>>
   void foreach (Callback&& callback) const {
-    if (is_perfect_) {
+    if (is_imperfect_) {
+      // Fallback to default iterators which are linked nodes.
+      for (const auto& it : *this) {
+        callback(it.first, it.second);
+      }
+    } else {
       // Traverse like array.
       for (size_t i = 0; i < count_; i++) {
         const Node& n = pool_[i];
         callback(n.value.first, n.value.second);
-      }
-    } else {
-      // Fallback to default iterators which are linked nodes.
-      for (const auto& it : *this) {
-        callback(it.first, it.second);
       }
     }
   }
@@ -438,16 +438,16 @@ class LinkedHashMap {
             typename =
                 std::enable_if_t<std::is_invocable_v<Callback, const Key&, T&>>>
   void foreach (Callback&& callback) {
-    if (is_perfect_) {
+    if (is_imperfect_) {
+      // Fallback to default iterators which are linked nodes.
+      for (auto& it : *this) {
+        callback(it.first, it.second);
+      }
+    } else {
       // Traverse like array.
       for (size_t i = 0; i < count_; i++) {
         Node& n = pool_[i];
         callback(n.value.first, n.value.second);
-      }
-    } else {
-      // Fallback to default iterators which are linked nodes.
-      for (auto& it : *this) {
-        callback(it.first, it.second);
       }
     }
   }
@@ -647,13 +647,17 @@ class LinkedHashMap {
   void reserve(size_type count) {
     if (pool_ == nullptr) {
       if (count > pool_size_) {
-        pool_size_ = static_cast<uint32_t>(count);
+        pool_size_ = count > std::numeric_limits<uint16_t>::max()
+                         ? std::numeric_limits<uint16_t>::max()
+                         : static_cast<uint16_t>(count);
       }
     } else if (pool_cursor_ == 0 && count > pool_size_) {
       // Pool allocated but not used and new reserving count is larger.
       std::free(pool_);
       pool_ = nullptr;
-      pool_size_ = static_cast<uint32_t>(count);
+      pool_size_ = count > std::numeric_limits<uint16_t>::max()
+                       ? std::numeric_limits<uint16_t>::max()
+                       : static_cast<uint16_t>(count);
     } else {
       // failed reserve
     }
@@ -673,7 +677,9 @@ class LinkedHashMap {
     } else if (count < pool_size_) {
       // Allows to set to smaller pool capacity.
       if (pool_ == nullptr) {
-        pool_size_ = static_cast<uint32_t>(count);
+        pool_size_ = count > std::numeric_limits<uint16_t>::max()
+                         ? std::numeric_limits<uint16_t>::max()
+                         : static_cast<uint16_t>(count);
       } else {
         // Pool already allocated, no need to reset to smaller size.
       }
@@ -697,7 +703,7 @@ class LinkedHashMap {
     static bool assume_status(const LinkedHashMap& map, bool has_map,
                               bool is_perfect) {
       return ((map.map_ != nullptr) == has_map) &&
-             (map.is_perfect_ == is_perfect);
+             (map.is_imperfect_ == !is_perfect);
     }
 
     static bool assume_end_in_initial_state(const LinkedHashMap& map) {
@@ -733,7 +739,7 @@ class LinkedHashMap {
         return false;
       }
 
-      if (map.is_perfect_) {
+      if (!map.is_imperfect_) {
         for (size_t i = 0; i < map.count_; i++) {
           Node& n = map.pool_[i];
           if (!map.ptr_on_pool(&n)) {
@@ -771,13 +777,20 @@ class LinkedHashMap {
 
   NodeBase end_;
   Node* pool_{nullptr};
-  uint32_t pool_size_{kInitialAllocationSize};
-  uint32_t pool_cursor_;
-  uint32_t count_{0u};
+  uint16_t pool_size_{kInitialAllocationSize};
+  uint16_t pool_cursor_;
 
-  // A pefect map only contains nodes continuous on pool memory.
-  // We can fast iterate nodes like array if self is perfect.
-  bool is_perfect_{true};
+  union {
+    struct {
+      uint32_t count_ : 31;
+
+      // A pefect map only contains nodes continuous on pool memory.
+      // We can fast iterate nodes like array if self is perfect.
+      uint32_t is_imperfect_ : 1;
+    };
+
+    uint32_t __init__{0u};
+  };
 
   // Map is created until element count reaches LinearFindThreshold.
   map_type* map_{nullptr};
@@ -796,7 +809,24 @@ class LinkedHashMap {
       map_ = new map_type();
       map_->reserve(std::max<size_t>(pool_size_, count_));
 
-      if (is_perfect_) {
+      if (is_imperfect_) {
+        // Not perfect nodes, loop as linked list.
+        auto i = begin();
+        const auto e = end();
+        for (; i != e; ++i) {
+          if (i->first == key) {
+            result = i;
+            break;
+          }
+          map_->emplace(i->first, i);
+        }
+
+        // Loop for remained index to build map, but no need to
+        // check equality with key.
+        for (; i != e; ++i) {
+          map_->emplace(i->first, i);
+        }
+      } else {
         // List nodes are in perfect state, loop as an array for
         // better performance.
         size_t i = 0;
@@ -819,39 +849,22 @@ class LinkedHashMap {
                         std::forward_as_tuple(n.value.first),
                         std::forward_as_tuple(&n));
         }
-      } else {
-        // Not perfect nodes, loop as linked list.
-        auto i = begin();
-        const auto e = end();
-        for (; i != e; ++i) {
-          if (i->first == key) {
-            result = i;
-            break;
-          }
-          map_->emplace(i->first, i);
-        }
-
-        // Loop for remained index to build map, but no need to
-        // check equality with key.
-        for (; i != e; ++i) {
-          map_->emplace(i->first, i);
-        }
       }
     } else {
       // Do linear find.
-      if (is_perfect_) {
-        for (size_t i = 0; i < count_; i++) {
-          Node& n = pool_[i];
-          if (n.value.first == key) {
-            result = iterator(&n);
-            break;
-          }
-        }
-      } else {
+      if (is_imperfect_) {
         const auto e = end();
         for (auto i = begin(); i != e; ++i) {
           if (i->first == key) {
             result = i;
+            break;
+          }
+        }
+      } else {
+        for (size_t i = 0; i < count_; i++) {
+          Node& n = pool_[i];
+          if (n.value.first == key) {
+            result = iterator(&n);
             break;
           }
         }
@@ -885,7 +898,7 @@ class LinkedHashMap {
     if (pool_ != nullptr && pool_cursor_ < pool_size_) {
       return &pool_[pool_cursor_++];
     } else {
-      is_perfect_ = false;
+      is_imperfect_ = 1;
       return static_cast<Node*>(std::malloc(sizeof(Node)));
     }
   }
@@ -959,15 +972,15 @@ class LinkedHashMap {
       // All nodes removed, reset pool cursor so that pool can be reused or
       // reserved with larger size.
       pool_cursor_ = 0;
-      is_perfect_ = true;
+      is_imperfect_ = 0;
     } else {
-      is_perfect_ = false;
+      is_imperfect_ = 1;
     }
     return iterator(r);
   }
 
   void list_clear() {
-    if (is_perfect_) {
+    if (!is_imperfect_) {
       // Fast path
       for (size_t i = 0; i < count_; i++) {
         pool_[i].~Node();

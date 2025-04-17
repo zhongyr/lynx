@@ -430,7 +430,7 @@ TEST(LinkedHashMap, clear) {
         std::string("value") + std::to_string(i);
   }
   EXPECT_EQ(decltype(map)::Testing::count_of_nodes_on_pool(map),
-            decltype(map)::kInitialAllocationSize + 1);
+            static_cast<size_t>(decltype(map)::kInitialAllocationSize + 1));
   EXPECT_TRUE(decltype(map)::Testing::check_consistency(map));
 }
 
@@ -451,7 +451,7 @@ TEST(LinkedHashMap, clear_pool) {
         std::string("value") + std::to_string(i);
   }
   EXPECT_EQ(decltype(map)::Testing::count_of_nodes_on_pool(map),
-            decltype(map)::kInitialAllocationSize);
+            static_cast<size_t>(decltype(map)::kInitialAllocationSize));
   EXPECT_TRUE(decltype(map)::Testing::check_consistency(map));
 }
 
@@ -465,7 +465,7 @@ TEST(LinkedHashMap, reserve) {
         std::string("value") + std::to_string(i);
   }
   EXPECT_EQ(decltype(map)::Testing::count_of_nodes_on_pool(map),
-            decltype(map)::kInitialAllocationSize + 4);
+            static_cast<size_t>(decltype(map)::kInitialAllocationSize + 4));
   EXPECT_TRUE(decltype(map)::Testing::check_consistency(map));
 }
 
