@@ -31,7 +31,7 @@ public class ImageRequestInfo {
 
   private final @CacheChoice int mCacheChoice;
 
-  private final @DiskCacheChoice int mDiskCacheChoice;
+  private @DiskCacheChoice Integer mDiskCacheChoice = null;
 
   private final boolean mEnableAsyncRequest;
 
@@ -109,7 +109,7 @@ public class ImageRequestInfo {
     return mUseLocalCache;
   }
 
-  public @DiskCacheChoice int getDiskCacheChoice() {
+  public @DiskCacheChoice Integer getDiskCacheChoice() {
     return mDiskCacheChoice;
   }
 
@@ -144,8 +144,6 @@ public class ImageRequestInfo {
       return false;
     if (mEnableDownSampling != that.mEnableDownSampling)
       return false;
-    if (mDiskCacheChoice != that.mDiskCacheChoice)
-      return false;
     if (mEnableAsyncRequest != that.mEnableAsyncRequest)
       return false;
     if (!Objects.equals(mUrl, that.mUrl))
@@ -164,7 +162,6 @@ public class ImageRequestInfo {
     result = 31 * result + (mEnableResourceHint ? 1 : 0);
     result = 31 * result + (mEnableGifLiteDecoder ? 1 : 0);
     result = 31 * result + (mEnableDownSampling ? 1 : 0);
-    result = 31 * result + mDiskCacheChoice;
     result = 31 * result + (mEnableAsyncRequest ? 1 : 0);
     result = 31 * result + (mProcessors != null ? mProcessors.hashCode() : 0);
     return result;

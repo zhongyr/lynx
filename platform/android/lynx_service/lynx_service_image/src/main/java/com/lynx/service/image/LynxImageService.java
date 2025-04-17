@@ -5,6 +5,7 @@
 package com.lynx.service.image;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -27,6 +28,7 @@ import com.facebook.imagepipeline.cache.MemoryCache;
 import com.facebook.imagepipeline.common.ImageDecodeOptionsBuilder;
 import com.facebook.imagepipeline.common.Priority;
 import com.facebook.imagepipeline.image.CloseableImage;
+import com.facebook.imagepipeline.image.CloseableStaticBitmap;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.lynx.react.bridge.ReadableMap;
@@ -45,6 +47,7 @@ import com.lynx.tasm.behavior.ui.image.FlattenUIImage;
 import com.lynx.tasm.behavior.ui.image.InlineImageShadowNode;
 import com.lynx.tasm.behavior.ui.image.UIImage;
 import com.lynx.tasm.image.AutoSizeImage;
+import com.lynx.tasm.image.ImageContent;
 import com.lynx.tasm.image.ImageErrorCodeUtils;
 import com.lynx.tasm.image.model.AnimationListener;
 import com.lynx.tasm.image.model.ImageInfo;
@@ -111,26 +114,34 @@ public class LynxImageService implements ILynxImageService {
   ConcurrentHashMap<ImageRequestInfo, CloseableReference<CloseableImage>> mImageReferenceMap =
       new ConcurrentHashMap<>();
 
+  private Resources mResources = null;
+  private final UiThreadImmediateExecutorService mExecutorService =
+      UiThreadImmediateExecutorService.getInstance();
+
   @Override
   public void fetchImage(@NonNull ImageRequestInfo imageRequestInfo,
       @NonNull ImageLoadListener loadListener, @Nullable AnimationListener animationListener,
       @NonNull Context context) {
+    if (mResources == null) {
+      mResources = context.getResources();
+    }
     if (mDefaultDrawableFactory == null) {
-      mDefaultDrawableFactory = new DefaultDrawableFactory(context.getResources(),
-          Fresco.getImagePipelineFactory().getAnimatedDrawableFactory(context));
+      mDefaultDrawableFactory = new DefaultDrawableFactory(
+          mResources, Fresco.getImagePipelineFactory().getAnimatedDrawableFactory(context));
     }
     if (mMemoryCache == null) {
       mMemoryCache = Fresco.getImagePipelineFactory().getBitmapMemoryCache();
     }
-    ImageRequest imageRequest = ImageUtils.getFrescoImageRequest(imageRequestInfo);
+    final ImageRequest imageRequest = ImageUtils.getFrescoImageRequest(imageRequestInfo);
     CloseableReference<CloseableImage> closeableReference = ImageUtils.getCachedImage(
         mMemoryCache, ImageUtils.getCacheKey(imageRequest, imageRequestInfo.getCallerContext()));
-    if (closeableReference != null && closeableReference.get() != null) {
+    if (closeableReference != null) {
       CloseableImage image = closeableReference.get();
-      Drawable drawable = mDefaultDrawableFactory.createDrawable(image);
-      if (drawable != null) {
+      mImageReferenceMap.put(imageRequestInfo, closeableReference);
+      if (image instanceof CloseableStaticBitmap) {
         loadListener.onSuccess(
-            drawable, imageRequestInfo, new ImageInfo(image.getWidth(), image.getHeight(), false));
+            new ImageContent(((CloseableStaticBitmap) image).getUnderlyingBitmap()),
+            imageRequestInfo, new ImageInfo(image.getWidth(), image.getHeight(), false));
         return;
       }
     }
@@ -149,7 +160,7 @@ public class LynxImageService implements ILynxImageService {
                 ImageErrorCodeUtils.checkImageException(dataSource.getFailureCause());
             loadListener.onFailure(errorCode, dataSource.getFailureCause());
           }
-        }, UiThreadImmediateExecutorService.getInstance());
+        }, mExecutorService);
   }
 
   private void handleImageLoadSuccess(DataSource<CloseableReference<CloseableImage>> dataSource,
@@ -157,12 +168,19 @@ public class LynxImageService implements ILynxImageService {
       AnimationListener animationListener) {
     CloseableReference<CloseableImage> reference = dataSource.getResult();
     try {
-      Drawable drawable = mDefaultDrawableFactory.createDrawable(reference.get());
       CloseableImage image = reference.get();
+      boolean isAnim = false;
+      ImageContent content = null;
+      if (image instanceof CloseableStaticBitmap) {
+        content = new ImageContent(((CloseableStaticBitmap) image).getUnderlyingBitmap());
+      } else {
+        Drawable drawable = mDefaultDrawableFactory.createDrawable(reference.get());
+        content = new ImageContent(drawable);
+        isAnim = handleImageAnimListener(imageRequestInfo, drawable, animationListener);
+      }
       mImageReferenceMap.put(imageRequestInfo, reference.clone());
-      boolean isAnim = handleImageAnimListener(imageRequestInfo, drawable, animationListener);
       loadListener.onSuccess(
-          drawable, imageRequestInfo, new ImageInfo(image.getWidth(), image.getHeight(), isAnim));
+          content, imageRequestInfo, new ImageInfo(image.getWidth(), image.getHeight(), isAnim));
     } catch (Exception exception) {
       CloseableReference.closeSafely(reference);
       loadListener.onFailure(LynxSubErrorCode.E_RESOURCE_IMAGE_PIC_SOURCE, exception);

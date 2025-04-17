@@ -8,6 +8,7 @@ import com.lynx.tasm.LynxError;
 import com.lynx.tasm.behavior.LynxContext;
 import com.lynx.tasm.behavior.shadow.text.AbsInlineImageShadowNode;
 import com.lynx.tasm.behavior.ui.text.AbsInlineImageSpan;
+import com.lynx.tasm.utils.UIThreadUtils;
 
 public class InlineImageShadowNode extends AbsInlineImageShadowNode {
   LynxImageManager mLynxImageManager;
@@ -33,6 +34,19 @@ public class InlineImageShadowNode extends AbsInlineImageShadowNode {
         notifyErrorIfNeeded(error.getSummaryMessage());
       }
     };
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    UIThreadUtils.runOnUiThreadImmediately(new Runnable() {
+      @Override
+      public void run() {
+        if (mLynxImageManager != null) {
+          mLynxImageManager.destroy();
+        }
+      }
+    });
   }
 
   @Override

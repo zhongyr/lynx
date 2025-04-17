@@ -25,7 +25,7 @@ public class ImageRequestInfoBuilder {
 
   private @CacheChoice int mCacheChoice;
 
-  private @DiskCacheChoice int mDiskCacheChoice;
+  private @DiskCacheChoice Integer mDiskCacheChoice = null;
 
   private List<BitmapPostProcessor> mProcessors;
 
@@ -126,11 +126,11 @@ public class ImageRequestInfoBuilder {
     return this;
   }
 
-  public @DiskCacheChoice int getDiskCacheChoice() {
+  public @DiskCacheChoice Integer getDiskCacheChoice() {
     return mDiskCacheChoice;
   }
 
-  public void setDiskCacheChoice(@DiskCacheChoice int diskCacheChoice) {
+  public void setDiskCacheChoice(@DiskCacheChoice Integer diskCacheChoice) {
     this.mDiskCacheChoice = diskCacheChoice;
   }
 

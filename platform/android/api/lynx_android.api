@@ -2251,6 +2251,23 @@ public class com::lynx::tasm::image::model::ImageBlurPostProcessor : com.lynx.ta
   public String com.lynx.tasm.image.model.ImageBlurPostProcessor.getPostprocessorCacheKey();
 }
 
+public class com::lynx::tasm::image::ImageContent :  {
+  public com.lynx.tasm.image.ImageContent.ImageContent(@NonNull Bitmap bitmap);
+  public com.lynx.tasm.image.ImageContent.ImageContent(@NonNull Drawable drawable);
+  public int com.lynx.tasm.image.ImageContent.getIntrinsicWidth();
+  public int com.lynx.tasm.image.ImageContent.getIntrinsicHeight();
+  public void com.lynx.tasm.image.ImageContent.setBounds(@androidx.annotation.NonNull Rect bounds);
+  public void com.lynx.tasm.image.ImageContent.setBounds(int left, int top, int right, int bottom);
+  public void com.lynx.tasm.image.ImageContent.draw(Canvas canvas);
+  public final Bitmap com.lynx.tasm.image.ImageContent.getBitmap();
+  public Drawable com.lynx.tasm.image.ImageContent.getDrawable();
+  public void com.lynx.tasm.image.ImageContent.setAlpha(int alpha);
+  public int com.lynx.tasm.image.ImageContent.getOpacity();
+  public void com.lynx.tasm.image.ImageContent.setColorFilter(ColorFilter colorFilter);
+  public final void com.lynx.tasm.image.ImageContent.setCallback(Drawable.Callback cb);
+  public void com.lynx.tasm.image.ImageContent.setFilterBitmap(boolean filter);
+}
+
 public class com::lynx::tasm::image::ImageErrorCodeUtils :  {
   public final String com.lynx.tasm.image.ImageErrorCodeUtils.LYNX_IMAGE_ERROR_CODE_KEY LYNX_IMAGE_ERROR_CODE_KEY;
   public final String com.lynx.tasm.image.ImageErrorCodeUtils.LYNX_IMAGE_CATEGORIZED_CODE_KEY LYNX_IMAGE_CATEGORIZED_CODE_KEY;
@@ -2295,7 +2312,7 @@ public interface com::lynx::tasm::behavior::ImageInterceptor {
 
 public interface com::lynx::tasm::image::model::ImageLoadListener {
   public void com.lynx.tasm.image.model.ImageLoadListener.onRequestSubmit(ImageRequestInfo imageRequestInfo);
-  public void com.lynx.tasm.image.model.ImageLoadListener.onSuccess(@Nullable Drawable drawable, ImageRequestInfo requestInfo, ImageInfo imageInfo);
+  public void com.lynx.tasm.image.model.ImageLoadListener.onSuccess( @Nullable ImageContent imageContent, ImageRequestInfo requestInfo, ImageInfo imageInfo);
   public void com.lynx.tasm.image.model.ImageLoadListener.onFailure(int errorCode, Throwable throwable);
   public void com.lynx.tasm.image.model.ImageLoadListener.onImageMonitorInfo(JSONObject monitorInfo);
 }
@@ -2313,7 +2330,7 @@ public class com::lynx::tasm::image::model::ImageRequestInfo :  {
   public boolean com.lynx.tasm.image.model.ImageRequestInfo.isEnableResourceHint();
   public boolean com.lynx.tasm.image.model.ImageRequestInfo.isEnableDownSampling();
   public boolean com.lynx.tasm.image.model.ImageRequestInfo.isUseLocalCache();
-  public int com.lynx.tasm.image.model.ImageRequestInfo.getDiskCacheChoice();
+  public Integer com.lynx.tasm.image.model.ImageRequestInfo.getDiskCacheChoice();
   public boolean com.lynx.tasm.image.model.ImageRequestInfo.isEnableAsyncRequest();
   public Object com.lynx.tasm.image.model.ImageRequestInfo.getCallerContext();
   public boolean com.lynx.tasm.image.model.ImageRequestInfo.isAutoPlay();
@@ -2340,8 +2357,8 @@ public class com::lynx::tasm::image::model::ImageRequestInfoBuilder :  {
   public ImageRequestInfoBuilder com.lynx.tasm.image.model.ImageRequestInfoBuilder.setUseLocalCache(boolean enable);
   public Object com.lynx.tasm.image.model.ImageRequestInfoBuilder.getCallerContext();
   public ImageRequestInfoBuilder com.lynx.tasm.image.model.ImageRequestInfoBuilder.setCallerContext(Object callerContext);
-  public int com.lynx.tasm.image.model.ImageRequestInfoBuilder.getDiskCacheChoice();
-  public void com.lynx.tasm.image.model.ImageRequestInfoBuilder.setDiskCacheChoice(@DiskCacheChoice int diskCacheChoice);
+  public Integer com.lynx.tasm.image.model.ImageRequestInfoBuilder.getDiskCacheChoice();
+  public void com.lynx.tasm.image.model.ImageRequestInfoBuilder.setDiskCacheChoice(@DiskCacheChoice Integer diskCacheChoice);
   public String com.lynx.tasm.image.model.ImageRequestInfoBuilder.getUrl();
   public int com.lynx.tasm.image.model.ImageRequestInfoBuilder.getResizeWidth();
   public int com.lynx.tasm.image.model.ImageRequestInfoBuilder.getResizeHeight();
@@ -5185,8 +5202,10 @@ public class com::lynx::tasm::navigator::LynxRouteLruCache : LruCache< LynxRoute
 }
 
 public class com::lynx::tasm::image::LynxScaleTypeDrawable : Drawable {
-  public com.lynx.tasm.image.LynxScaleTypeDrawable.LynxScaleTypeDrawable(Drawable drawable, ScalingUtils.ScaleType scaleType);
-  public void com.lynx.tasm.image.LynxScaleTypeDrawable.setCurrent(Drawable newDelegate);
+  public com.lynx.tasm.image.LynxScaleTypeDrawable.LynxScaleTypeDrawable(ImageContent drawDelegate, ScalingUtils.ScaleType scaleType);
+  public Drawable com.lynx.tasm.image.LynxScaleTypeDrawable.getAnimDrawable();
+  public void com.lynx.tasm.image.LynxScaleTypeDrawable.setCurrent(ImageContent newDelegate);
+  public void com.lynx.tasm.image.LynxScaleTypeDrawable.setCurrent(ImageContent newDelegate, boolean needUpdateBounds);
   public void com.lynx.tasm.image.LynxScaleTypeDrawable.setCapInsets(String capInsets, String capInsetsScale);
   public ScalingUtils.ScaleType com.lynx.tasm.image.LynxScaleTypeDrawable.getScaleType();
   public void com.lynx.tasm.image.LynxScaleTypeDrawable.setScaleType(ScalingUtils.ScaleType scaleType);
@@ -5194,7 +5213,7 @@ public class com::lynx::tasm::image::LynxScaleTypeDrawable : Drawable {
   public void com.lynx.tasm.image.LynxScaleTypeDrawable.setAlpha(int alpha);
   public void com.lynx.tasm.image.LynxScaleTypeDrawable.setColorFilter(@Nullable ColorFilter colorFilter);
   public int com.lynx.tasm.image.LynxScaleTypeDrawable.getOpacity();
-  public Drawable com.lynx.tasm.image.LynxScaleTypeDrawable.getCurrent();
+  public ImageContent com.lynx.tasm.image.LynxScaleTypeDrawable.getContent();
 }
 
 public interface com::lynx::tasm::navigator::LynxSchemaInterceptor {

@@ -6,12 +6,14 @@ package com.lynx.tasm.image.model;
 
 import android.graphics.drawable.Drawable;
 import androidx.annotation.Nullable;
+import com.lynx.tasm.image.ImageContent;
 import org.json.JSONObject;
 
 public interface ImageLoadListener {
   void onRequestSubmit(ImageRequestInfo imageRequestInfo);
 
-  void onSuccess(@Nullable Drawable drawable, ImageRequestInfo requestInfo, ImageInfo imageInfo);
+  void onSuccess(
+      @Nullable ImageContent imageContent, ImageRequestInfo requestInfo, ImageInfo imageInfo);
 
   void onFailure(int errorCode, Throwable throwable);
 

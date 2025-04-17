@@ -27,20 +27,33 @@ public class LynxScaleTypeDrawable extends Drawable {
 
   private Matrix mTempMatrix = new Matrix();
 
-  private Drawable mCurrentDelegate;
+  private ImageContent mCurrentDelegate;
 
   String mCapInsets;
   String mCapInsetsScale;
 
-  public LynxScaleTypeDrawable(Drawable drawable, ScalingUtils.ScaleType scaleType) {
+  public LynxScaleTypeDrawable(ImageContent drawDelegate, ScalingUtils.ScaleType scaleType) {
     super();
-    mCurrentDelegate = drawable;
+    mCurrentDelegate = drawDelegate;
     mScaleType = scaleType;
   }
 
-  public void setCurrent(Drawable newDelegate) {
+  public Drawable getAnimDrawable() {
+    if (mCurrentDelegate != null) {
+      return mCurrentDelegate.getDrawable();
+    }
+    return null;
+  }
+
+  public void setCurrent(ImageContent newDelegate) {
+    this.setCurrent(newDelegate, true);
+  }
+
+  public void setCurrent(ImageContent newDelegate, boolean needUpdateBounds) {
     mCurrentDelegate = newDelegate;
-    configureBounds();
+    if (needUpdateBounds) {
+      configureBounds();
+    }
   }
 
   public void setCapInsets(String capInsets, String capInsetsScale) {
@@ -66,12 +79,12 @@ public class LynxScaleTypeDrawable extends Drawable {
   public void draw(Canvas canvas) {
     if (mCurrentDelegate != null) {
       configureBoundsIfUnderlyingChanged();
-      if (!TextUtils.isEmpty(mCapInsets) && mCurrentDelegate instanceof BitmapDrawable) {
-        Bitmap bitmap = ((BitmapDrawable) mCurrentDelegate).getBitmap();
+      if (!TextUtils.isEmpty(mCapInsets)) {
+        Bitmap bitmap = mCurrentDelegate.getBitmap();
         if (bitmap != null) {
           NinePatchHelper.drawNinePatch(getBounds().width(), getBounds().height(),
               bitmap.getWidth(), bitmap.getHeight(), mScaleType, mCapInsets, mCapInsetsScale,
-              canvas, ((BitmapDrawable) mCurrentDelegate).getBitmap());
+              canvas, mCurrentDelegate.getBitmap());
           return;
         }
       }
@@ -111,51 +124,50 @@ public class LynxScaleTypeDrawable extends Drawable {
 
   @Override
   protected void onBoundsChange(Rect bounds) {
-    if (getCurrent() != null) {
+    if (getContent() != null) {
       configureBounds();
     }
   }
 
   private void configureBoundsIfUnderlyingChanged() {
-    boolean underlyingChanged = mUnderlyingWidth != getCurrent().getIntrinsicWidth()
-        || mUnderlyingHeight != getCurrent().getIntrinsicHeight();
+    boolean underlyingChanged = mUnderlyingWidth != getContent().getIntrinsicWidth()
+        || mUnderlyingHeight != getContent().getIntrinsicHeight();
     if (underlyingChanged) {
       configureBounds();
     }
   }
 
-  @Override
-  public Drawable getCurrent() {
+  public ImageContent getContent() {
     return mCurrentDelegate;
   }
 
   void configureBounds() {
-    Drawable underlyingDrawable = getCurrent();
+    ImageContent imageContent = getContent();
     Rect bounds = getBounds();
     int viewWidth = bounds.width();
     int viewHeight = bounds.height();
-    int underlyingWidth = mUnderlyingWidth = underlyingDrawable.getIntrinsicWidth();
-    int underlyingHeight = mUnderlyingHeight = underlyingDrawable.getIntrinsicHeight();
+    int underlyingWidth = mUnderlyingWidth = imageContent.getIntrinsicWidth();
+    int underlyingHeight = mUnderlyingHeight = imageContent.getIntrinsicHeight();
 
     if (underlyingWidth <= 0 || underlyingHeight <= 0) {
-      underlyingDrawable.setBounds(bounds);
+      imageContent.setBounds(bounds);
       mDrawMatrix = null;
       return;
     }
 
     if (underlyingWidth == viewWidth && underlyingHeight == viewHeight) {
-      underlyingDrawable.setBounds(bounds);
+      imageContent.setBounds(bounds);
       mDrawMatrix = null;
       return;
     }
 
     if (mScaleType == ScalingUtils.ScaleType.FIT_XY) {
-      underlyingDrawable.setBounds(bounds);
+      imageContent.setBounds(bounds);
       mDrawMatrix = null;
       return;
     }
 
-    underlyingDrawable.setBounds(0, 0, underlyingWidth, underlyingHeight);
+    imageContent.setBounds(0, 0, underlyingWidth, underlyingHeight);
     mScaleType.getTransform(mTempMatrix, bounds, underlyingWidth, underlyingHeight, 0.5f, 0.5f);
     mDrawMatrix = mTempMatrix;
   }

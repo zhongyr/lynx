@@ -37,6 +37,7 @@ import com.lynx.tasm.core.LynxThreadPool;
 import com.lynx.tasm.event.EventsListener;
 import com.lynx.tasm.event.LynxDetailEvent;
 import com.lynx.tasm.image.AutoSizeImage;
+import com.lynx.tasm.image.ImageContent;
 import com.lynx.tasm.image.ImageErrorCodeUtils;
 import com.lynx.tasm.image.ImageUtils;
 import com.lynx.tasm.image.LynxImageMediaFetcherProxy;
@@ -135,7 +136,7 @@ public class LynxImageManager implements Drawable.Callback {
 
   private boolean mEnableExtraLoadInfo;
 
-  private boolean mEnableAsyncRequest;
+  private boolean mEnableAsyncRequest = true;
 
   private int mPaddingLeft;
 
@@ -224,16 +225,16 @@ public class LynxImageManager implements Drawable.Callback {
 
     @Override
     public void onSuccess(
-        @Nullable Drawable drawable, ImageRequestInfo requestInfo, ImageInfo imageInfo) {
+        @Nullable ImageContent imageContent, ImageRequestInfo requestInfo, ImageInfo imageInfo) {
       if (!TextUtils.equals(requestInfo.getUrl(), mCurImageRequest.getUrl())) {
         return;
       }
-      if (drawable != null) {
+      if (imageContent != null) {
         if (mIsPixelated) {
-          drawable.setFilterBitmap(false);
+          imageContent.setFilterBitmap(false);
         }
         if (imageInfo.isAnim()) {
-          drawable.setCallback(LynxImageManager.this);
+          imageContent.setCallback(LynxImageManager.this);
         }
       }
       if (mDeferInvalidation) {
@@ -242,7 +243,7 @@ public class LynxImageManager implements Drawable.Callback {
         mPreImageRequestInfo = null;
         mImageDrawable = null;
       }
-      mImageDrawable = new LynxScaleTypeDrawable(drawable, mMode);
+      mImageDrawable = new LynxScaleTypeDrawable(imageContent, mMode);
       if (!TextUtils.isEmpty(mCapInsets)) {
         mImageDrawable.setCapInsets(mCapInsets, mCapInsetsScale);
       }
@@ -288,11 +289,11 @@ public class LynxImageManager implements Drawable.Callback {
 
     @Override
     public void onSuccess(
-        @Nullable Drawable drawable, ImageRequestInfo requestInfo, ImageInfo imageInfo) {
+        @Nullable ImageContent imageContent, ImageRequestInfo requestInfo, ImageInfo imageInfo) {
       if (!TextUtils.equals(requestInfo.getUrl(), mCurPlaceholderRequest.getUrl())) {
         return;
       }
-      mPlaceholderDrawable = new LynxScaleTypeDrawable(drawable, mMode);
+      mPlaceholderDrawable = new LynxScaleTypeDrawable(imageContent, mMode);
       configureBounds(mPlaceholderDrawable);
       invalidate();
     }
@@ -485,9 +486,7 @@ public class LynxImageManager implements Drawable.Callback {
   // region UIMethod
   public void updatePropertiesInterval(StylesDiffMap props) {
     if (TraceEvent.enableTrace()) {
-      Map<String, String> params = new HashMap<>();
-      params.put("src", mSrc);
-      TraceEvent.beginSection(TraceEventDef.IMAGE_MANAGER_UPDATE_PROPS_INTERVAL, params);
+      TraceEvent.beginSection(TraceEventDef.IMAGE_MANAGER_UPDATE_PROPS_INTERVAL);
     }
     ReadableMapKeySetIterator iterator = props.mBackingMap.keySetIterator();
     while (iterator.hasNextKey()) {
@@ -569,7 +568,7 @@ public class LynxImageManager implements Drawable.Callback {
   }
 
   public void pauseAnimation(ReadableMap params, Callback callback) {
-    if (mImageDrawable != null && mImageLoader.pauseAnimation(mImageDrawable.getCurrent())) {
+    if (mImageDrawable != null && mImageLoader.pauseAnimation(mImageDrawable.getAnimDrawable())) {
       callback.invoke(LynxUIMethodConstants.SUCCESS, "Animation paused.");
     } else {
       callback.invoke(LynxUIMethodConstants.PARAM_INVALID, "Not support pause yet");
@@ -577,7 +576,7 @@ public class LynxImageManager implements Drawable.Callback {
   }
 
   public void resumeAnimation(ReadableMap params, Callback callback) {
-    if (mImageDrawable != null && mImageLoader.resumeAnimation(mImageDrawable.getCurrent())) {
+    if (mImageDrawable != null && mImageLoader.resumeAnimation(mImageDrawable.getAnimDrawable())) {
       callback.invoke(LynxUIMethodConstants.SUCCESS, "Animation resumed.");
     } else {
       callback.invoke(LynxUIMethodConstants.PARAM_INVALID, "Not support resume yet");
@@ -585,7 +584,7 @@ public class LynxImageManager implements Drawable.Callback {
   }
 
   public void stopAnimation(ReadableMap params, Callback callback) {
-    if (mImageDrawable != null && mImageLoader.stopAnimation(mImageDrawable.getCurrent())) {
+    if (mImageDrawable != null && mImageLoader.stopAnimation(mImageDrawable.getAnimDrawable())) {
       callback.invoke(LynxUIMethodConstants.SUCCESS, "Animation stopped.");
     } else {
       callback.invoke(LynxUIMethodConstants.PARAM_INVALID, "Not support stop yet");
@@ -593,7 +592,7 @@ public class LynxImageManager implements Drawable.Callback {
   }
 
   public void startAnimate(ReadableMap params, Callback callback) {
-    if (mImageDrawable != null && mImageLoader.startAnimation(mImageDrawable.getCurrent())) {
+    if (mImageDrawable != null && mImageLoader.startAnimation(mImageDrawable.getAnimDrawable())) {
       callback.invoke(LynxUIMethodConstants.SUCCESS, "Animation started.");
     } else {
       callback.invoke(LynxUIMethodConstants.PARAM_INVALID, "Not support start yet");
@@ -683,9 +682,7 @@ public class LynxImageManager implements Drawable.Callback {
 
   private void updateImageSource() {
     if (TraceEvent.enableTrace()) {
-      Map<String, String> params = new HashMap<>();
-      params.put("src", mSrc);
-      TraceEvent.beginSection(TraceEventDef.IMAGE_MANAGER_UPDATE_IMAGE_SOURCE, params);
+      TraceEvent.beginSection(TraceEventDef.IMAGE_MANAGER_UPDATE_IMAGE_SOURCE);
     }
     int width = 0;
     int height = 0;
@@ -707,9 +704,7 @@ public class LynxImageManager implements Drawable.Callback {
 
   private void updatePlaceholderSource() {
     if (TraceEvent.enableTrace()) {
-      Map<String, String> params = new HashMap<>();
-      params.put("src", mSrc);
-      TraceEvent.beginSection(TraceEventDef.IMAGE_MANAGER_UPDATE_PLACEHOLDER_SOURCE, params);
+      TraceEvent.beginSection(TraceEventDef.IMAGE_MANAGER_UPDATE_PLACEHOLDER_SOURCE);
     }
     int width = 0;
     int height = 0;
@@ -736,11 +731,12 @@ public class LynxImageManager implements Drawable.Callback {
   }
 
   public void updateNodeProps() {
-    if (isDirty(DOWN_SAMPLING_SCALE_CHANGED) && (mDisableDefaultResize || mAutoSize)) {
+    if (isDirty(DOWN_SAMPLING_SCALE_CHANGED)
+        && (mDisableDefaultResize || mAutoSize || mEnableResourceHint)) {
       dirtyFlags &= ~DOWN_SAMPLING_SCALE_CHANGED;
     }
     if (isDirty(MODE_CHANGED) && mImageDrawable != null) {
-      mImageDrawable = new LynxScaleTypeDrawable(mImageDrawable.getCurrent(), mMode);
+      mImageDrawable = new LynxScaleTypeDrawable(mImageDrawable.getContent(), mMode);
     }
     if (isDirty(CAP_INSETS_CHANGED) && mImageDrawable != null) {
       mImageDrawable.setCapInsets(mCapInsets, mCapInsetsScale);
@@ -749,7 +745,7 @@ public class LynxImageManager implements Drawable.Callback {
       mImageDrawable.setColorFilter(mColorFilter);
     }
 
-    if (isDirty(PLACEHOLDER_CHANGED) || isDirty(DOWN_SAMPLING_SCALE_CHANGED)) {
+    if (isDirty(PLACEHOLDER_CHANGED)) {
       releaseImage(mCurPlaceholderRequest);
       releaseDrawable(mPlaceholderDrawable);
       mCurPlaceholderRequest = null;
@@ -940,6 +936,9 @@ public class LynxImageManager implements Drawable.Callback {
 
   public void onLayoutUpdated(
       int width, int height, int paddingLeft, int paddingRight, int paddingTop, int paddingBottom) {
+    if (width <= 0 && height <= 0) {
+      return;
+    }
     if (width != mViewWidth || height != mViewHeight) {
       if (width > mViewWidth || height > mViewHeight) {
         dirtyFlags |= DOWN_SAMPLING_SCALE_CHANGED;
