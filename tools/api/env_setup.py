@@ -16,6 +16,9 @@ IOS_API_PATH = os.path.join(LYNX_ROOT_PATH, 'platform', 'darwin', 'ios', 'api')
 ERROR_CODE_PACKAGE_DIR = os.path.join(LYNX_ROOT_PATH, 'tools', 'error_code')
 FEATURE_COUNT_PACKAGE_DIR = os.path.join(LYNX_ROOT_PATH, 'tools',
                                          'feature_count')
+CSS_GENERATOR_DIR_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir))
+CSS_GENERATOR_PATH = os.path.join(CSS_GENERATOR_DIR_PATH, 'css_generator')
 
 API_CONFIG_PATH = os.path.abspath(
     os.path.join(LYNX_ROOT_PATH, 'tools', 'api', 'config.yml'))
@@ -40,6 +43,13 @@ def guarantee_generated_files():
     from feature_count.generate_feature_count import main as generate_feature_count
     sys.path.remove(FEATURE_COUNT_PACKAGE_DIR)
     generate_feature_count()
+
+    sys.path.append(CSS_GENERATOR_DIR_PATH)
+    sys.path.append(CSS_GENERATOR_PATH)
+    from css_generator.css_parser_generator import main as generate_css_parser
+    sys.path.remove(CSS_GENERATOR_PATH)
+    sys.path.remove(CSS_GENERATOR_DIR_PATH)
+    generate_css_parser()
 
 
 if __name__ == '__main__':

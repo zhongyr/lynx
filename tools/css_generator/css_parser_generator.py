@@ -19,7 +19,6 @@ import css_property_generator
 import enum_css_generator
 import utils
 
-
 # TODO: handle fastjsonschema fatal
 # try:
 #     import fastjsonschema
@@ -253,35 +252,40 @@ def generate_files(json_obj):
     main_generator(json_obj)
 
 
-# start execute:
-script_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(os.path.split(os.path.abspath(__file__))[0])
-json_obj = check_and_get_defines()
+def main():
+    # start execute:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(os.path.split(os.path.abspath(__file__))[0])
+    json_obj = check_and_get_defines()
 
-string_content = json.dumps(json_obj, sort_keys=True)
-new_hash = hashlib.sha256(string_content.encode()).hexdigest()
-hash_define_file = os.path.join(script_dir, "css_defines_sha256.txt")
-# Check if the hash file exists.
-# If the hash file does not exist, the hash file is generated and then executed the generate logic.
-if not os.path.exists(hash_define_file):
-    with open(hash_define_file, "w") as file:
-        file.write(new_hash)
-    print("First generate!")
-    generate_files(json_obj)
-else:
-    with open(hash_define_file, "r") as file:
-        existing_hash = file.read().strip()
-    # If the hash file exists, the hash value is first checked to see if it matches the hash value of the source file: "css_defines.json".
-    if existing_hash != new_hash:
-        # If the hash value of the source file has changed, the hash value in the hash file is overwritten and the generate logic is executed.
-        print("css_define.json changed! Generate!")
-        generate_files(json_obj)
+    string_content = json.dumps(json_obj, sort_keys=True)
+    new_hash = hashlib.sha256(string_content.encode()).hexdigest()
+    hash_define_file = os.path.join(script_dir, "css_defines_sha256.txt")
+    # Check if the hash file exists.
+    # If the hash file does not exist, the hash file is generated and then executed the generate logic.
+    if not os.path.exists(hash_define_file):
         with open(hash_define_file, "w") as file:
             file.write(new_hash)
-    # The generate logic is also executed if the generated object file does not exist.
-    elif not utils.checkAllFileGenerated():
-        print("Generated file not exist! Generate!")
+        print("First generate!")
         generate_files(json_obj)
-    # If the hash value of the source file has not changed, the generate logic is not executed.
     else:
-        print("css_defines.json don't changed!")
+        with open(hash_define_file, "r") as file:
+            existing_hash = file.read().strip()
+        # If the hash file exists, the hash value is first checked to see if it matches the hash value of the source file: "css_defines.json".
+        if existing_hash != new_hash:
+            # If the hash value of the source file has changed, the hash value in the hash file is overwritten and the generate logic is executed.
+            print("css_define.json changed! Generate!")
+            generate_files(json_obj)
+            with open(hash_define_file, "w") as file:
+                file.write(new_hash)
+        # The generate logic is also executed if the generated object file does not exist.
+        elif not utils.checkAllFileGenerated():
+            print("Generated file not exist! Generate!")
+            generate_files(json_obj)
+        # If the hash value of the source file has not changed, the generate logic is not executed.
+        else:
+            print("css_defines.json don't changed!")
+
+
+if __name__ == "__main__":
+    main()
