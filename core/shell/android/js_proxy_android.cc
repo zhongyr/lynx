@@ -23,13 +23,13 @@
 #include "core/shell/android/runtime_lifecycle_listener_delegate_android.h"
 #include "core/shell/lynx_runtime_proxy_impl.h"
 #include "core/shell/lynx_shell.h"
+#include "core/value_wrapper/android/value_impl_android.h"
 #include "core/value_wrapper/value_impl_piper.h"
+#include "core/value_wrapper/value_wrapper_utils.h"
 
 using lynx::base::android::AttachCurrentThread;
 using lynx::base::android::JNIConvertHelper;
 using lynx::base::android::ScopedGlobalJavaRef;
-using lynx::piper::jsArrayFromJavaOnlyArray;
-using lynx::piper::jsObjectFromJavaOnlyMap;
 using lynx::shell::JSProxyAndroid;
 
 #define JS_PROXY reinterpret_cast<JSProxyAndroid*>(ptr)
@@ -153,22 +153,13 @@ std::unique_ptr<pub::Value> JSProxyAndroid::GetArgs(
     return nullptr;
   }
 
-  piper::Scope scope(*runtime);
-  std::optional<piper::Object> params;
   if (is_array) {
-    params = jsArrayFromJavaOnlyArray(AttachCurrentThread(), args.Get(),
-                                      runtime.get());
+    return std::make_unique<pub::ValueImplAndroid>(
+        std::make_shared<base::android::JavaOnlyArray>(env, std::move(args)));
   } else {
-    params = jsObjectFromJavaOnlyMap(AttachCurrentThread(), args.Get(),
-                                     runtime.get());
+    return std::make_unique<pub::ValueImplAndroid>(
+        std::make_shared<base::android::JavaOnlyMap>(env, std::move(args)));
   }
-  if (!params) {
-    runtime->reportJSIException(BUILD_JSI_NATIVE_EXCEPTION(
-        "Call Runtime fail! Reason: Transfer java value to js "
-        "value fail."));
-    return nullptr;
-  }
-  return std::make_unique<pub::ValueImplPiper>(*runtime, std::move(*params));
 }
 
 void JSProxyAndroid::CallJSFunctionByArgsId(std::string module_id,

@@ -80,11 +80,6 @@ void PushByteArrayToJavaArray(piper::Runtime* rt,
 void PushByteArrayToJavaMap(piper::Runtime* rt, const std::string& key,
                             const piper::ArrayBuffer& array_buffer,
                             base::android::JavaOnlyMap* jmap);
-
-std::optional<piper::Array> jsArrayFromJavaOnlyArray(JNIEnv* env, jobject array,
-                                                     piper::Runtime* rt);
-std::optional<piper::Object> jsObjectFromJavaOnlyMap(JNIEnv* env, jobject map,
-                                                     piper::Runtime* rt);
 #endif  // OS_ANDROID
 
 }  // namespace piper
