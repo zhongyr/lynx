@@ -505,7 +505,6 @@ public abstract class LynxContext extends LynxBaseContext implements ExceptionHa
     mIntersectionObserverManager = new WeakReference<>(manager);
   }
 
-  @Nullable
   public LynxIntersectionObserverManager getIntersectionObserverManager() {
     if (mIntersectionObserverManager == null) {
       return null;
