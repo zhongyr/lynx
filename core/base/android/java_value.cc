@@ -273,13 +273,7 @@ jvalue JavaValue::WrapperJBoolean() const {
 
 jvalue JavaValue::JShort() const {
   jvalue j_short;
-  if (IsInt32()) {
-    j_short.s = static_cast<jshort>(Int32());
-  } else if (IsDouble()) {
-    j_short.s = static_cast<jshort>(Double());
-  } else {
-    j_short.s = 0;
-  }
+  j_short.s = static_cast<jshort>(Number());
   return j_short;
 }
 
@@ -292,13 +286,7 @@ jvalue JavaValue::WrapperJShort() const {
 
 jvalue JavaValue::JInt() const {
   jvalue j_int;
-  if (IsInt32()) {
-    j_int.i = static_cast<jint>(Int32());
-  } else if (IsDouble()) {
-    j_int.i = static_cast<jint>(Double());
-  } else {
-    j_int.i = 0;
-  }
+  j_int.i = static_cast<jint>(Number());
   return j_int;
 }
 
@@ -313,10 +301,8 @@ jvalue JavaValue::JLong() const {
   jvalue j_long;
   if (IsInt64()) {
     j_long.j = static_cast<jlong>(Int64());
-  } else if (IsDouble()) {
-    j_long.j = static_cast<jlong>(Double());
   } else {
-    j_long.j = 0;
+    j_long.j = static_cast<jlong>(Double());
   }
   return j_long;
 }
@@ -329,20 +315,22 @@ jvalue JavaValue::WrapperJLong() const {
 }
 
 jvalue JavaValue::JFloat() const {
-  return IsFloat() ? std::get<jvalue>(j_variant_value_) : jvalue{};
+  jvalue j_float;
+  j_float.f = static_cast<jfloat>(Number());
+  return j_float;
 }
 
 jvalue JavaValue::WrapperJFloat() const {
   jvalue j_wrapper_float;
   JNIEnv* env = base::android::AttachCurrentThread();
   j_wrapper_float.l =
-      converter::floatValueOf(env, static_cast<jfloat>(Float()));
+      converter::floatValueOf(env, static_cast<jfloat>(JFloat().f));
   return j_wrapper_float;
 }
 
 jvalue JavaValue::JDouble() const {
   jvalue j_double;
-  j_double.d = static_cast<jdouble>(Double());
+  j_double.d = static_cast<jdouble>(Number());
   return j_double;
 }
 
@@ -350,7 +338,7 @@ jvalue JavaValue::WrapperJDouble() const {
   jvalue j_wrapper_double;
   JNIEnv* env = base::android::AttachCurrentThread();
   j_wrapper_double.l =
-      converter::doubleValueOf(env, static_cast<jdouble>(Double()));
+      converter::doubleValueOf(env, static_cast<jdouble>(JDouble().d));
   return j_wrapper_double;
 }
 
@@ -369,6 +357,19 @@ int JavaValue::Length() const {
   } else {
     return 0;
   }
+}
+
+double JavaValue::Number() const {
+  if (IsDouble()) {
+    return Double();
+  } else if (IsInt32()) {
+    return Int32();
+  } else if (IsInt64()) {
+    return Int64();
+  } else if (IsFloat()) {
+    return Float();
+  }
+  return 0;
 }
 
 }  // namespace android

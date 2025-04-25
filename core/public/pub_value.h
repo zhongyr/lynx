@@ -71,6 +71,8 @@ class Value {
   virtual uint32_t UInt32() const = 0;
   virtual int64_t Int64() const = 0;
   virtual uint64_t UInt64() const = 0;
+  // TODO(zhangqun.29): The double return value cannot represent Int64,Delete
+  // the interface
   virtual double Number() const = 0;
   virtual uint8_t* ArrayBuffer() const { return nullptr; }
   virtual const std::string& str() const = 0;

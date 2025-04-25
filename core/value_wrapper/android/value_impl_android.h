@@ -73,7 +73,7 @@ class ValueImplAndroid : public pub::Value {
   uint32_t UInt32() const override { return 0; }
   int64_t Int64() const override { return backend_value_.Int64(); }
   uint64_t UInt64() const override { return 0; }
-  double Number() const override { return backend_value_.Double(); }
+  double Number() const override { return backend_value_.Number(); }
   uint8_t* ArrayBuffer() const override;
   const std::string& str() const override { return backend_value_.String(); }
   int Length() const override { return backend_value_.Length(); }

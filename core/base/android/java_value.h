@@ -118,6 +118,22 @@ class JavaValue {
   int64_t Int64() const;
   double Double() const;
   float Float() const;
+  // When using the Number() method on a JavaValue of type Int64, the return
+  // value will be cast to double. This will result in a loss of precision when
+  // the absolute value exceeds 2^53. If you ensure that the data is within a
+  // reasonable range, you can use Number() directly. But it is strongly
+  // recommended to use IsInt64() and Int64() when applicable.
+  // e.g.
+  // if (IsInt64()) {
+  //    ...
+  // } else if (IsNumber()) {
+  //    ...
+  // }
+  // In this interface , int64 is supported merely to align the behavior in the
+  // hierarchy.
+  // TODO(zhangqun.29): When Number() in pub::Value is deleted, this interface
+  // will be deleted at the same time
+  double Number() const;
   uint8_t* ArrayBuffer() const;
   const std::string& String() const;
   const std::shared_ptr<base::android::JavaOnlyArray>& Array() const {
