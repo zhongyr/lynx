@@ -1993,7 +1993,7 @@ public interface com::lynx::tasm::base::ILogDelegate {
 public interface com::lynx::tasm::service::ILynxDevToolService {
   public default Class<? extends IServiceProvider > com.lynx.tasm.service.ILynxDevToolService.getServiceClass();
   public LynxBaseInspectorOwnerNG com.lynx.tasm.service.ILynxDevToolService.createInspectorOwner(@Nullable LynxView view);
-  public LynxBaseLogBoxProxy com.lynx.tasm.service.ILynxDevToolService.createLogBoxProxy(@NonNull LynxDevtool devtool);
+  public ILynxLogBox com.lynx.tasm.service.ILynxDevToolService.createLogBox(@NonNull LynxDevtool devtool);
   public Class<? extends com.lynx.jsbridge.LynxModule > com.lynx.tasm.service.ILynxDevToolService.getDevToolSetModuleClass();
   public Class<? extends com.lynx.jsbridge.LynxModule > com.lynx.tasm.service.ILynxDevToolService.getDevToolWebSocketModuleClass();
   public Class<? extends com.lynx.jsbridge.LynxModule > com.lynx.tasm.service.ILynxDevToolService.getLynxTrailModule();
@@ -2074,6 +2074,12 @@ public interface com::lynx::jsbridge::jsi::ILynxJSIObjectDescriptor {
   public String com.lynx.jsbridge.jsi.ILynxJSIObjectDescriptor.getClassName();
   public String[] com.lynx.jsbridge.jsi.ILynxJSIObjectDescriptor.getFields();
   public String[] com.lynx.jsbridge.jsi.ILynxJSIObjectDescriptor.getLynxObjectDescriptorInfo(String fieldName);
+}
+
+public interface com::lynx::devtoolwrapper::ILynxLogBox {
+  public void com.lynx.devtoolwrapper.ILynxLogBox.showLogMessage(final LynxError error);
+  public void com.lynx.devtoolwrapper.ILynxLogBox.onLoadTemplate();
+  public void com.lynx.devtoolwrapper.ILynxLogBox.attachContext(Context context);
 }
 
 public interface com::lynx::tasm::service::ILynxLogService {
@@ -3266,12 +3272,6 @@ public interface com::lynx::devtoolwrapper::LynxBaseInspectorOwnerNG {
   public void com.lynx.devtoolwrapper.LynxBaseInspectorOwnerNG.unsubscribeMessage(String type);
   public void com.lynx.devtoolwrapper.LynxBaseInspectorOwnerNG.onRegisterModule(LynxModuleFactory moduleFactory);
   public void com.lynx.devtoolwrapper.LynxBaseInspectorOwnerNG.downloadResource(String url, LynxResourceCallback< byte[]> callback);
-}
-
-public interface com::lynx::devtoolwrapper::LynxBaseLogBoxProxy {
-  public void com.lynx.devtoolwrapper.LynxBaseLogBoxProxy.showLogMessage(final LynxError error);
-  public void com.lynx.devtoolwrapper.LynxBaseLogBoxProxy.onLoadTemplate();
-  public void com.lynx.devtoolwrapper.LynxBaseLogBoxProxy.attachContext(Context context);
 }
 
 public class abstract com::lynx::tasm::behavior::ui::LynxBaseUI : com.lynx.tasm.behavior.ui.UIParent, com.lynx.tasm.behavior.event.EventTarget, com.lynx.tasm.behavior.PropertiesDispatcher, Cloneable, com.lynx.tasm.gesture.LynxNewGestureDelegate {

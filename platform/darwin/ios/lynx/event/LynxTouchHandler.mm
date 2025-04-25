@@ -6,8 +6,8 @@
 #import <UIKit/UIGestureRecognizerSubclass.h>
 #import "LynxTouchHandler+Internal.h"
 
+#import <Lynx/DevToolLogLevel.h>
 #import <Lynx/LynxBaseInspectorOwner.h>
-#import <Lynx/LynxBaseLogBoxProxy.h>
 #import <Lynx/LynxEnv.h>
 #import <Lynx/LynxEventEmitter.h>
 #import <Lynx/LynxLog.h>
@@ -332,7 +332,7 @@
       [self showMessageOnConsole:
                 [NSString stringWithFormat:@"LynxTouchHandler: hit the target with sign = %ld",
                                            target.signature]
-                       withLevel:LynxLogBoxLevelInfo];
+                       withLevel:DevToolLogLevelInfo];
     }
   } else if (eventName == LynxEventTouchEnd || eventName == LynxEventTouchCancel) {
     _preTouchPoint = CGPointMake(-FLT_MAX, -FLT_MAX);
@@ -513,7 +513,7 @@
     [self showMessageOnConsole:
               [NSString stringWithFormat:@"LynxTouchHandler: receive touch for lynx %ld, touch %d",
                                          [_eventHandler.rootView hash], 0]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
   }
   _LogI(@"Lynxview LynxTouchHandler touchesBegan %p: ", _eventHandler.rootView);
 
@@ -802,7 +802,7 @@
     [self showMessageOnConsole:
               [NSString stringWithFormat:@"LynxTouchHandler: receive touch for lynx %ld, touch %d",
                                          [_eventHandler.rootView hash], 1]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
   }
   _LogI(@"Lynxview LynxTouchHandler touchesEnded %p: ", _eventHandler.rootView);
 
@@ -897,7 +897,7 @@
     [self showMessageOnConsole:
               [NSString stringWithFormat:@"LynxTouchHandler: receive touch for lynx %ld, touch %d",
                                          [_eventHandler.rootView hash], 3]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
   }
   _LogI(@"Lynxview LynxTouchHandler touchesCancelled %p: ", _eventHandler.rootView);
 
@@ -1122,7 +1122,7 @@
           showMessageOnConsole:
               [NSString stringWithFormat:@"LynxTouchHandler: receive touch for lynx %ld, touch %d",
                                          [_eventHandler.rootView hash], 3]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
     }
     if (!_enableMultiTouch) {
       CGPoint windowLocation = [otherGestureRecognizer locationInView:otherGestureRecognizer.view];

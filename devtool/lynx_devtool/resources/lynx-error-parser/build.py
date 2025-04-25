@@ -11,7 +11,7 @@ import sys
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Calculate the root path
-root_path = os.path.abspath(os.path.join(current_dir, '../../../../'))
+root_path = os.path.abspath(os.path.join(current_dir, '..', '..', '..', '..'))
 
 sys.path.append(root_path)
 from tools.js_tools.pnpm_helper import run_pnpm_command

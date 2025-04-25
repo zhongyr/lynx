@@ -76,21 +76,8 @@ devtool_source_set("logbox") {
   ]
 
   sources = [
-    "LogBox/DevToolLogBoxEnv.h",
-    "LogBox/DevToolLogBoxEnv.mm",
-    "LogBox/LogBoxFileLoadUtils.h",
-    "LogBox/LogBoxFileLoadUtils.mm",
-    "LogBox/LynxLogBox.h",
-    "LogBox/LynxLogBox.mm",
-    "LogBox/LynxLogBoxHelper.h",
-    "LogBox/LynxLogBoxManager.h",
-    "LogBox/LynxLogBoxManager.m",
-    "LogBox/LynxLogBoxOwner.h",
-    "LogBox/LynxLogBoxOwner.mm",
-    "LogBox/LynxLogBoxProxy.h",
-    "LogBox/LynxLogBoxProxy.mm",
-    "LogBox/LynxLogNotification.h",
-    "LogBox/LynxLogNotification.m",
+    "LogBox/LynxLogBoxWrapper.h",
+    "LogBox/LynxLogBoxWrapper.mm",
   ]
 
   public_configs = devtool_darwin_config

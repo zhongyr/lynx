@@ -125,7 +125,6 @@ bundle_data("LynxDebugResources") {
   sources = [
     "//lynx/platform/darwin/ios/lynx_devtool/assets/logbox",
     "//lynx/platform/darwin/ios/lynx_devtool/assets/lynx_core_dev.js",
-    "//lynx/platform/darwin/ios/lynx_devtool/assets/notification_cancel.png",
     "//lynx/platform/darwin/ios/lynx_devtool/assets/switchPage",
   ]
   outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
@@ -333,12 +332,11 @@ subspec_target("zlib") {
 subspec_target("UnitTests") {
   test_subspec = true
   sources = [
-    "//lynx/platform/darwin/common/lynx_devtool/LogBox/LynxLogBoxManagerUnitTest.m",
-    "//platform/darwin/ios/lynxDevtool/ConsoleDelegateManagerUnitTest.mm",
-    "//platform/darwin/ios/lynxDevtool/Helper/LepusDebugInfoHelperUnitTest.m",
-    "//platform/darwin/ios/lynxDevtool/Helper/LynxUITreeHelperUnitTest.m",
-    "//platform/darwin/ios/lynxDevtool/LynxDevToolErrorUtilsUnitTest.m",
-    "//platform/darwin/ios/lynxDevtool/Memory/LynxMemoryControllerUnitTest.m",
+    "ConsoleDelegateManagerUnitTest.mm",
+    "Helper/LepusDebugInfoHelperUnitTest.m",
+    "Helper/LynxUITreeHelperUnitTest.m",
+    "LynxDevToolErrorUtilsUnitTest.m",
+    "Memory/LynxMemoryControllerUnitTest.m",
   ]
   dependency = [
     "LynxDevtool/Framework",

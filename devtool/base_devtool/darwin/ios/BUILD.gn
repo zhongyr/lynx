@@ -41,6 +41,11 @@ podspec_target("BaseDevtool_podspec") {
     if (!is_debug) {
       pod_target_xcconfig.GCC_PREPROCESSOR_DEFINITIONS += [ "NDEBUG=1" ]
     }
+    prepare_command = [
+      "if [ -f \"./lynx/devtool/base_devtool/resources/copy_resources.py\" ]; then",
+      " python3 lynx/devtool/base_devtool/resources/copy_resources.py",
+      "fi",
+    ]
     ios = {
       deployment_target = "10.0"
     }
@@ -49,8 +54,10 @@ podspec_target("BaseDevtool_podspec") {
     deps = [ ":framework" ]
   } else {
     deps = [
+      ":DebugResource",
       ":ThirdParty",
       ":framework",
+      ":logbox",
     ]
   }
 }
@@ -59,6 +66,8 @@ subspec_target("framework") {
   sources = [
     "//lynx/devtool/base_devtool/darwin/common/utils/DevToolDownloader.h",
     "//lynx/devtool/base_devtool/darwin/common/utils/DevToolDownloader.m",
+    "//lynx/devtool/base_devtool/darwin/common/utils/DevToolFileLoadUtils.h",
+    "//lynx/devtool/base_devtool/darwin/common/utils/DevToolFileLoadUtils.mm",
     "//lynx/devtool/base_devtool/darwin/common/utils/DevToolToast.h",
     "//lynx/devtool/base_devtool/darwin/common/utils/DevToolToast.m",
     "DevToolGlobalSlotIOS.h",
@@ -71,6 +80,7 @@ subspec_target("framework") {
     "DevToolSlotIOS.h",
     "//lynx/devtool/base_devtool/darwin/common/utils/DevToolDownloader.h",
     "//lynx/devtool/base_devtool/darwin/common/utils/DevToolToast.h",
+    "//lynx/devtool/base_devtool/darwin/common/utils/DevToolFileLoadUtils.h",
   ]
   deps = [
     "//lynx/devtool/base_devtool/native/js_inspect:base_devtool_js_inspect",
@@ -80,7 +90,11 @@ subspec_target("framework") {
   ]
   flatten_deps = [ "//lynx/devtool/base_devtool/native:base_devtool_subspec" ]
   if (use_flatten_deps) {
-    flatten_deps += [ ":ThirdParty" ]
+    flatten_deps += [
+      ":DebugResource",
+      ":ThirdParty",
+      ":logbox",
+    ]
   }
 
   pod_target_xcconfig = {
@@ -176,4 +190,39 @@ subspec_target("rapidjson") {
   if (!use_flatten_deps) {
     dependency = [ "Lynx/Native/third_party/rapidjson" ]
   }
+}
+
+bundle_data("LynxBaseDevToolResources") {
+  sources = [
+    "//lynx/devtool/base_devtool/darwin/ios/assets/logbox",
+    "//lynx/devtool/base_devtool/darwin/ios/assets/notification_cancel.png",
+  ]
+  outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
+}
+
+subspec_target("DebugResource") {
+  resource_bundles = [ ":LynxBaseDevToolResources" ]
+}
+
+subspec_target("logbox") {
+  sources = [
+    "logbox/DevToolLogBox.h",
+    "logbox/DevToolLogBox.mm",
+    "logbox/DevToolLogBoxEnv.h",
+    "logbox/DevToolLogBoxEnv.mm",
+    "logbox/DevToolLogBoxHelper.h",
+    "logbox/DevToolLogBoxManager.h",
+    "logbox/DevToolLogBoxManager.m",
+    "logbox/DevToolLogBoxNotification.h",
+    "logbox/DevToolLogBoxNotification.m",
+    "logbox/DevToolLogBoxOwner.h",
+    "logbox/DevToolLogBoxOwner.mm",
+    "logbox/DevToolLogBoxProxy.h",
+    "logbox/DevToolLogBoxProxy.mm",
+    "logbox/DevToolLogBoxResProvider.h",
+  ]
+  public_header_files = [
+    "logbox/DevToolLogBoxProxy.h",
+    "logbox/DevToolLogBoxResProvider.h",
+  ]
 }

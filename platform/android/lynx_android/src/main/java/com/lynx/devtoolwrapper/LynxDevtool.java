@@ -44,7 +44,7 @@ public class LynxDevtool {
   private static ILynxDevToolService sDevToolService = null;
   private static final String TAG = "LynxDevtool";
   @Keep private LynxBaseInspectorOwnerNG mOwner = null;
-  private LynxBaseLogBoxProxy mLogBox = null;
+  private ILynxLogBox mLogBox = null;
   private PageReloadHelper mReloader = null;
   private WeakReference<LynxView> mView = null;
   private WeakReference<LynxTemplateRender> mRender = null;
@@ -85,7 +85,7 @@ public class LynxDevtool {
         }
 
         if (LynxEnv.inst().isLogBoxEnabled() && sDevToolService != null) {
-          mLogBox = sDevToolService.createLogBoxProxy(this);
+          mLogBox = sDevToolService.createLogBox(this);
           LLog.i(TAG, "LogBox init");
         }
 

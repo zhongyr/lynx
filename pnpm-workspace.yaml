@@ -1,8 +1,10 @@
 packages:
   - '.'
   - 'js_libraries/*'
+  - devtool/base_devtool/js_libraries/logbox-types
+  - devtool/base_devtool/js_libraries/logbox
   - devtool/lynx_devtool/resources/devtool-switch
-  - devtool/lynx_devtool/resources/lynx-logbox
   - devtool/lynx_devtool/resources/lynx-error-parser
-  - devtool/lynx_devtool/resources/logbox-types
   - explorer/homepage
+  # base devtool
+  - 'lynx/devtool/base_devtool/js_libraries/logbox'

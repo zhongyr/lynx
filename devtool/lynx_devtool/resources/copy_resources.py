@@ -11,9 +11,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 # Run the build.sh scripts
 scripts = [
     os.path.join(current_dir, 'devtool-switch', 'build.py'),
-    os.path.join(current_dir, 'lynx-logbox', 'build.py'),
     os.path.join(current_dir, 'lynx-error-parser', 'build.py'),
-    os.path.join(current_dir, 'images', 'copy_images.py')
 ]
 
 for script in scripts:

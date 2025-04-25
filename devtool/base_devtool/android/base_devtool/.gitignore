@@ -2,3 +2,5 @@
 .cxx
 CMakeLists_impl/
 libs/
+src/main/assets/logbox/
+src/main/res/drawable/notification_cancel.png

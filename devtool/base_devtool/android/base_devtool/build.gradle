@@ -81,6 +81,17 @@ android {
     }
 }
 
+task copyResources() {
+    doLast {
+        exec {
+            workingDir '../../'
+            commandLine 'python3', './resources/copy_resources.py'
+        }
+    }
+}
+
+preBuild.dependsOn copyResources
+
 dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

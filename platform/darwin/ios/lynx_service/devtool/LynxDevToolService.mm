@@ -26,20 +26,18 @@
 #pragma clang diagnostic pop
 }
 
-- (id<LynxBaseLogBoxProxy>)createLogBoxProxyWithLynxView:(LynxView *)lynxView {
-  Class logBoxProxyClass = NSClassFromString(@"LynxLogBoxProxy");
-  if (!logBoxProxyClass) {
+- (id<LynxLogBoxProtocol>)createLogBoxWithLynxView:(LynxView *)lynxView {
+  Class logBoxClass = NSClassFromString(@"LynxLogBoxWrapper");
+  if (!logBoxClass) {
     return nil;
   }
-
   SEL initSelector = NSSelectorFromString(@"initWithLynxView:");
-  if (![logBoxProxyClass instancesRespondToSelector:initSelector]) {
+  if (![logBoxClass instancesRespondToSelector:initSelector]) {
     return nil;
   }
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-  return [[logBoxProxyClass alloc] performSelector:initSelector withObject:lynxView];
+  return [[logBoxClass alloc] performSelector:initSelector withObject:lynxView];
 #pragma clang diagnostic pop
 }
 

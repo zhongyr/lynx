@@ -2,8 +2,8 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
+#import <Lynx/DevToolLogLevel.h>
 #import <Lynx/LynxBaseInspectorOwner.h>
-#import <Lynx/LynxBaseLogBoxProxy.h>
 #import <Lynx/LynxContext.h>
 #import <Lynx/LynxDevtool.h>
 #import <Lynx/LynxEnv.h>
@@ -336,7 +336,7 @@
   if ([LynxEnv.sharedInstance highlightTouchEnabled]) {
     [self showMessageOnConsole:[NSString
                                    stringWithFormat:@"LynxView: hit test for lynx %ld", [self hash]]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
   }
   _LogI(@"LynxView %p: hitTest with point.x: %f, point.y: %f", self, point.x, point.y);
 
@@ -691,7 +691,7 @@
     [self showMessageOnConsole:[NSString
                                    stringWithFormat:@"LynxView: send global event %@ for lynx %ld",
                                                     name, [self hash]]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
   }
   if ([_templateRender enableAirStrictMode]) {
     // In Air mode, send global event by triggerEventBus
@@ -706,7 +706,7 @@
     [self showMessageOnConsole:
               [NSString stringWithFormat:@"LynxView: send global event %@ to lepus for lynx %ld",
                                          name, [self hash]]
-                     withLevel:LynxLogBoxLevelInfo];
+                     withLevel:DevToolLogLevelInfo];
   }
   RUN_RENDER_SAFELY([_templateRender sendGlobalEventToLepus:name withParams:params];);
 }
