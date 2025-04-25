@@ -33,8 +33,7 @@ def remove_dirs(dir_path):
         try:
             shutil.rmtree(dir_path)
         except Exception as e:
-            print(f'Failed to remove directory {dir_path}: {e}',
-                  file=sys.stderr)
+            print(f"Failed to remove directory {dir_path}: {e}", file=sys.stderr)
 
 
 def is_doxygen_installed():
@@ -44,12 +43,13 @@ def is_doxygen_installed():
         bool: True if installed, False otherwise
     """
     try:
-        subprocess.check_output([DOXYGEN_PATH, '--version'])
+        subprocess.check_output([DOXYGEN_PATH, "--version"])
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(
-            f'Doxygen not found, please check {HANDLE_FAILED_INSTRUCTION} for more infomation',
-            file=sys.stderr)
+            f"Doxygen not found, please check {HANDLE_FAILED_INSTRUCTION} for more infomation",
+            file=sys.stderr,
+        )
         return False
 
 
@@ -64,44 +64,46 @@ def generate_api_metadata(api_path, platform):
         bool: True if generation succeeded, False otherwise
     """
     if not os.path.exists(api_path):
-        print(f'{api_path} not found')
+        print(f"{api_path} not found")
         return False
     if not is_doxygen_installed():
         return False
 
     doxygen_config_path = os.path.join(
-        ANDROID_API_PATH if platform == 'android' else IOS_API_PATH,
-        'doxygen.cfg')
+        ANDROID_API_PATH if platform == "android" else IOS_API_PATH, "doxygen.cfg"
+    )
     if not os.path.exists(doxygen_config_path):
-        print(f'{doxygen_config_path} not found')
+        print(f"{doxygen_config_path} not found")
         return False
 
-    remove_dirs(os.path.join(api_path, platform, 'xml'))
-    remove_dirs(os.path.join(api_path, platform, 'html'))
+    remove_dirs(os.path.join(api_path, platform, "xml"))
+    remove_dirs(os.path.join(api_path, platform, "html"))
 
     try:
-        result = subprocess.run([DOXYGEN_PATH, doxygen_config_path],
-                                capture_output=True,
-                                text=True,
-                                cwd=api_path,
-                                check=True)
+        result = subprocess.run(
+            [DOXYGEN_PATH, doxygen_config_path],
+            capture_output=True,
+            text=True,
+            cwd=api_path,
+            check=True,
+        )
         return True
     except subprocess.CalledProcessError as e:
-        print(f'generate api metadata failed: {e}', file=sys.stderr)
+        print(f"generate api metadata failed: {e}", file=sys.stderr)
         return False
 
 
 COMPOUNDDEF_PARSE_DICT = {
-    'class': class_parse,
-    'enum': enum_parse,
-    'interface': interface_parse,
-    'file': file_parse,
-    'struct': struct_parse,
-    'category': category_parse,
-    'protocol': protocol_parse,
+    "class": class_parse,
+    "enum": enum_parse,
+    "interface": interface_parse,
+    "file": file_parse,
+    "struct": struct_parse,
+    "category": category_parse,
+    "protocol": protocol_parse,
 }
 
-IGNORE_COMPOUNDDEF_LIST = ['dir', 'namespace', 'page', 'example']
+IGNORE_COMPOUNDDEF_LIST = ["dir", "namespace", "page", "example"]
 
 
 def dump_class_metadata(class_xml_path):
@@ -114,24 +116,23 @@ def dump_class_metadata(class_xml_path):
         list: Formatted API entries for the class
     """
     if not os.path.exists(class_xml_path):
-        print(f'{class_xml_path} not found')
+        print(f"{class_xml_path} not found")
         return []
 
     api_list = []
-    with open(class_xml_path, 'r') as f:
+    with open(class_xml_path, "r") as f:
         tree = ET.parse(class_xml_path)
-        for compounddef in tree.findall('.//compounddef'):
+        for compounddef in tree.findall(".//compounddef"):
             compounddef_api_list = []
-            if compounddef.get('prot') not in ['public', None]:
+            if compounddef.get("prot") not in ["public", None]:
                 # We only care about public api.
                 continue
-            compounddef_kind = compounddef.get('kind')
-            compounddef_parse_func = COMPOUNDDEF_PARSE_DICT.get(
-                compounddef_kind)
+            compounddef_kind = compounddef.get("kind")
+            compounddef_parse_func = COMPOUNDDEF_PARSE_DICT.get(compounddef_kind)
             if compounddef_parse_func is not None:
                 compounddef_api_list = compounddef_parse_func(compounddef)
             elif compounddef_kind not in IGNORE_COMPOUNDDEF_LIST:
-                print(f'unknown compounddef kind: {compounddef_kind}')
+                print(f"unknown compounddef kind: {compounddef_kind}")
 
             if compounddef_api_list:
                 api_list.extend(compounddef_api_list)
@@ -151,29 +152,29 @@ def parse_api_metadata(api_path, platform, target_api_path):
         bool: True if processing succeeded, False otherwise
     """
     root_path = os.path.join(api_path, platform)
-    index_xml_path = os.path.join(root_path, 'xml', 'index.xml')
+    index_xml_path = os.path.join(root_path, "xml", "index.xml")
     if not os.path.exists(index_xml_path):
-        print(f'index.xml not found in {root_path}')
+        print(f"index.xml not found in {root_path}")
         return False
 
-    if (os.path.exists(target_api_path)):
+    if os.path.exists(target_api_path):
         os.remove(target_api_path)
 
-    with open(target_api_path, 'at') as api_file:
+    with open(target_api_path, "at") as api_file:
         # Write API doc annotation
         api_file.write(API_DOC_ANNOTATION)
-        api_file.write('\n')
+        api_file.write("\n")
 
         tree = ET.parse(index_xml_path)
-        for compound in tree.findall('.//compound'):
-            refid = compound.get('refid')
-            class_xml_path = os.path.join(root_path, 'xml', f'{refid}.xml')
+        for compound in tree.findall(".//compound"):
+            refid = compound.get("refid")
+            class_xml_path = os.path.join(root_path, "xml", f"{refid}.xml")
             api_list = dump_class_metadata(class_xml_path)
             if api_list:
                 for api in api_list:
                     api_file.write(api)
-                    api_file.write('\n')
-                api_file.write('\n')
+                    api_file.write("\n")
+                api_file.write("\n")
 
     return True
 
@@ -188,40 +189,45 @@ def diff_api_metadata(api_path, platform):
     Returns:
         bool: True if no differences found, False otherwise
     """
-    print(f'generate {platform} api metadata...')
+    print(f"generate {platform} api metadata...")
     if not generate_api_metadata(api_path, platform):
-        print(f'generate {platform} api metadata failed')
+        print(f"generate {platform} api metadata failed")
         return False
-    target_api_path = os.path.join(api_path, platform, f'lynx_{platform}.api')
+    target_api_path = os.path.join(api_path, platform, f"lynx_{platform}.api")
     if not parse_api_metadata(api_path, platform, target_api_path):
-        print(f'parse {platform} api metadata failed')
+        print(f"parse {platform} api metadata failed")
         return False
-    print(f'generate {platform} api metadata success')
+    print(f"generate {platform} api metadata success")
 
-    print(f'diff {platform} api metadata...')
+    print(f"diff {platform} api metadata...")
     origin_api_path = os.path.join(
-        IOS_API_PATH if platform == 'ios' else ANDROID_API_PATH,
-        f'lynx_{platform}.api')
-    with open(origin_api_path, 'r') as origin_file, open(target_api_path,
-                                                         'r') as target_file:
+        IOS_API_PATH if platform == "ios" else ANDROID_API_PATH, f"lynx_{platform}.api"
+    )
+    with open(origin_api_path, "r") as origin_file, open(
+        target_api_path, "r"
+    ) as target_file:
         origin_api_doc = origin_file.readlines()
         target_api_doc = target_file.readlines()
 
-        diff = difflib.unified_diff(origin_api_doc,
-                                    target_api_doc,
-                                    fromfile=origin_api_path,
-                                    tofile=target_api_path)
+        diff = difflib.unified_diff(
+            origin_api_doc,
+            target_api_doc,
+            fromfile=origin_api_path,
+            tofile=target_api_path,
+        )
 
         diff_detais = [line for line in diff]
         if len(diff_detais) == 0:
-            print(f'no diff found in {platform} api metadata')
+            print(f"no diff found in {platform} api metadata")
             return True
         else:
-            print(f'error: diff found in {platform} api metadata, '\
-                  f'you can check {HANDLE_FAILED_INSTRUCTION} for '\
-                  'details and process instructions')
+            print(
+                f"error: diff found in {platform} api metadata, "
+                f"you can check {HANDLE_FAILED_INSTRUCTION} for "
+                "details and process instructions"
+            )
             for line in diff_detais:
-                print(line, end='')
+                print(line, end="")
             return False
 
 
@@ -235,21 +241,21 @@ def update_api_metadata(api_path, platform):
     Returns:
         bool: True if update succeeded, False otherwise
     """
-    print(f'update {platform} api metadata...')
+    print(f"update {platform} api metadata...")
     if not generate_api_metadata(api_path, platform):
-        print(f'generate {platform} api metadata failed')
+        print(f"generate {platform} api metadata failed")
         return False
 
     target_api_path = os.path.join(
-        IOS_API_PATH if platform == 'ios' else ANDROID_API_PATH,
-        f'lynx_{platform}.api')
+        IOS_API_PATH if platform == "ios" else ANDROID_API_PATH, f"lynx_{platform}.api"
+    )
     if not parse_api_metadata(api_path, platform, target_api_path):
-        print(f'parse {platform} api metadata failed')
+        print(f"parse {platform} api metadata failed")
         return False
 
-    print(f'update {platform} api metadata success')
+    print(f"update {platform} api metadata success")
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parse_api_metadata(sys.argv)

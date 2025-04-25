@@ -42,3 +42,4 @@ checker-config:
       android: 'platform/android/lynx_android/src/main'
       ios: 'platform/darwin/ios/lynx'
       ios-common: 'platform/darwin/common/lynx'
+    instruction-doc: https://github.com/lynx-family/lynx/blob/develop/CONTRIBUTING.md#static-code-analysis-tasks

@@ -5,11 +5,18 @@
 # /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from memberdef_parse import function_parse, variable_parse, property_parse, typedef_parse, enum_parse as memberdef_enum_parse, define_parse
+from memberdef_parse import (
+    function_parse,
+    variable_parse,
+    property_parse,
+    typedef_parse,
+    enum_parse as memberdef_enum_parse,
+    define_parse,
+)
 
 
 def compounddef_kind_check(compounddef, kind: str) -> bool:
-    if compounddef == None or compounddef.get('kind') != kind:
+    if compounddef == None or compounddef.get("kind") != kind:
         print(
             f'compounddef function parse failed, wrong kind: {compounddef.get("kind")} expected kind: {kind}'
         )
@@ -18,27 +25,27 @@ def compounddef_kind_check(compounddef, kind: str) -> bool:
 
 
 MEMBERDEF_PARSE_DICT = {
-    'function': function_parse,
-    'variable': variable_parse,
-    'property': property_parse,
-    'typedef': typedef_parse,
-    'enum': memberdef_enum_parse,
+    "function": function_parse,
+    "variable": variable_parse,
+    "property": property_parse,
+    "typedef": typedef_parse,
+    "enum": memberdef_enum_parse,
 }
 
-MEMBERDEF_IGNORE_LIST = ['define']
+MEMBERDEF_IGNORE_LIST = ["define"]
 
 
 def memberdef_parse(compounddef, header: str, end: str) -> list[str]:
     member_list = []
-    for memberdef in compounddef.findall('.//memberdef'):
-        if memberdef.get('prot') != 'public':
+    for memberdef in compounddef.findall(".//memberdef"):
+        if memberdef.get("prot") != "public":
             continue
-        memberdef_kind = memberdef.get('kind')
+        memberdef_kind = memberdef.get("kind")
         memberdef_parse_func = MEMBERDEF_PARSE_DICT.get(memberdef_kind)
         if memberdef_parse_func is not None:
             member_list.append(memberdef_parse_func(memberdef))
         elif memberdef_kind not in MEMBERDEF_IGNORE_LIST:
-            print(f'unknown memberdef: {memberdef_kind}')
+            print(f"unknown memberdef: {memberdef_kind}")
 
     if not member_list:
         return []
@@ -50,60 +57,60 @@ def memberdef_parse(compounddef, header: str, end: str) -> list[str]:
 
 
 def class_parse(compounddef) -> list[str]:
-    if not compounddef_kind_check(compounddef, 'class'):
-        return ''
+    if not compounddef_kind_check(compounddef, "class"):
+        return ""
 
-    class_name = compounddef.find('compoundname').text
-    abstract_str = 'abstract ' if compounddef.get('abstract') == 'yes' else ''
-    class_str = f'public class {abstract_str}{class_name} : '
+    class_name = compounddef.find("compoundname").text
+    abstract_str = "abstract " if compounddef.get("abstract") == "yes" else ""
+    class_str = f"public class {abstract_str}{class_name} : "
     base_class_list = []
-    for basecompoundref in compounddef.findall('.//basecompoundref'):
+    for basecompoundref in compounddef.findall(".//basecompoundref"):
         base_class_list.append(basecompoundref.text)
-    class_str += ', '.join(base_class_list)
-    class_str += ' {'
+    class_str += ", ".join(base_class_list)
+    class_str += " {"
 
-    return memberdef_parse(compounddef, class_str, '}')
+    return memberdef_parse(compounddef, class_str, "}")
 
 
 def enum_parse(compdef) -> list[str]:
-    if not compounddef_kind_check(compdef, 'enum'):
-        return ''
+    if not compounddef_kind_check(compdef, "enum"):
+        return ""
     enum_header = f'public enum {compdef.find("compoundname").text} {{'
-    return memberdef_parse(compdef, enum_header, '}')
+    return memberdef_parse(compdef, enum_header, "}")
 
 
 def interface_parse(compdef) -> list[str]:
-    if not compounddef_kind_check(compdef, 'interface'):
-        return ''
+    if not compounddef_kind_check(compdef, "interface"):
+        return ""
     interface_header = f'public interface {compdef.find("compoundname").text} {{'
-    return memberdef_parse(compdef, interface_header, '}')
+    return memberdef_parse(compdef, interface_header, "}")
 
 
 def file_parse(compdef) -> list[str]:
-    if not compounddef_kind_check(compdef, 'file'):
-        return ''
-    return memberdef_parse(compdef, '', '')
+    if not compounddef_kind_check(compdef, "file"):
+        return ""
+    return memberdef_parse(compdef, "", "")
 
 
 def struct_parse(compdef) -> list[str]:
-    if not compounddef_kind_check(compdef, 'struct'):
-        return ''
+    if not compounddef_kind_check(compdef, "struct"):
+        return ""
     struct_header = f'public struct {compdef.find("compoundname").text} {{'
-    return memberdef_parse(compdef, struct_header, '}')
+    return memberdef_parse(compdef, struct_header, "}")
 
 
 def category_parse(compdef) -> list[str]:
-    if not compounddef_kind_check(compdef, 'category'):
-        return ''
+    if not compounddef_kind_check(compdef, "category"):
+        return ""
     category_header = f'public interface {compdef.find("compoundname").text} {{'
-    return memberdef_parse(compdef, category_header, '}')
+    return memberdef_parse(compdef, category_header, "}")
 
 
 def protocol_parse(compdef) -> list[str]:
-    if not compounddef_kind_check(compdef, 'protocol'):
-        return ''
+    if not compounddef_kind_check(compdef, "protocol"):
+        return ""
     base_class_list = []
-    for basecompoundref in compdef.findall('.//basecompoundref'):
+    for basecompoundref in compdef.findall(".//basecompoundref"):
         base_class_list.append(basecompoundref.text)
     protocol_header = f'public protocol {compdef.find("compoundname").text} : {", ".join(base_class_list)} {{'
-    return memberdef_parse(compdef, protocol_header, '}')
+    return memberdef_parse(compdef, protocol_header, "}")

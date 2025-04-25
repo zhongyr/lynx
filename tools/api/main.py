@@ -31,21 +31,19 @@ def main():
     """
     # Initialize argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('-u',
-                        '--update',
-                        action='store_true',
-                        default=False,
-                        help='Update API metadata')
-    parser.add_argument('-d',
-                        '--diff',
-                        action='store_true',
-                        default=False,
-                        help='Diff API metadata')
-    parser.add_argument('-p',
-                        '--platform',
-                        choices=['both', 'ios', 'android'],
-                        default='both',
-                        help='Specify the platform')
+    parser.add_argument(
+        "-u", "--update", action="store_true", default=False, help="Update API metadata"
+    )
+    parser.add_argument(
+        "-d", "--diff", action="store_true", default=False, help="Diff API metadata"
+    )
+    parser.add_argument(
+        "-p",
+        "--platform",
+        choices=["both", "ios", "android"],
+        default="both",
+        help="Specify the platform",
+    )
 
     # Process command line arguments
     args = parser.parse_args()
@@ -57,13 +55,15 @@ def main():
         # Ensure generated files are up-to-date
         guarantee_generated_files()
         # iOS platform update
-        if args.platform == 'both' or args.platform == 'ios':
+        if args.platform == "both" or args.platform == "ios":
             ios_result = update_api_metadata(
-                os.path.dirname(os.path.abspath(__file__)), 'ios')
+                os.path.dirname(os.path.abspath(__file__)), "ios"
+            )
         # Android platform update
-        if args.platform == 'both' or args.platform == 'android':
+        if args.platform == "both" or args.platform == "android":
             android_result = update_api_metadata(
-                os.path.dirname(os.path.abspath(__file__)), 'android')
+                os.path.dirname(os.path.abspath(__file__)), "android"
+            )
         sys.exit(0 if (ios_result and android_result) else 1)
 
     # Handle diff operation
@@ -71,15 +71,17 @@ def main():
         # Ensure generated files are up-to-date
         guarantee_generated_files()
         # iOS platform comparison
-        if args.platform == 'both' or args.platform == 'ios':
+        if args.platform == "both" or args.platform == "ios":
             ios_result = diff_api_metadata(
-                os.path.dirname(os.path.abspath(__file__)), 'ios')
+                os.path.dirname(os.path.abspath(__file__)), "ios"
+            )
         # Android platform comparison
-        if args.platform == 'both' or args.platform == 'android':
+        if args.platform == "both" or args.platform == "android":
             android_result = diff_api_metadata(
-                os.path.dirname(os.path.abspath(__file__)), 'android')
+                os.path.dirname(os.path.abspath(__file__)), "android"
+            )
         sys.exit(0 if (ios_result and android_result) else 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

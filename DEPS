@@ -290,7 +290,7 @@ deps = {
     "./tools_shared": {
         "type": "solution",
         "url": "https://github.com/lynx-family/tools-shared.git",
-        "commit": "580ecf1eff3b18693fb41de25e958dfd4f101c90",
+        "commit": "901fd697f36f8784f9695dc4941e613edb7ed5f8",
         'deps_file': 'dependencies/DEPS',
         "ignore_in_git": True,
     },
