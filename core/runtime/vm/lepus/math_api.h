@@ -140,25 +140,27 @@ Value Tan(VMContext* context) {
 }
 
 void RegisterMathAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "sin", &Sin);
-  RegisterTableFunction(ctx, table, "abs", &Abs);
-  RegisterTableFunction(ctx, table, "acos", &Acos);
-  RegisterTableFunction(ctx, table, "atan", &Atan);
-  RegisterTableFunction(ctx, table, "asin", &Asin);
-  RegisterTableFunction(ctx, table, "ceil", &Ceil);
-  RegisterTableFunction(ctx, table, "cos", &Cos);
-  RegisterTableFunction(ctx, table, "exp", &Exp);
-  RegisterTableFunction(ctx, table, "floor", &Floor);
-  RegisterTableFunction(ctx, table, "log", &Log);
-  RegisterTableFunction(ctx, table, "max", &Max);
-  RegisterTableFunction(ctx, table, "min", &Min);
-  RegisterTableFunction(ctx, table, "pow", &Pow);
-  RegisterTableFunction(ctx, table, "random", &Random);
-  RegisterTableFunction(ctx, table, "round", &Round);
-  RegisterTableFunction(ctx, table, "sqrt", &Sqrt);
-  RegisterTableFunction(ctx, table, "tan", &Tan);
-  RegisterFunctionTable(ctx, "Math", std::move(table));
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::Math,
+                                   {
+                                       {"sin", &Sin},
+                                       {"abs", &Abs},
+                                       {"acos", &Acos},
+                                       {"atan", &Atan},
+                                       {"asin", &Asin},
+                                       {"ceil", &Ceil},
+                                       {"cos", &Cos},
+                                       {"exp", &Exp},
+                                       {"floor", &Floor},
+                                       {"log", &Log},
+                                       {"max", &Max},
+                                       {"min", &Min},
+                                       {"pow", &Pow},
+                                       {"random", &Random},
+                                       {"round", &Round},
+                                       {"sqrt", &Sqrt},
+                                       {"tan", &Tan},
+                                   });
+  RegisterFunctionTable(ctx, "Math", &apis);
 }
 }  // namespace lepus
 }  // namespace lynx

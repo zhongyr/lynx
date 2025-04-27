@@ -24,9 +24,11 @@ Value Now(VMContext* context) {
 }
 
 void RegisterDateAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "now", &Now);
-  RegisterBuiltinFunctionTable(ctx, "Date", std::move(table));
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::Date,
+                                   {
+                                       {"now", &Now},
+                                   });
+  RegisterBuiltinFunctionTable(ctx, "Date", &apis);
 }
 }  // namespace lepus
 }  // namespace lynx

@@ -31,14 +31,18 @@ void RegisterBuiltinFunction(Context* context, const char* name,
 }
 
 void RegisterBuiltinFunctionTable(Context* context, const char* name,
-                                  fml::RefPtr<Dictionary> table) {
-  VMContext::Cast(context)->builtin()->Set(name,
-                                           lepus::Value(std::move(table)));
+                                  BuiltinFunctionTable* function_table) {
+  VMContext::Cast(context)->builtin()->Set(name, lepus::Value(function_table));
 }
 
 void RegisterFunctionTable(Context* context, const char* name,
                            fml::RefPtr<Dictionary> table) {
   VMContext::Cast(context)->global()->Set(name, lepus::Value(std::move(table)));
+}
+
+void RegisterFunctionTable(Context* context, const char* name,
+                           BuiltinFunctionTable* function_table) {
+  VMContext::Cast(context)->global()->Set(name, lepus::Value(function_table));
 }
 
 void RegisterTableFunction(Context* context,
@@ -51,20 +55,15 @@ void RegisterBuiltin(Context* ctx) {
   TRACE_EVENT(LYNX_TRACE_CATEGORY, REGISTER_BUILD_IN);
   RegisterBaseAPI(ctx);
   RegisterStringAPI(ctx);
-  RegisterStringPrototypeAPI(ctx);
   RegisterMathAPI(ctx);
-  RegisterArrayAPI(ctx);
   RegisterDateAPI(ctx);
   RegisterJSONAPI(ctx);
   if (lynx::tasm::Config::IsHigherOrEqual(
           reinterpret_cast<VMContext*>(ctx)->GetSdkVersion(),
           FEATURE_CONTROL_VERSION_2)) {
     RegisterLepusDateAPI(ctx);
-    RegisterLepusDatePrototypeAPI(ctx);
-    RegisterREGEXPPrototypeAPI(ctx);
     RegisterFunctionAPI(ctx);
     RegisterTableAPI(ctx);
-    RegisterNumberAPI(ctx);
   }
 }
 

@@ -79,6 +79,7 @@ enum ValueType {
   // Value_TypeCount is used for encoding jsvalue tag,
   // Adding a new Value_type needs to be inserted before 'Value_TypeCount'
   Value_PrimJsValue,
+  Value_FunctionTable,
   Value_TypeCount,
 };
 
@@ -91,6 +92,7 @@ class RegExp;
 class ByteArray;
 class RefCounted;
 class LEPUSObject;
+class BuiltinFunctionTable;
 
 typedef Value (*CFunction)(Context*);
 
@@ -135,6 +137,7 @@ class BASE_EXPORT_FOR_DEVTOOL Value {
   explicit Value(bool val);
   explicit Value(void* data);
   explicit Value(CFunction val);
+  explicit Value(BuiltinFunctionTable* data);
   explicit Value(bool for_nan, bool val);
   explicit Value(lynx_value&& value);
   Value(lynx_api_env env, int64_t val, int32_t tag);
@@ -271,6 +274,9 @@ class BASE_EXPORT_FOR_DEVTOOL Value {
     return value_.type == lynx_value_undefined || IsJSUndefined();
   }
   inline bool IsCFunction() const { return value_.type == lynx_value_function; }
+  inline bool IsBuiltinFunctionTable() const {
+    return value_.type == lynx_value_function_table;
+  }
   inline bool IsJSObject() const {
     return value_.type == lynx_value_object &&
            value_.tag == static_cast<int32_t>(CustomRefCountedType::kJSObject);
@@ -372,6 +378,7 @@ class BASE_EXPORT_FOR_DEVTOOL Value {
   fml::RefPtr<lepus::ByteArray> ByteArray() const;
 
   CFunction Function() const;
+  BuiltinFunctionTable* FunctionTable() const;
   void* CPoint() const;
   fml::RefPtr<lepus::RefCounted> RefCounted() const;
 

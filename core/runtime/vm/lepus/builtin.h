@@ -5,6 +5,7 @@
 #define CORE_RUNTIME_VM_LEPUS_BUILTIN_H_
 
 #include "core/renderer/tasm/config.h"
+#include "core/runtime/vm/lepus/builtin_function_table.h"
 #include "core/runtime/vm/lepus/context.h"
 #include "core/runtime/vm/lepus/jsvalue_helper.h"
 #include "core/runtime/vm/lepus/quick_context.h"
@@ -22,9 +23,14 @@ inline void RegisterBuiltinFunction(Context* context, const char* name,
   RegisterBuiltinFunction(context, name, reinterpret_cast<CFunction>(function));
 }
 void RegisterBuiltinFunctionTable(Context* context, const char* name,
-                                  fml::RefPtr<Dictionary> function);
+                                  BuiltinFunctionTable* function_table);
+
 void RegisterFunctionTable(Context* context, const char* name,
                            fml::RefPtr<Dictionary> function);
+
+void RegisterFunctionTable(Context* context, const char* name,
+                           BuiltinFunctionTable* function_table);
+
 void RegisterTableFunction(Context* context,
                            const fml::RefPtr<Dictionary>& table,
                            const char* name, CFunction function);

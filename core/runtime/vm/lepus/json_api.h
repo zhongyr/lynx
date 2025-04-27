@@ -40,10 +40,12 @@ Value Parse(VMContext* context) {
 }
 
 void RegisterJSONAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "stringify", &Stringify);
-  RegisterTableFunction(ctx, table, "parse", &Parse);
-  RegisterBuiltinFunctionTable(ctx, "JSON", std::move(table));
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::Json,
+                                   {
+                                       {"stringify", &Stringify},
+                                       {"parse", &Parse},
+                                   });
+  RegisterBuiltinFunctionTable(ctx, "JSON", &apis);
 }
 }  // namespace lepus
 }  // namespace lynx

@@ -55,6 +55,9 @@ class RefCountedStringImpl : public fml::RefCountedThreadSafeStorage {
   std::size_t length_utf8();
   std::size_t length_utf16();
 
+  uint8_t* __get_padding_chars__() { return __padding_chars__; }
+  uint16_t* __get_padding_shorts__() { return __padding_shorts__; }
+
   class Unsafe {
     // ATTENTION: function under this class is UNSAFE to use.
     // Do NOT use them unless you have consulted with the owners of String.

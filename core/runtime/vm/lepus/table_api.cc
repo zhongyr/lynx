@@ -87,11 +87,13 @@ static Value Assign(VMContext* context) {
 }
 
 void RegisterTableAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "assign", &Assign);
-  RegisterTableFunction(ctx, table, "freeze", &Freeze);
-  RegisterTableFunction(ctx, table, "keys", &Keys);
-  RegisterBuiltinFunctionTable(ctx, "Object", std::move(table));
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::Object,
+                                   {
+                                       {"assign", &Assign},
+                                       {"freeze", &Freeze},
+                                       {"keys", &Keys},
+                                   });
+  RegisterBuiltinFunctionTable(ctx, "Object", &apis);
 }
 }  // namespace lepus
 }  // namespace lynx

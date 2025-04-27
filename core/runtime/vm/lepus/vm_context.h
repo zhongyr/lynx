@@ -98,16 +98,6 @@ class VMContext : public Context {
     return current_context_.top();
   }
 
-  void SetArrayPrototype(Value proto) { array_prototype_ = proto; }
-
-  void SetDatePrototype(Value proto) { date_prototype_ = proto; }
-
-  void SetStringPrototype(Value proto) { string_prototype_ = proto; }
-
-  void SetRegexpPrototype(Value proto) { regexp_prototype_ = proto; }
-
-  void SetNumberPrototype(Value proto) { number_prototype_ = proto; }
-
   void SetEnableStrictCheck(bool val) { enable_strict_check_ = val; }
 
   void SetEnableTopVarStrictMode(bool val) {
@@ -250,12 +240,6 @@ class VMContext : public Context {
   bool enable_top_var_strict_mode_;
   bool enable_null_prop_as_undef_ = false;
   bool closure_fix_ = false;
-
-  Value array_prototype_;
-  Value date_prototype_;
-  Value string_prototype_;
-  Value regexp_prototype_;
-  Value number_prototype_;
 
   bool executed_ = false;
 

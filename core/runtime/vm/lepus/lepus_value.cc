@@ -133,9 +133,15 @@ Value::Value(std::string&& str) {
 Value::Value(void* data)
     : value_({.val_ptr = reinterpret_cast<lynx_value_ptr>(data),
               .type = lynx_value_external}) {}
+
 Value::Value(CFunction val)
     : value_({.val_ptr = reinterpret_cast<lynx_value_ptr>(val),
               .type = lynx_value_function}) {}
+
+Value::Value(BuiltinFunctionTable* data)
+    : value_({.val_ptr = reinterpret_cast<lynx_value_ptr>(data),
+              .type = lynx_value_function_table}) {}
+
 Value::Value(bool for_nan, bool val) {
   if (for_nan) {
     value_.val_bool = val;
@@ -473,6 +479,13 @@ fml::RefPtr<lepus::CArray> Value::Array() const {
 CFunction Value::Function() const {
   if (likely(value_.type == lynx_value_function)) {
     return reinterpret_cast<CFunction>(Ptr());
+  }
+  return nullptr;
+}
+
+BuiltinFunctionTable* Value::FunctionTable() const {
+  if (likely(value_.type == lynx_value_function_table)) {
+    return reinterpret_cast<BuiltinFunctionTable*>(Ptr());
   }
   return nullptr;
 }
@@ -1225,6 +1238,7 @@ bool Value::MarkConst() const {
     case lynx_value_null ... lynx_value_string:
     case lynx_value_arraybuffer:
     case lynx_value_function:
+    case lynx_value_function_table:
     case lynx_value_external:
       // ByteArray and Element objects don't cross thread, and don't need to
       // markConst.
@@ -1483,6 +1497,8 @@ ValueType Value::LegacyTypeFromLynxValue(const lynx_value& value) {
       return Value_ByteArray;
     case lynx_value_function:
       return Value_CFunction;
+    case lynx_value_function_table:
+      return Value_FunctionTable;
     case lynx_value_object: {
       CustomRefCountedType type = static_cast<CustomRefCountedType>(value.tag);
       switch (type) {

@@ -17,9 +17,14 @@
 #include "base/trace/native/trace_event.h"
 #include "core/renderer/utils/lynx_env.h"
 #include "core/runtime/vm/lepus/array.h"
+#include "core/runtime/vm/lepus/array_api.h"
+#include "core/runtime/vm/lepus/base_api.h"
 #include "core/runtime/vm/lepus/builtin.h"
 #include "core/runtime/vm/lepus/exception.h"
+#include "core/runtime/vm/lepus/lepus_date_api.h"
 #include "core/runtime/vm/lepus/path_parser.h"
+#include "core/runtime/vm/lepus/regexp_api.h"
+#include "core/runtime/vm/lepus/string_api.h"
 // #include "ast_dump.h"
 #include "base/include/string/string_utils.h"
 #include "core/build/gen/lynx_sub_error_code.h"
@@ -1280,7 +1285,7 @@ void VMContext::RunFrame() {
                   *a = b->Array()->GetMatchGroups();
                 }
               } else {
-                *a = array_prototype_.Table()->GetValue(c_str);
+                *a = GetArrayPrototypeAPI(c_str);
               }
             } else {
 #ifdef LEPUS_LOG
@@ -1296,7 +1301,7 @@ void VMContext::RunFrame() {
               if (c_str_value == "length") {
                 *a = Value(static_cast<int64_t>((b->String().length_utf16())));
               } else {
-                *a = string_prototype_.Table()->GetValue(c_str);
+                *a = GetStringPrototypeAPI(c_str);
               }
             } else {
               RunFrame_Op_GetTable_UnlikelyPath_String(a, b, c);
@@ -1304,21 +1309,28 @@ void VMContext::RunFrame() {
             break;
           case Value_CDate:
             if (c->IsString()) {
-              *a = date_prototype_.Table()->GetValue(c->String());
+              *a = GetDatePrototypeAPI(c->String());
             } else {
               *a = Value();
             }
             break;
           case Value_RegExp:
             if (c->IsString()) {
-              *a = regexp_prototype_.Table()->GetValue(c->String());
+              *a = GetRegexPrototypeAPI(c->String());
             } else {
               *a = Value();
             }
             break;
+          case Value_FunctionTable:
+            if (c->IsString()) {
+              *a = b->FunctionTable()->GetFunction(c->String());
+            } else {
+              a->SetNil();
+            }
+            break;
           default:
             if (b->IsNumber() && c->IsString()) {
-              *a = number_prototype_.Table()->GetValue(c->String());
+              *a = GetNumberPrototypeAPI(c->String());
             } else {
 #ifdef LEPUS_LOG
               LOGE("lepus: GetTable unknown, receiver type  "

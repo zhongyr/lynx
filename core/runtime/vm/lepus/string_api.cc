@@ -997,25 +997,29 @@ static Value Split(VMContext* context) {
 }
 
 void RegisterStringAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "indexOf", &IndexOf);
-  RegisterTableFunction(ctx, table, "length", &Length);
-  RegisterTableFunction(ctx, table, "substr", &SubStr);
-  RegisterFunctionTable(ctx, "String", std::move(table));
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::String,
+                                   {
+                                       {"indexOf", &IndexOf},
+                                       {"length", &Length},
+                                       {"substr", &SubStr},
+                                   });
+  RegisterFunctionTable(ctx, "String", &apis);
 }
 
-void RegisterStringPrototypeAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "split", &Split);
-  RegisterTableFunction(ctx, table, "trim", &Trim);
-  RegisterTableFunction(ctx, table, "charAt", &CharAt);
-  RegisterTableFunction(ctx, table, "search", &Search);
-  RegisterTableFunction(ctx, table, "match", &Match);
-  RegisterTableFunction(ctx, table, "replace", &Replace);
-  RegisterTableFunction(ctx, table, "slice", &Slice);
-  RegisterTableFunction(ctx, table, "substring", &SubString);
-  reinterpret_cast<VMContext*>(ctx)->SetStringPrototype(
-      Value(std::move(table)));
+const Value& GetStringPrototypeAPI(const base::String& key) {
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::StringPrototype,
+                                   {
+                                       {"split", &Split},
+                                       {"trim", &Trim},
+                                       {"charAt", &CharAt},
+                                       {"search", &Search},
+                                       {"match", &Match},
+                                       {"replace", &Replace},
+                                       {"slice", &Slice},
+                                       {"substring", &SubString},
+                                   });
+
+  return apis.GetFunction(key);
 }
 
 }  // namespace lepus

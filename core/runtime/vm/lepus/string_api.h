@@ -16,8 +16,8 @@ std::pair<size_t, bool> GetUnicodeFromUft8(const char* input, size_t input_len,
                                            uint16_t* output,
                                            size_t output_length);
 
+const Value& GetStringPrototypeAPI(const base::String& key);
 void RegisterStringAPI(Context* ctx);
-void RegisterStringPrototypeAPI(Context* ctx);
 std::string GetReplaceStr(const std::string& data,
                           const std::string& need_to_replace_str,
                           const std::string& replace_to_str, int32_t position);

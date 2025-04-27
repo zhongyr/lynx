@@ -201,6 +201,7 @@ static std::string CastToString(const Value& v) {
       break;
     }
     case lepus::ValueType::Value_PrimJsValue:
+    case lepus::ValueType::Value_FunctionTable:
     case lepus::ValueType::Value_TypeCount:
       break;
   }
@@ -372,21 +373,25 @@ static Value ForEach(VMContext* context) {
   return Value();
 }
 
-void RegisterArrayAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "push", &Push);
-  RegisterTableFunction(ctx, table, "pop", &Pop);
-  RegisterTableFunction(ctx, table, "shift", &Shift);
-  RegisterTableFunction(ctx, table, "map", &Map);
-  RegisterTableFunction(ctx, table, "filter", &Filter);
-  RegisterTableFunction(ctx, table, "concat", &Concat);
-  RegisterTableFunction(ctx, table, "join", &Join);
-  RegisterTableFunction(ctx, table, "findIndex", &FindIndex);
-  RegisterTableFunction(ctx, table, "find", &Find);
-  RegisterTableFunction(ctx, table, "includes", &Includes);
-  RegisterTableFunction(ctx, table, "slice", &ArraySlice);
-  RegisterTableFunction(ctx, table, "forEach", &ForEach);
-  reinterpret_cast<VMContext*>(ctx)->SetArrayPrototype(Value(std::move(table)));
+const Value& GetArrayPrototypeAPI(const base::String& key) {
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::ArrayPrototype,
+                                   {
+                                       {"push", &Push},
+                                       {"pop", &Pop},
+                                       {"shift", &Shift},
+                                       {"map", &Map},
+                                       {"filter", &Filter},
+                                       {"concat", &Concat},
+                                       {"join", &Join},
+                                       {"findIndex", &FindIndex},
+                                       {"find", &Find},
+                                       {"includes", &Includes},
+                                       {"slice", &ArraySlice},
+                                       {"forEach", &ForEach},
+                                   });
+
+  return apis.GetFunction(key);
 }
+
 }  // namespace lepus
 }  // namespace lynx

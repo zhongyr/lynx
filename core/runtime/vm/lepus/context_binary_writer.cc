@@ -75,8 +75,9 @@ void ContextBinaryWriter::SerializeGlobal() {
   std::vector<base::String> names(global->global_content_.size());
   for (; iter != global->global_.end(); ++iter) {
     names[iter->second] = iter->first;
-    // TODO: now don't serialize cfuntion!
-    if (global->Get(iter->second)->IsCFunction()) {
+    // now don't serialize cfuntion and runtime builtin function table!
+    if (global->Get(iter->second)->IsCFunction() ||
+        global->Get(iter->second)->IsBuiltinFunctionTable()) {
       continue;
     }
     size++;
@@ -86,8 +87,8 @@ void ContextBinaryWriter::SerializeGlobal() {
 
   for (size_t i = 0; i < global->global_content_.size(); ++i) {
     const Value& value = global->global_content_[i];
-    // TODO: now don't serialize cfuntion!
-    if (value.IsCFunction()) {
+    // now don't serialize cfuntion and runtime builtin function table!
+    if (value.IsCFunction() || value.IsBuiltinFunctionTable()) {
       continue;
     }
     EncodeUtf8Str(names[i].c_str(), names[i].length());
@@ -321,6 +322,9 @@ void ContextBinaryWriter::EncodeValue(const Value* value, bool is_header) {
     case ValueType::Value_CFunction:
       // TODO...
       // DCHECK(0);
+      break;
+    case ValueType::Value_FunctionTable:
+      // Nothing to do, actually unreachable
       break;
     case ValueType::Value_Nil:
     case ValueType::Value_Undefined:

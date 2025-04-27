@@ -191,30 +191,38 @@ static Value GetTimeZoneOffset(VMContext* ctx) {
 }
 
 void RegisterLepusDateAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "now", &LepusNow);
-  RegisterTableFunction(ctx, table, "parse", &ParseStringToDate);
-  RegisterTableFunction(ctx, table, "locale", &LepusLocal);
-  RegisterTableFunction(ctx, table, "format", &Format);
-  RegisterTableFunction(ctx, table, "getTimezoneOffset", &GetTimeZoneOffset);
-  RegisterBuiltinFunctionTable(ctx, "LepusDate", std::move(table));
+  static BuiltinFunctionTable apis(
+      BuiltinFunctionTable::LepusDate,
+      {
+          {"now", &LepusNow},
+          {"parse", &ParseStringToDate},
+          {"locale", &LepusLocal},
+          {"format", &Format},
+          {"getTimezoneOffset", &GetTimeZoneOffset},
+      });
+  RegisterBuiltinFunctionTable(ctx, "LepusDate", &apis);
 }
 
-void RegisterLepusDatePrototypeAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "format", &Format);
-  RegisterTableFunction(ctx, table, "unix", &Unix);
-  RegisterTableFunction(ctx, table, "year", &Year);
-  RegisterTableFunction(ctx, table, "month", &Month);
-  RegisterTableFunction(ctx, table, "date", &Date);
-  RegisterTableFunction(ctx, table, "day", &Day);
-  RegisterTableFunction(ctx, table, "hour", &Hour);
-  RegisterTableFunction(ctx, table, "minute", &Minute);
-  RegisterTableFunction(ctx, table, "second", &Sec);
-  RegisterTableFunction(ctx, table, "locale", &Locale);
-  RegisterTableFunction(ctx, table, "format", &Format);
-  RegisterTableFunction(ctx, table, "getTimezoneOffset", &GetTimeZoneOffset);
-  reinterpret_cast<VMContext*>(ctx)->SetDatePrototype(Value(std::move(table)));
+const Value& GetDatePrototypeAPI(const base::String& key) {
+  static BuiltinFunctionTable apis(
+      BuiltinFunctionTable::DatePrototype,
+      {
+          {"format", &Format},
+          {"unix", &Unix},
+          {"year", &Year},
+          {"month", &Month},
+          {"date", &Date},
+          {"day", &Day},
+          {"hour", &Hour},
+          {"minute", &Minute},
+          {"second", &Sec},
+          {"locale", &Locale},
+          {"format", &Format},
+          {"getTimezoneOffset", &GetTimeZoneOffset},
+      });
+
+  return apis.GetFunction(key);
 }
+
 }  // namespace lepus
 }  // namespace lynx

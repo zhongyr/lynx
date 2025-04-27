@@ -140,6 +140,7 @@ std::optional<Value> valueFromLepus(
     case lepus::ValueType::Value_CDate:
     case lepus::ValueType::Value_RegExp:
     case lepus::ValueType::Value_PrimJsValue:
+    case lepus::ValueType::Value_FunctionTable:
     case lepus::ValueType::Value_TypeCount:
       break;
   }

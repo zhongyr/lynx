@@ -64,11 +64,14 @@ static Value Test(VMContext* context) {
   return result;
 }
 
-void RegisterREGEXPPrototypeAPI(Context* ctx) {
-  fml::RefPtr<Dictionary> table = Dictionary::Create();
-  RegisterTableFunction(ctx, table, "test", &Test);
-  reinterpret_cast<VMContext*>(ctx)->SetRegexpPrototype(
-      Value(std::move(table)));
+const Value& GetRegexPrototypeAPI(const base::String& key) {
+  static BuiltinFunctionTable apis(BuiltinFunctionTable::RegexPrototype,
+                                   {
+                                       {"test", &Test},
+                                   });
+
+  return apis.GetFunction(key);
 }
+
 }  // namespace lepus
 }  // namespace lynx
