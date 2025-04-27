@@ -42,6 +42,7 @@
   LynxTextOverflowLayer *_overflow_layer;
   LynxCALayerDelegate *_delegate;
   BOOL _isHasSubSpan;
+  BOOL _isDirty;
 }
 
 #if LYNX_LAZY_LOAD
@@ -104,15 +105,8 @@ LYNX_PROPS_GROUP_DECLARE(
 - (void)frameDidChange {
   [super frameDidChange];
   self.view.contentLayer.frame = CGRectMake(0, 0, self.frameSize.width, self.frameSize.height);
-  [self updateAttachmentsFrame];
-  if ([self enableLayerRender]) {
-    self.view.border = self.border;
-    self.view.padding = self.padding;
-    [self adjustContentLayerPosition];
-    [self.view.contentLayer setNeedsDisplay];
-  } else {
-    [self _lynxUIRequestDisplay];
-  }
+
+  _isDirty = true;
 }
 
 - (void)updateAttachmentsFrame {
@@ -152,20 +146,13 @@ LYNX_PROPS_GROUP_DECLARE(
 - (void)onReceiveUIOperation:(id)value {
   if (value && [value isKindOfClass:LynxTextRenderer.class]) {
     _isHasSubSpan = false;
+    _isDirty = true;
     _renderer = value;
-
-    [self updateAttachmentsFrame];
 
     if (self.useDefaultAccessibilityLabel) {
       self.view.accessibilityLabel = _renderer.attrStr.string;
     }
     self.view.textRenderer = _renderer;
-    if ([self enableLayerRender]) {
-      [self adjustContentLayerPosition];
-      [self.view.contentLayer setNeedsDisplay];
-    } else {
-      [self _lynxUIRequestDisplay];
-    }
     if (!self.view.selectionChangeEventCallback &&
         [self.eventSet objectForKey:@"selectionchange"]) {
       __weak typeof(self) weakSelf = self;
@@ -319,7 +306,24 @@ LYNX_PROPS_GROUP_DECLARE(
 }
 
 - (void)onNodeReady {
+  [super onNodeReady];
+  if (_isDirty) {
+    [self requestDisplay];
+    _isDirty = false;
+  }
   [self.view initSelectionGesture];
+}
+
+- (void)requestDisplay {
+  [self updateAttachmentsFrame];
+  if ([self enableLayerRender]) {
+    self.view.border = self.border;
+    self.view.padding = self.padding;
+    [self adjustContentLayerPosition];
+    [self.view.contentLayer setNeedsDisplay];
+  } else {
+    [self _lynxUIRequestDisplay];
+  }
 }
 
 #pragma mark prop setter
