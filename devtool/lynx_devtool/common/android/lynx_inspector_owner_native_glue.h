@@ -13,7 +13,6 @@ namespace lynx {
 namespace devtool {
 class LynxInspectorOwnerNativeGlue {
  public:
-  static bool RegisterJNIUtils(JNIEnv* env);
   static void Reload(JNIEnv* env, jobject obj, bool ignore_cache);
   static void Navigate(JNIEnv* env, jobject obj, jstring url);
   static lynx::base::android::ScopedLocalJavaRef<jstring> GetTemplateUrl(

@@ -91,7 +91,6 @@ if (is_android) {
     "//lynx/devtool/lynx_devtool/android/invoke_cdp_from_sdk_sender_android.cc",
     "//lynx/devtool/lynx_devtool/android/invoke_cdp_from_sdk_sender_android.h",
     "//lynx/devtool/lynx_devtool/android/lynx_devtool_ng_android.cc",
-    "//lynx/devtool/lynx_devtool/android/lynx_devtool_ng_android.h",
     "android/devtool_platform_android.cc",
     "android/devtool_platform_android.h",
     "android/global_devtool_platform_android.cc",

@@ -5,7 +5,18 @@
 
 #include "base/include/platform/android/jni_convert_helper.h"
 #include "base/include/platform/android/jni_utils.h"
-#include "devtool/lynx_devtool/build/gen/CDPResultCallbackWrapper_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/CDPResultCallbackWrapper_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/CDPResultCallbackWrapper_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForCDPResultCallbackWrapper(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 namespace lynx {
 namespace devtool {
@@ -30,10 +41,6 @@ void InvokeCDPFromSDKSenderAndroid::SendMessage(const std::string& type,
   lynx::base::android::ScopedLocalJavaRef<jstring> msgJStr =
       lynx::base::android::JNIConvertHelper::ConvertToJNIStringUTF(env, msg);
   Java_CDPResultCallbackWrapper_onResult(env, jobj_ptr_->Get(), msgJStr.Get());
-}
-
-bool InvokeCDPFromSDKSenderAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
 }
 
 }  // namespace devtool

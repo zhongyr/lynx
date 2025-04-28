@@ -51,6 +51,7 @@ cmake_target("lynxdevtool") {
 
 group("lynxdevtool_lib") {
   public_deps = [
+    ":devtool_jni_files",
     ":devtool_third_party",
     ":lynx_base_for_devtool",
     ":lynx_tasm_recorder_for_devtool",
@@ -59,13 +60,23 @@ group("lynxdevtool_lib") {
     "//lynx/devtool/lynx_devtool/build:android_devtool_build",
     "//lynx/devtool/lynx_devtool/js_debug:v8_profile_devtool",
     "//lynx/devtool/lynx_devtool/tracing",
-    "//lynx/platform/android/lynx_devtool/src:lynx_devtool_jni_on_load",
   ]
 
   # jsbridge source file
   if (enable_napi_binding) {
     public_deps += [ "//lynx/core/runtime/bindings/napi:napi_binding_v8" ]
   }
+}
+
+group("devtool_jni_files") {
+  exec_script("//lynx/tools/build_jni/generate_and_register_jni_files.py",
+              [
+                "-root",
+                rebase_path("//"),
+                "-path",
+                rebase_path("./src/main/jni/jni_configs.yml"),
+              ])
+  public_deps = [ "src/main/jni:build" ]
 }
 
 group("devtool_third_party") {

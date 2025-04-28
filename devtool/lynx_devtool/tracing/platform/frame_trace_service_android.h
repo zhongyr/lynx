@@ -14,8 +14,6 @@ namespace trace {
 
 class FrameTraceServiceAndroid {
  public:
-  static bool RegisterJNIUtils(JNIEnv *env);
-
   FrameTraceServiceAndroid(JNIEnv *env, jobject owner);
   ~FrameTraceServiceAndroid() = default;
   void Initialize();

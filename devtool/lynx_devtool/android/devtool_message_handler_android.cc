@@ -5,7 +5,18 @@
 
 #include "base/include/platform/android/jni_convert_helper.h"
 #include "base/include/platform/android/jni_utils.h"
-#include "devtool/lynx_devtool/build/gen/DevToolMessageHandlerDelegate_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/DevToolMessageHandlerDelegate_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/DevToolMessageHandlerDelegate_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForDevToolMessageHandlerDelegate(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 namespace lynx {
 namespace devtool {
@@ -24,9 +35,6 @@ void DevToolMessageHandlerAndroid::handle(
           env, message.toStyledString());
   return Java_DevToolMessageHandlerDelegate_onMessage(env, jobj_ptr_->Get(),
                                                       msgJStr.Get());
-}
-bool DevToolMessageHandlerAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
 }
 }  // namespace devtool
 }  // namespace lynx

@@ -14,7 +14,6 @@ namespace lynx {
 namespace devtool {
 class DevToolGlobalSlotDelegate : public DevToolGlobalSlot {
  public:
-  static bool RegisterJNIUtils(JNIEnv* env);
   explicit DevToolGlobalSlotDelegate(
       const std::shared_ptr<DebugRouterMessageSubscriber>& delegate);
   void SendMessage(const std::string& type, const std::string& msg) override;

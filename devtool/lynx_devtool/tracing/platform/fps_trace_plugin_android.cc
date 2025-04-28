@@ -6,7 +6,16 @@
 #include "devtool/lynx_devtool/tracing/platform/fps_trace_plugin_android.h"
 
 #include "core/base/android/jni_helper.h"
-#include "devtool/lynx_devtool/build/gen/FPSTrace_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/FPSTrace_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/FPSTrace_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForFPSTrace(JNIEnv* env) { return RegisterNativesImpl(env); }
+
+}  // namespace jni
+}  // namespace lynx
 
 static jlong CreateFPSTrace(JNIEnv* env, jobject jcaller) {
   auto* trace_plugin = new lynx::trace::FPSTracePluginAndroid(env, jcaller);
@@ -15,10 +24,6 @@ static jlong CreateFPSTrace(JNIEnv* env, jobject jcaller) {
 
 namespace lynx {
 namespace trace {
-
-bool FPSTracePluginAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
-}
 
 void FPSTracePluginAndroid::DispatchBegin() {
   JNIEnv* env = lynx::base::android::AttachCurrentThread();

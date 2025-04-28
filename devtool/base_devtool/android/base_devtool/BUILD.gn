@@ -9,7 +9,10 @@ cmake_target("base_devtool") {
   cmake_version = "3.4.1"
   target_type = "shared_library"
   output_name = "basedevtool"
-  deps = [ "//lynx/devtool/base_devtool/native:base_devtool_lib" ]
+  deps = [
+    ":base_devtool_jni_files",
+    "//lynx/devtool/base_devtool/native:base_devtool_lib",
+  ]
   libs = [
     "android",
     "dl",
@@ -22,6 +25,18 @@ cmake_target("base_devtool") {
     ":devtool_ldflag_config",
     "//lynx/platform/android:16kb_page",
   ]
+}
+
+group("base_devtool_jni_files") {
+  exec_script("//lynx/tools/build_jni/generate_and_register_jni_files.py",
+              [
+                "-root",
+                rebase_path("//"),
+                "-path",
+                rebase_path("./src/main/jni/jni_configs.yml"),
+                "--use-base-jni-header",
+              ])
+  public_deps = [ "src/main/jni:build" ]
 }
 
 config("devtool_common_defines") {

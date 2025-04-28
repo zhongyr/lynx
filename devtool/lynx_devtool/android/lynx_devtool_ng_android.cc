@@ -1,8 +1,6 @@
 // Copyright 2024 The Lynx Authors. All rights reserved.
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
-#include "devtool/lynx_devtool/android/lynx_devtool_ng_android.h"
-
 #include <jni.h>
 
 #include <memory>
@@ -11,10 +9,12 @@
 #include "core/renderer/tasm/config.h"
 #include "devtool/lynx_devtool/android/devtool_message_handler_android.h"
 #include "devtool/lynx_devtool/android/invoke_cdp_from_sdk_sender_android.h"
-#include "devtool/lynx_devtool/build/gen/LynxDevToolNGDelegate_jni.h"
+#include "devtool/lynx_devtool/lynx_devtool_ng.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/LynxDevToolNGDelegate_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/LynxDevToolNGDelegate_register_jni.h"
 
 jlong CreateLynxDevToolNG(JNIEnv* env, jobject jcaller) {
-  auto* ptr = new lynx::devtool::LynxDevToolNGAndroid();
+  auto* ptr = new lynx::devtool::LynxDevToolNG();
   auto sp_ptr = new std::shared_ptr<lynx::devtool::LynxDevToolNG>(ptr);
   return reinterpret_cast<jlong>(sp_ptr);
 }
@@ -122,11 +122,11 @@ void UpdateDevice(JNIEnv* env, jobject jcaller, jint width, jint height,
 }
 
 namespace lynx {
-namespace devtool {
+namespace jni {
 
-bool LynxDevToolNGAndroid ::RegisterJNIUtils(JNIEnv* env) {
+bool RegisterJNIForLynxDevToolNGDelegate(JNIEnv* env) {
   return RegisterNativesImpl(env);
 }
-}  // namespace devtool
 
+}  // namespace jni
 }  // namespace lynx

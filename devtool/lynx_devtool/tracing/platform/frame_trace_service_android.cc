@@ -7,7 +7,18 @@
 
 #include "base/include/log/logging.h"
 #include "core/base/android/jni_helper.h"
-#include "devtool/lynx_devtool/build/gen/FrameTraceService_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/FrameTraceService_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/FrameTraceService_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForFrameTraceService(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 static void Initialize(JNIEnv* env, jobject jcaller, jlong nativePtr) {
   auto* trace_service =
@@ -45,10 +56,6 @@ static void Screenshot(JNIEnv* env, jobject jcaller, jlong nativePtr,
 
 namespace lynx {
 namespace trace {
-
-bool FrameTraceServiceAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
-}
 
 FrameTraceServiceAndroid::FrameTraceServiceAndroid(JNIEnv* env, jobject owner)
     : weak_owner_(env, owner),

@@ -6,7 +6,18 @@
 #include "devtool/lynx_devtool/tracing/platform/frameview_trace_plugin_android.h"
 
 #include "core/base/android/jni_helper.h"
-#include "devtool/lynx_devtool/build/gen/FrameViewTrace_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/FrameViewTrace_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/FrameViewTrace_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForFrameViewTrace(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 static jlong CreateFrameViewTrace(JNIEnv* env, jobject jcaller) {
   auto* trace_plugin =
@@ -16,10 +27,6 @@ static jlong CreateFrameViewTrace(JNIEnv* env, jobject jcaller) {
 
 namespace lynx {
 namespace trace {
-
-bool FrameViewTracePluginAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
-}
 
 void FrameViewTracePluginAndroid::DispatchBegin() {
   JNIEnv* env = lynx::base::android::AttachCurrentThread();

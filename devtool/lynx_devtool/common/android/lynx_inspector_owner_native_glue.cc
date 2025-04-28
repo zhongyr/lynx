@@ -9,8 +9,19 @@
 #include "core/services/recorder/recorder_controller.h"
 #include "core/services/replay/replay_controller.h"
 #include "devtool/lynx_devtool/agent/inspector_util.h"
-#include "devtool/lynx_devtool/build/gen/LynxInspectorOwner_jni.h"
 #include "devtool/lynx_devtool/config/devtool_config.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/LynxInspectorOwner_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/LynxInspectorOwner_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForLynxInspectorOwner(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 void SetStopAtEntry(JNIEnv* env, jobject jcaller, jboolean stop,
                     jboolean isLepus) {
@@ -58,10 +69,6 @@ void SendFileByAgent(JNIEnv* env, jobject jcaller, jstring jni_type,
 
 namespace lynx {
 namespace devtool {
-
-bool LynxInspectorOwnerNativeGlue::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
-}
 
 void LynxInspectorOwnerNativeGlue::Reload(JNIEnv* env, jobject obj,
                                           bool ignore_cache) {

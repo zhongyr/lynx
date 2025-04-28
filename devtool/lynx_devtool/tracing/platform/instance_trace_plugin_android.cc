@@ -6,7 +6,18 @@
 #include "devtool/lynx_devtool/tracing/platform/instance_trace_plugin_android.h"
 
 #include "core/base/android/jni_helper.h"
-#include "devtool/lynx_devtool/build/gen/InstanceTrace_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/InstanceTrace_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/InstanceTrace_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForInstanceTrace(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 static jlong CreateInstanceTrace(JNIEnv* env, jobject jcaller) {
   auto* trace_plugin =
@@ -20,10 +31,6 @@ namespace trace {
 std::unique_ptr<InstanceCounterTrace::Impl>
     InstanceTracePluginAndroid::empty_counter_trace_ =
         std::make_unique<InstanceCounterTrace::Impl>();
-
-bool InstanceTracePluginAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
-}
 
 InstanceTracePluginAndroid::InstanceTracePluginAndroid(JNIEnv* env,
                                                        jobject owner)

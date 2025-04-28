@@ -14,8 +14,6 @@ namespace trace {
 
 class FPSTracePluginAndroid : public TracePlugin {
  public:
-  static bool RegisterJNIUtils(JNIEnv *env);
-
   FPSTracePluginAndroid(JNIEnv *env, jobject owner) : weak_owner_(env, owner){};
   virtual ~FPSTracePluginAndroid() = default;
   virtual void DispatchBegin() override;

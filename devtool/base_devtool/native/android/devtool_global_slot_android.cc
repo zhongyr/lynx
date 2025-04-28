@@ -5,7 +5,16 @@
 #include "devtool/base_devtool/native/android/devtool_global_slot_android.h"
 
 #include "base/include/platform/android/jni_convert_helper.h"
-#include "devtool/base_devtool/build/gen/DevToolGlobalSlot_jni.h"
+#include "devtool/base_devtool/android/base_devtool/src/main/jni/gen/DevToolGlobalSlot_jni.h"
+#include "devtool/base_devtool/android/base_devtool/src/main/jni/gen/DevToolGlobalSlot_register_jni.h"
+
+namespace lynx {
+namespace jni {
+bool RegisterJNIForDevToolGlobalSlot(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+}  // namespace jni
+}  // namespace lynx
 
 static void OnGlobalSlotMessage(JNIEnv* env, jobject jcaller,
                                 jlong nativeHandler, jstring type,
@@ -48,10 +57,6 @@ void DevToolGlobalSlotDelegate::SendMessage(const std::string& type,
       lynx::base::android::JNIConvertHelper::ConvertToJNIStringUTF(env, msg);
   Java_DevToolGlobalSlot_sendMessage(env, jobj_ptr_->Get(), typeJStr.Get(),
                                      msgJStr.Get());
-}
-
-bool DevToolGlobalSlotDelegate::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
 }
 }  // namespace devtool
 }  // namespace lynx

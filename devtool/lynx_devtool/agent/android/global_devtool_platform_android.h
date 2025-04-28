@@ -15,8 +15,6 @@ namespace lynx {
 namespace devtool {
 class GlobalDevToolPlatformAndroid : public GlobalDevToolPlatformFacade {
  public:
-  static bool RegisterJNIUtils(JNIEnv* env);
-
   void StartMemoryTracing() override;
   void StopMemoryTracing() override;
 

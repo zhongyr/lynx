@@ -15,8 +15,6 @@ namespace trace {
 
 class InstanceTracePluginAndroid : public TracePlugin {
  public:
-  static bool RegisterJNIUtils(JNIEnv *env);
-
   InstanceTracePluginAndroid(JNIEnv *env, jobject owner);
   virtual ~InstanceTracePluginAndroid();
   virtual void DispatchBegin() override;

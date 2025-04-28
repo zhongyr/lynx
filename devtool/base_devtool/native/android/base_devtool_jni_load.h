@@ -6,15 +6,15 @@
 
 #include <jni.h>
 
-#include "devtool/base_devtool/native/android/devtool_global_slot_android.h"
-#include "devtool/base_devtool/native/android/devtool_slot_android.h"
+#include "devtool/base_devtool/android/base_devtool/src/main/jni/gen/DevToolGlobalSlot_register_jni.h"
+#include "devtool/base_devtool/android/base_devtool/src/main/jni/gen/DevToolSlot_register_jni.h"
 
 namespace basedevtool {
 bool RegisterBaseDevToolSoFunctions(JNIEnv* env) {
-  bool resultDevToolSlotDelegate =
-      lynx::devtool::DevToolSlotDelegate::RegisterJNIUtils(env);
+  bool resultDevToolSlotDelegate = lynx::jni::RegisterJNIForDevToolSlot(env);
   bool resultDevToolGlobalSlotDelegate =
-      lynx::devtool::DevToolGlobalSlotDelegate::RegisterJNIUtils(env);
+      lynx::jni::RegisterJNIForDevToolGlobalSlot(env);
+  ;
   return resultDevToolSlotDelegate && resultDevToolGlobalSlotDelegate;
 }
 }  // namespace basedevtool

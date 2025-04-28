@@ -13,7 +13,6 @@ namespace devtool {
 
 class InvokeCDPFromSDKSenderAndroid : public lynx::devtool::MessageSender {
  public:
-  static bool RegisterJNIUtils(JNIEnv* env);
   InvokeCDPFromSDKSenderAndroid(JNIEnv* env, jobject callback);
   void SendMessage(const std::string& type, const Json::Value& msg) override;
   void SendMessage(const std::string& type, const std::string& msg) override;

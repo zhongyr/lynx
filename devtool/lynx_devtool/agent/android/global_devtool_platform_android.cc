@@ -8,7 +8,18 @@
 
 #include "core/base/android/jni_helper.h"
 #include "devtool/lynx_devtool/agent/lynx_global_devtool_mediator.h"
-#include "devtool/lynx_devtool/build/gen/GlobalDevToolPlatformAndroidDelegate_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/GlobalDevToolPlatformAndroidDelegate_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/GlobalDevToolPlatformAndroidDelegate_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForGlobalDevToolPlatformAndroidDelegate(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 namespace lynx {
 namespace devtool {
@@ -16,10 +27,6 @@ namespace devtool {
 GlobalDevToolPlatformFacade& GlobalDevToolPlatformFacade::GetInstance() {
   static base::NoDestructor<GlobalDevToolPlatformAndroid> instance;
   return *(instance.get());
-}
-
-bool GlobalDevToolPlatformAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
 }
 
 void GlobalDevToolPlatformAndroid::StartMemoryTracing() {

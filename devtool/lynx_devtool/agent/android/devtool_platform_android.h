@@ -17,7 +17,6 @@ namespace lynx {
 namespace devtool {
 class DevToolPlatformAndroid : public DevToolPlatformFacade {
  public:
-  static bool RegisterJNIUtils(JNIEnv* env);
   DevToolPlatformAndroid(JNIEnv* env, jobject owner);
 
   void ScrollIntoView(int node_id) override;

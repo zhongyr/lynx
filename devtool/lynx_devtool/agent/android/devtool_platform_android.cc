@@ -11,9 +11,20 @@
 #include "devtool/lynx_devtool/agent/inspector_util.h"
 #include "devtool/lynx_devtool/agent/lynx_devtool_mediator.h"
 #include "devtool/lynx_devtool/base/screen_metadata.h"
-#include "devtool/lynx_devtool/build/gen/DevToolPlatformAndroidDelegate_jni.h"
 #include "devtool/lynx_devtool/element/element_inspector.h"
 #include "devtool/lynx_devtool/js_debug/js/inspector_java_script_debugger_impl.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/DevToolPlatformAndroidDelegate_jni.h"
+#include "platform/android/lynx_devtool/src/main/jni/gen/DevToolPlatformAndroidDelegate_register_jni.h"
+
+namespace lynx {
+namespace jni {
+
+bool RegisterJNIForDevToolPlatformAndroidDelegate(JNIEnv* env) {
+  return RegisterNativesImpl(env);
+}
+
+}  // namespace jni
+}  // namespace lynx
 
 jlong CreateDevToolPlatformFacade(JNIEnv* env, jobject jcaller) {
   auto* ptr = new lynx::devtool::DevToolPlatformAndroid(env, jcaller);
@@ -113,10 +124,6 @@ void SendLayerTreeDidChangeEvent(JNIEnv* env, jobject jcaller,
 
 namespace lynx {
 namespace devtool {
-
-bool DevToolPlatformAndroid::RegisterJNIUtils(JNIEnv* env) {
-  return RegisterNativesImpl(env);
-}
 DevToolPlatformAndroid::DevToolPlatformAndroid(JNIEnv* env, jobject owner)
     : weak_android_delegate_(env, owner) {}
 

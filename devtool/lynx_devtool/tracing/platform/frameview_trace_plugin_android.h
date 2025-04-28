@@ -13,8 +13,6 @@ namespace lynx {
 namespace trace {
 class FrameViewTracePluginAndroid : public TracePlugin {
  public:
-  static bool RegisterJNIUtils(JNIEnv *env);
-
   FrameViewTracePluginAndroid(JNIEnv *env, jobject owner)
       : weak_owner_(env, owner){};
   virtual ~FrameViewTracePluginAndroid() = default;

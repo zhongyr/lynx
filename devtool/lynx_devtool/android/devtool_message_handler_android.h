@@ -13,7 +13,6 @@ namespace devtool {
 
 class DevToolMessageHandlerAndroid : public DevToolMessageHandler {
  public:
-  static bool RegisterJNIUtils(JNIEnv* env);
   DevToolMessageHandlerAndroid(JNIEnv* env, jobject handler);
   void handle(const std::shared_ptr<MessageSender>& sender,
               const std::string& type, const Json::Value& message) override;
