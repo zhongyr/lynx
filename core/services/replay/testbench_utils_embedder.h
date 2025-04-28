@@ -2,14 +2,14 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
-#ifndef CORE_SERVICES_RECORDER_TESTBENCH_UTILS_EMBEDDER_H_
-#define CORE_SERVICES_RECORDER_TESTBENCH_UTILS_EMBEDDER_H_
+#ifndef CORE_SERVICES_REPLAY_TESTBENCH_UTILS_EMBEDDER_H_
+#define CORE_SERVICES_REPLAY_TESTBENCH_UTILS_EMBEDDER_H_
 
 #include <string>
 
 namespace lynx {
 namespace tasm {
-namespace recorder {
+namespace replay {
 
 class TestBenchUtilsEmbedder {
  public:
@@ -17,8 +17,8 @@ class TestBenchUtilsEmbedder {
   ~TestBenchUtilsEmbedder() = default;
   static std::string ParserTestBenchRecordData(const std::string& source);
 };
-}  // namespace recorder
+}  // namespace replay
 }  // namespace tasm
 }  // namespace lynx
 
-#endif  // CORE_SERVICES_RECORDER_TESTBENCH_UTILS_EMBEDDER_H_
+#endif  // CORE_SERVICES_REPLAY_TESTBENCH_UTILS_EMBEDDER_H_

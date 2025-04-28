@@ -16,8 +16,6 @@ recorder_shared_sources = [
   "template_assembler_recorder.h",
   "testbench_base_recorder.cc",
   "testbench_base_recorder.h",
-  "testbench_utils_embedder.cc",
-  "testbench_utils_embedder.h",
 ]
 
 if (is_ios) {

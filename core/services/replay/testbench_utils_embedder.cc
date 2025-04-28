@@ -2,7 +2,7 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
-#include "core/services/recorder/testbench_utils_embedder.h"
+#include "core/services/replay/testbench_utils_embedder.h"
 
 #include <cstddef>
 #include <cstring>
@@ -15,7 +15,7 @@
 
 namespace lynx {
 namespace tasm {
-namespace recorder {
+namespace replay {
 
 #define CHUNK 1024 * 10
 
@@ -82,6 +82,6 @@ std::string TestBenchUtilsEmbedder::ParserTestBenchRecordData(
   }
   return "parse error!";
 }
-}  // namespace recorder
+}  // namespace replay
 }  // namespace tasm
 }  // namespace lynx

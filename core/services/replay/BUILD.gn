@@ -21,6 +21,8 @@ replay_shared_sources = [
   "lynx_replay_helper.h",
   "testbench_test_replay.cc",
   "testbench_test_replay.h",
+  "testbench_utils_embedder.cc",
+  "testbench_utils_embedder.h",
 ]
 
 lynx_core_source_set("replay") {
@@ -41,7 +43,9 @@ lynx_core_source_set("replay") {
     "//lynx/core/renderer/dom:dom",
     "//lynx/core/runtime",
     "//lynx/core/runtime/vm/lepus:lepus",
+    "//lynx/third_party/modp_b64:modp_b64",
     "//lynx/third_party/rapidjson:rapidjson",
+    "//third_party/zlib",
   ]
 }
 
