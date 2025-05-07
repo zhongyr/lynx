@@ -38,6 +38,9 @@ podspec_target("BaseDevtool_podspec") {
       OTHER_CPLUSPLUSFLAGS =
           "-fno-aligned-allocation -fno-c++-static-destructors"
     }
+    if (!is_debug) {
+      pod_target_xcconfig.GCC_PREPROCESSOR_DEFINITIONS += [ "NDEBUG=1" ]
+    }
     ios = {
       deployment_target = "10.0"
     }
