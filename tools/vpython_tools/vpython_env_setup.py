@@ -59,9 +59,9 @@ def install_requirements(python_bin_path, python_package_index):
     index_url = f'-i {python_package_index}'
   cmd = f'{python_path} -m pip install -r {requirements_path} {index_url}'
   try:
-    subprocess.run(cmd, check=True, shell=True, stderr=subprocess.PIPE)
     if system == "Windows":
       copy_python3_exe()
+    subprocess.run(cmd, check=True, shell=True, stderr=subprocess.PIPE)
   except subprocess.CalledProcessError as e:
     print(f"Failed to install requirements for python venv({VENV_PATH}). Error: {e.stderr.decode('utf-8')}")
     return -1
