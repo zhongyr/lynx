@@ -95,7 +95,9 @@ dependencies {
     implementation project(':lynx_service_devtool')
     implementation project(':lynx_service_http')
     implementation project(':LynxDevtool')
-
+    implementation project(':LynxXElement')
+    implementation project(':LynxXElement:Input')
+    
     kapt project(':LynxProcessor')
     compileOnly project(':LynxProcessor')
 }

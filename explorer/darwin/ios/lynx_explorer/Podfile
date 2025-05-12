@@ -37,6 +37,10 @@ target 'LynxExplorer' do
     'Http',
   ]
 
+  pod 'XElement', :path => '../../../../..', :subspecs => [
+    'Behavior',
+  ]
+  
   pod 'TestBenchReplay', :path => '../lynx_test_bench'
 
   pod 'PrimJS', '2.12.1-alpha.1', :subspecs => ['quickjs', 'napi']

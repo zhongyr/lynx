@@ -22,6 +22,7 @@ group("default") {
   if (is_ios) {
     deps += [ "//lynx/platform/darwin/ios/lynx_service:LynxService" ]
     deps += [ "//lynx/platform/darwin/ios/lynx_devtool:devtool_podspec" ]
+    deps += [ "//lynx/platform/darwin/ios/lynx_xelement:XElement" ]
     deps += [ "//lynx/platform/darwin/ios:iOS" ]
     deps += [ "//lynx/devtool/base_devtool/darwin/ios:BaseDevtool_podspec" ]
   }
