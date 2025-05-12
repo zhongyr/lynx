@@ -15,10 +15,15 @@
 namespace lynx {
 namespace lepus {
 
+std::shared_ptr<QuickContextPool> QuickContextPool::Create() {
+  return std::shared_ptr<QuickContextPool>(new QuickContextPool());
+}
+
 std::shared_ptr<QuickContextPool> QuickContextPool::Create(
-    const std::shared_ptr<ContextBundle>& context_bundle) {
+    const std::shared_ptr<ContextBundle>& context_bundle,
+    const tasm::CompileOptions& compile_options) {
   return std::shared_ptr<QuickContextPool>(
-      new QuickContextPool(context_bundle));
+      new QuickContextPool(context_bundle, compile_options));
 }
 
 void QuickContextPool::FillPool(int32_t count) {
@@ -55,11 +60,13 @@ void QuickContextPool::AddContextSafely(int32_t count) {
   decltype(contexts_) temp_contexts;
   for (; count > 0; --count) {
     auto context = std::make_shared<QuickContext>();
-    // if context_bundle_ exists, should call DeSerialize. And if DeSerialize
-    // fails, just return.
-    if (context_bundle_ &&
-        !context->DeSerialize(*context_bundle_, false, nullptr)) {
-      return;
+    if (context_bundle_) {
+      context->RegisterCtxBuiltin(arch_option_);
+      // if context_bundle_ exists, should call DeSerialize. And if DeSerialize
+      // fails, just return.
+      if (!context->DeSerialize(*context_bundle_, false, nullptr)) {
+        return;
+      }
     }
     temp_contexts.emplace_back(std::move(context));
   }

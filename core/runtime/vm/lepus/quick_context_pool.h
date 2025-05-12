@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "base/include/vector.h"
+#include "core/template_bundle/template_codec/compile_options.h"
 
 namespace lynx {
 namespace lepus {
@@ -19,10 +20,12 @@ class QuickContext;
 
 class QuickContextPool : public std::enable_shared_from_this<QuickContextPool> {
  public:
+  static std::shared_ptr<QuickContextPool> Create();
   // QuickContextPool must check its own life cycle asynchronously when
   // replenishing the cache, so it can only exist in the form of shared_ptr
   static std::shared_ptr<QuickContextPool> Create(
-      const std::shared_ptr<ContextBundle>& context_bundle = nullptr);
+      const std::shared_ptr<ContextBundle>& context_bundle,
+      const tasm::CompileOptions& compile_options);
 
   ~QuickContextPool() = default;
 
@@ -43,10 +46,13 @@ class QuickContextPool : public std::enable_shared_from_this<QuickContextPool> {
   // determine its size.
   // The local pool in TemplateBundle hold context_bundle_ and have no need to
   // check settings.
+  explicit QuickContextPool() : need_check_settings_(true) {}
   explicit QuickContextPool(
-      const std::shared_ptr<ContextBundle>& context_bundle)
+      const std::shared_ptr<ContextBundle>& context_bundle,
+      const tasm::CompileOptions& compile_options)
       : need_check_settings_(context_bundle == nullptr),
-        context_bundle_(context_bundle) {}
+        context_bundle_(context_bundle),
+        arch_option_(compile_options.arch_option_) {}
 
   int32_t TryCheckSettings(int32_t default_value);
 
@@ -57,6 +63,7 @@ class QuickContextPool : public std::enable_shared_from_this<QuickContextPool> {
   bool need_check_settings_{true};
   std::shared_ptr<ContextBundle> context_bundle_{nullptr};
   bool enable_auto_generate_{true};
+  tasm::ArchOption arch_option_;
 };
 
 }  // namespace lepus
