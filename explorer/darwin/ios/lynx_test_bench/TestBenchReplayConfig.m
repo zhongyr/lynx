@@ -64,9 +64,9 @@
       }
     }
 
-    _backgroundColor = [UIColor colorWithRed:colorValues[0]
-                                       green:colorValues[1]
-                                        blue:colorValues[2]
+    _backgroundColor = [UIColor colorWithRed:colorValues[0] / 255
+                                       green:colorValues[1] / 255
+                                        blue:colorValues[2] / 255
                                        alpha:colorValues[3] / 255];
 
     _canMockFuncName = [[NSSet alloc]
