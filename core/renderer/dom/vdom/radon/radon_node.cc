@@ -206,6 +206,13 @@ void RadonNode::DispatchFirstTime() {
   }
   if (page_proxy_->element_manager()->GetEnableFiberElementForRadonDiff()) {
     auto* fiber_element = static_cast<FiberElement*>(element_.get());
+    // Using JSValue across multiple threads
+    // is not allowed. Therefore, JSValue needs to be converted to LepusValue
+    // before the parallel flush to prevent conversion through LepusContext
+    // during the parallel flush phase.
+    const auto should_convert_to_lepus_value =
+        page_proxy_->element_manager()->GetEnableParallelElement();
+
     // Id Selector
     if (!id_selector().empty()) {
       fiber_element->SetIdSelector(id_selector());
@@ -221,7 +228,11 @@ void RadonNode::DispatchFirstTime() {
       for (const auto& [key, value] : attributes()) {
         // In first dispatch, should not flush empty attribute in RadonArch.
         if (!value.IsEmpty()) {
-          fiber_element->SetAttribute(key, value, false);
+          if (should_convert_to_lepus_value) {
+            fiber_element->SetAttribute(key, value.ToLepusValue(), false);
+          } else {
+            fiber_element->SetAttribute(key, value, false);
+          }
         }
       }
     }
@@ -250,7 +261,11 @@ void RadonNode::DispatchFirstTime() {
     // Raw Inline Styles
     if (!raw_inline_styles().empty()) {
       for (const auto& [key, value] : raw_inline_styles()) {
-        fiber_element->SetStyle(key, value);
+        if (should_convert_to_lepus_value) {
+          fiber_element->SetStyle(key, value.ToLepusValue());
+        } else {
+          fiber_element->SetStyle(key, value);
+        }
       }
       // After setting the raw_inline_style in FiberElement,
       // inline styles will be set in the AttributeHolder for use by DevTool.
@@ -933,6 +948,12 @@ bool RadonNode::DiffRawStyleForFiber(const RawLepusStyleMap& old_map,
                                                       lepus::Value());
     }
   }
+  // Using JSValue across multiple threads
+  // is not allowed. Therefore, JSValue needs to be converted to LepusValue
+  // before the parallel flush to prevent conversion through LepusContext
+  // during the parallel flush phase.
+  const auto should_convert_to_lepus_value =
+      page_proxy_->element_manager()->GetEnableParallelElement();
   // check update and insert
   for (auto& it : new_map) {
     // try to find the corresponding style in old_map
@@ -941,7 +962,11 @@ bool RadonNode::DiffRawStyleForFiber(const RawLepusStyleMap& old_map,
     // if r exist in lhs but with different value, update it
     if (it_old_map == old_map.end() || !(it.second == it_old_map->second)) {
       need_update = true;
-      static_cast<FiberElement*>(element())->SetStyle(it.first, it.second);
+      if (should_convert_to_lepus_value) {
+        fiber_element()->SetStyle(it.first, it.second.ToLepusValue());
+      } else {
+        fiber_element()->SetStyle(it.first, it.second);
+      }
     }
   }
 
@@ -961,6 +986,12 @@ bool RadonNode::DiffAttrMapForFiber(const AttrMap& old_map,
           it->first, lepus::Value(), false);
     }
   }
+  // Using JSValue across multiple threads
+  // is not allowed. Therefore, JSValue needs to be converted to LepusValue
+  // before the parallel flush to prevent conversion through LepusContext
+  // during the parallel flush phase.
+  const auto should_convert_to_lepus_value =
+      page_proxy_->element_manager()->GetEnableParallelElement();
   // check update and insert
   for (auto& it : new_map) {
     // try to find the corresponding style in old_map
@@ -969,8 +1000,12 @@ bool RadonNode::DiffAttrMapForFiber(const AttrMap& old_map,
     // if r exist in lhs but with different value, update it
     if (it_old_map == old_map.end() || !(it.second == it_old_map->second)) {
       need_update = true;
-      static_cast<FiberElement*>(element())->SetAttribute(it.first, it.second,
-                                                          false);
+      if (should_convert_to_lepus_value) {
+        fiber_element()->SetAttribute(it.first, it.second.ToLepusValue(),
+                                      false);
+      } else {
+        fiber_element()->SetAttribute(it.first, it.second, false);
+      }
     }
   }
 
