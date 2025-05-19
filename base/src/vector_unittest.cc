@@ -9,6 +9,7 @@
 #include <functional>
 #include <numeric>
 #include <stack>
+#include <string>
 #include <vector>
 
 #pragma clang diagnostic push
@@ -4299,6 +4300,217 @@ TEST(SetStringTest, LinearMixedInlineSize) {
   m17 = std::move(m_src2);
   EXPECT_TRUE(AssertSetContent_ABC(m17));
   EXPECT_TRUE(m_src2.empty());
+}
+
+TEST(LinearMap, FromSourceArray) {
+  {
+    Vector<std::pair<std::string, std::string>> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    LinearFlatMap<std::string, std::string> map(std::move(source_array));
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+    EXPECT_TRUE(source_array.empty());
+  }
+
+  {
+    InlineVector<std::pair<std::string, std::string>, 5> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    LinearFlatMap<std::string, std::string> map(std::move(source_array));
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    Vector<std::pair<std::string, std::string>> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    InlineLinearFlatMap<std::string, std::string, 2> map(
+        std::move(source_array));
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    Vector<std::pair<std::string, std::string>> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    InlineLinearFlatMap<std::string, std::string, 5> map(
+        std::move(source_array));
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    InlineVector<std::pair<std::string, std::string>, 5> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    InlineLinearFlatMap<std::string, std::string, 5> map(
+        std::move(source_array));
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    Vector<std::pair<std::string, std::string>> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    LinearFlatMap<std::string, std::string> map;
+    map = std::move(source_array);
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+    EXPECT_TRUE(source_array.empty());
+  }
+
+  {
+    InlineVector<std::pair<std::string, std::string>, 5> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    LinearFlatMap<std::string, std::string> map;
+    map = std::move(source_array);
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    Vector<std::pair<std::string, std::string>> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    InlineLinearFlatMap<std::string, std::string, 2> map;
+    map = std::move(source_array);
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    Vector<std::pair<std::string, std::string>> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    InlineLinearFlatMap<std::string, std::string, 5> map;
+    map = std::move(source_array);
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+
+  {
+    InlineVector<std::pair<std::string, std::string>, 5> source_array{
+        {"z", "Z"}, {"a", "A"}, {"e", "E"}};
+    InlineLinearFlatMap<std::string, std::string, 5> map;
+    map = std::move(source_array);
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_EQ(map["z"], "Z");
+    EXPECT_EQ(map["a"], "A");
+    EXPECT_EQ(map["e"], "E");
+  }
+}
+
+TEST(LinearSet, FromSourceArray) {
+  {
+    Vector<std::string> source_array{"z", "a", "e"};
+    LinearFlatSet<std::string> set(std::move(source_array));
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+    EXPECT_TRUE(source_array.empty());
+  }
+
+  {
+    InlineVector<std::string, 5> source_array{"z", "a", "e"};
+    LinearFlatSet<std::string> set(std::move(source_array));
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    Vector<std::string> source_array{"z", "a", "e"};
+    InlineLinearFlatSet<std::string, 2> set(std::move(source_array));
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    Vector<std::string> source_array{"z", "a", "e"};
+    InlineLinearFlatSet<std::string, 5> set(std::move(source_array));
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    InlineVector<std::string, 5> source_array{"z", "a", "e"};
+    InlineLinearFlatSet<std::string, 5> set(std::move(source_array));
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    Vector<std::string> source_array{"z", "a", "e"};
+    LinearFlatSet<std::string> set;
+    set = std::move(source_array);
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+    EXPECT_TRUE(source_array.empty());
+  }
+
+  {
+    InlineVector<std::string, 5> source_array{"z", "a", "e"};
+    LinearFlatSet<std::string> set;
+    set = std::move(source_array);
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    Vector<std::string> source_array{"z", "a", "e"};
+    InlineLinearFlatSet<std::string, 2> set;
+    set = std::move(source_array);
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    Vector<std::string> source_array{"z", "a", "e"};
+    InlineLinearFlatSet<std::string, 5> set;
+    set = std::move(source_array);
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
+
+  {
+    InlineVector<std::string, 5> source_array{"z", "a", "e"};
+    InlineLinearFlatSet<std::string, 5> set;
+    set = std::move(source_array);
+    EXPECT_EQ(set.size(), 3);
+    EXPECT_TRUE(set.contains("z"));
+    EXPECT_TRUE(set.contains("a"));
+    EXPECT_TRUE(set.contains("e"));
+  }
 }
 
 }  // namespace base

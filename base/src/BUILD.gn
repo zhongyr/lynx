@@ -199,6 +199,7 @@ source_set("base") {
     "fml/unique_fd.cc",
     "md5.cc",
     "thread/timed_task.cc",
+    "vector.cc",
   ]
 
   if (is_android || is_linux) {

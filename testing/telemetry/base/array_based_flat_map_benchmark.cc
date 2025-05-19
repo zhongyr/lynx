@@ -23,6 +23,13 @@ using namespace lynx::lepus;  // NOLINT
 
 namespace lynx {
 namespace base {
+
+// Test template codec ranges.
+struct Range {
+  uint32_t start;
+  uint32_t end;
+};
+
 namespace {
 template <class T>
 T Cast(size_t v);
@@ -30,6 +37,11 @@ T Cast(size_t v);
 template <>
 int Cast(size_t v) {
   return (int)v;
+}
+
+template <>
+Range Cast(size_t v) {
+  return {static_cast<uint32_t>(v), static_cast<uint32_t>(v)};
 }
 
 template <>
@@ -154,6 +166,10 @@ Value Cast(size_t v) {
   TEST_FUNC_MAP_INSERT(II, DATA_COUNT, MAP, __VA_ARGS__) \
   BENCHMARK(BM_##MAP##_insert_##DATA_COUNT##_II)
 
+#define TEST_MAP_INSERT_IR(DATA_COUNT, MAP, ...)         \
+  TEST_FUNC_MAP_INSERT(IR, DATA_COUNT, MAP, __VA_ARGS__) \
+  BENCHMARK(BM_##MAP##_insert_##DATA_COUNT##_IR)
+
 #define TEST_MAP_INSERT_ss(DATA_COUNT, MAP, ...)         \
   TEST_FUNC_MAP_INSERT(ss, DATA_COUNT, MAP, __VA_ARGS__) \
   BENCHMARK(BM_##MAP##_insert_##DATA_COUNT##_ss)
@@ -161,6 +177,10 @@ Value Cast(size_t v) {
 #define TEST_MAP_INSERT_ISP(DATA_COUNT, MAP, ...)         \
   TEST_FUNC_MAP_INSERT(ISP, DATA_COUNT, MAP, __VA_ARGS__) \
   BENCHMARK(BM_##MAP##_insert_##DATA_COUNT##_ISP)
+
+#define TEST_MAP_INSERT_sSP(DATA_COUNT, MAP, ...)         \
+  TEST_FUNC_MAP_INSERT(sSP, DATA_COUNT, MAP, __VA_ARGS__) \
+  BENCHMARK(BM_##MAP##_insert_##DATA_COUNT##_sSP)
 
 #define TEST_MAP_INSERT_SV(DATA_COUNT, MAP, ...)         \
   TEST_FUNC_MAP_INSERT(SV, DATA_COUNT, MAP, __VA_ARGS__) \
@@ -174,6 +194,13 @@ Value Cast(size_t v) {
   TEST_FUNC_MAP_INSERT(SS, DATA_COUNT, MAP, __VA_ARGS__) \
   BENCHMARK(BM_##MAP##_insert_##DATA_COUNT##_SS)
 
+/**
+ * <int, int>
+ * data count
+ *   0~48: LinearFlatMap best
+ *   48~2048: OrderedFlatMap best
+ *   > 2048: std::unordered_map best
+ */
 TEST_MAP_INSERT_II(8, map, int, int);
 TEST_MAP_INSERT_II(8, unordered_map, int, int);
 TEST_MAP_INSERT_II(8, OrderedFlatMap, int, int);
@@ -185,9 +212,43 @@ TEST_MAP_INSERT_II(2048, map, int, int);
 TEST_MAP_INSERT_II(2048, unordered_map, int, int);
 TEST_MAP_INSERT_II(2048, OrderedFlatMap, int, int);
 TEST_MAP_INSERT_II(2048, InlineOrderedFlatMap, int, int, 2048);
-TEST_MAP_INSERT_II(800, LinearFlatMap, int, int);
-TEST_MAP_INSERT_II(800, InlineLinearFlatMap, int, int, 800);
 
+TEST_MAP_INSERT_II(48, OrderedFlatMap, int, int);
+TEST_MAP_INSERT_II(48, InlineOrderedFlatMap, int, int, 48);
+TEST_MAP_INSERT_II(48, LinearFlatMap, int, int);
+TEST_MAP_INSERT_II(48, InlineLinearFlatMap, int, int, 48);
+
+/**
+ * <int, Range>
+ * data count
+ *   0~72: LinearFlatMap best
+ *   72~1300: OrderedFlatMap best
+ *   > 1300: std::unordered_map best
+ */
+TEST_MAP_INSERT_IR(8, map, int, Range);
+TEST_MAP_INSERT_IR(8, unordered_map, int, Range);
+TEST_MAP_INSERT_IR(8, OrderedFlatMap, int, Range);
+TEST_MAP_INSERT_IR(8, InlineOrderedFlatMap, int, Range, 8);
+TEST_MAP_INSERT_IR(8, LinearFlatMap, int, Range);
+TEST_MAP_INSERT_IR(8, InlineLinearFlatMap, int, Range, 8);
+
+TEST_MAP_INSERT_IR(1300, map, int, Range);
+TEST_MAP_INSERT_IR(1300, unordered_map, int, Range);
+TEST_MAP_INSERT_IR(1300, OrderedFlatMap, int, Range);
+TEST_MAP_INSERT_IR(1300, InlineOrderedFlatMap, int, Range, 1300);
+
+TEST_MAP_INSERT_IR(72, OrderedFlatMap, int, Range);
+TEST_MAP_INSERT_IR(72, InlineOrderedFlatMap, int, Range, 72);
+TEST_MAP_INSERT_IR(72, LinearFlatMap, int, Range);
+TEST_MAP_INSERT_IR(72, InlineLinearFlatMap, int, Range, 72);
+
+/**
+ * <std::string, std::string>
+ * data count
+ *   0~42: LinearFlatMap best
+ *   =24: std::unordered_map == OrderedFlatMap
+ *   > 42: std::unordered_map best
+ */
 TEST_MAP_INSERT_ss(8, map, string, string);
 TEST_MAP_INSERT_ss(8, unordered_map, string, string);
 TEST_MAP_INSERT_ss(8, OrderedFlatMap, string, string);
@@ -199,9 +260,30 @@ TEST_MAP_INSERT_ss(24, map, string, string);
 TEST_MAP_INSERT_ss(24, unordered_map, string, string);
 TEST_MAP_INSERT_ss(24, OrderedFlatMap, string, string);
 TEST_MAP_INSERT_ss(24, InlineOrderedFlatMap, string, string, 24);
-TEST_MAP_INSERT_ss(32, LinearFlatMap, string, string);
-TEST_MAP_INSERT_ss(32, InlineLinearFlatMap, string, string, 36);
+TEST_MAP_INSERT_ss(24, LinearFlatMap, string, string);
+TEST_MAP_INSERT_ss(24, InlineLinearFlatMap, string, string, 24);
 
+TEST_MAP_INSERT_ss(32, map, string, string);
+TEST_MAP_INSERT_ss(32, unordered_map, string, string);
+TEST_MAP_INSERT_ss(32, OrderedFlatMap, string, string);
+TEST_MAP_INSERT_ss(32, InlineOrderedFlatMap, string, string, 32);
+TEST_MAP_INSERT_ss(32, LinearFlatMap, string, string);
+TEST_MAP_INSERT_ss(32, InlineLinearFlatMap, string, string, 32);
+
+TEST_MAP_INSERT_ss(42, map, string, string);
+TEST_MAP_INSERT_ss(42, unordered_map, string, string);
+TEST_MAP_INSERT_ss(42, OrderedFlatMap, string, string);
+TEST_MAP_INSERT_ss(42, InlineOrderedFlatMap, string, string, 42);
+TEST_MAP_INSERT_ss(42, LinearFlatMap, string, string);
+TEST_MAP_INSERT_ss(42, InlineLinearFlatMap, string, string, 42);
+
+/**
+ * <int, std::shared_ptr<string>>
+ * data count
+ *   0~270: LinearFlatMap best
+ *   =68: std::unordered_map == OrderedFlatMap
+ *   > 270: std::unordered_map best
+ */
 TEST_MAP_INSERT_ISP(8, map, int, shared_ptr<string>);
 TEST_MAP_INSERT_ISP(8, unordered_map, int, shared_ptr<string>);
 TEST_MAP_INSERT_ISP(8, OrderedFlatMap, int, shared_ptr<string>);
@@ -209,13 +291,54 @@ TEST_MAP_INSERT_ISP(8, InlineOrderedFlatMap, int, shared_ptr<string>, 8);
 TEST_MAP_INSERT_ISP(8, LinearFlatMap, int, shared_ptr<string>);
 TEST_MAP_INSERT_ISP(8, InlineLinearFlatMap, int, shared_ptr<string>, 8);
 
-TEST_MAP_INSERT_ISP(72, map, int, shared_ptr<string>);
-TEST_MAP_INSERT_ISP(72, unordered_map, int, shared_ptr<string>);
-TEST_MAP_INSERT_ISP(72, OrderedFlatMap, int, shared_ptr<string>);
-TEST_MAP_INSERT_ISP(72, InlineOrderedFlatMap, int, shared_ptr<string>, 72);
+TEST_MAP_INSERT_ISP(68, map, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(68, unordered_map, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(68, OrderedFlatMap, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(68, InlineOrderedFlatMap, int, shared_ptr<string>, 68);
+TEST_MAP_INSERT_ISP(68, LinearFlatMap, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(68, InlineLinearFlatMap, int, shared_ptr<string>, 68);
+
+TEST_MAP_INSERT_ISP(128, map, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(128, unordered_map, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(128, OrderedFlatMap, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(128, InlineOrderedFlatMap, int, shared_ptr<string>, 128);
 TEST_MAP_INSERT_ISP(128, LinearFlatMap, int, shared_ptr<string>);
 TEST_MAP_INSERT_ISP(128, InlineLinearFlatMap, int, shared_ptr<string>, 128);
 
+TEST_MAP_INSERT_ISP(270, map, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(270, unordered_map, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(270, OrderedFlatMap, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(270, InlineOrderedFlatMap, int, shared_ptr<string>, 270);
+TEST_MAP_INSERT_ISP(270, LinearFlatMap, int, shared_ptr<string>);
+TEST_MAP_INSERT_ISP(270, InlineLinearFlatMap, int, shared_ptr<string>, 270);
+
+/**
+ * <std::string, std::shared_ptr<string>>
+ * data count
+ *   0~50: LinearFlatMap best
+ *   > 50: std::unordered_map best
+ */
+TEST_MAP_INSERT_sSP(8, map, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(8, unordered_map, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(8, OrderedFlatMap, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(8, InlineOrderedFlatMap, string, shared_ptr<string>, 8);
+TEST_MAP_INSERT_sSP(8, LinearFlatMap, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(8, InlineLinearFlatMap, string, shared_ptr<string>, 8);
+
+TEST_MAP_INSERT_sSP(50, map, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(50, unordered_map, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(50, OrderedFlatMap, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(50, InlineOrderedFlatMap, string, shared_ptr<string>, 50);
+TEST_MAP_INSERT_sSP(50, LinearFlatMap, string, shared_ptr<string>);
+TEST_MAP_INSERT_sSP(50, InlineLinearFlatMap, string, shared_ptr<string>, 50);
+
+/**
+ * <lepus::String, lepus::Value>
+ * data count
+ *   0~66: LinearFlatMap best
+ *   =12: std::unordered_map == OrderedFlatMap
+ *   > 66: std::unordered_map best
+ */
 TEST_MAP_INSERT_SV(8, map, String, Value);
 TEST_MAP_INSERT_SV(8, unordered_map, String, Value);
 TEST_MAP_INSERT_SV(8, OrderedFlatMap, String, Value);
@@ -227,9 +350,30 @@ TEST_MAP_INSERT_SV(12, map, String, Value);
 TEST_MAP_INSERT_SV(12, unordered_map, String, Value);
 TEST_MAP_INSERT_SV(12, OrderedFlatMap, String, Value);
 TEST_MAP_INSERT_SV(12, InlineOrderedFlatMap, String, Value, 12);
+TEST_MAP_INSERT_SV(12, LinearFlatMap, String, Value);
+TEST_MAP_INSERT_SV(12, InlineLinearFlatMap, String, Value, 12);
+
+TEST_MAP_INSERT_SV(24, map, String, Value);
+TEST_MAP_INSERT_SV(24, unordered_map, String, Value);
+TEST_MAP_INSERT_SV(24, OrderedFlatMap, String, Value);
+TEST_MAP_INSERT_SV(24, InlineOrderedFlatMap, String, Value, 24);
 TEST_MAP_INSERT_SV(24, LinearFlatMap, String, Value);
 TEST_MAP_INSERT_SV(24, InlineLinearFlatMap, String, Value, 24);
 
+TEST_MAP_INSERT_SV(66, map, String, Value);
+TEST_MAP_INSERT_SV(66, unordered_map, String, Value);
+TEST_MAP_INSERT_SV(66, OrderedFlatMap, String, Value);
+TEST_MAP_INSERT_SV(66, InlineOrderedFlatMap, String, Value, 66);
+TEST_MAP_INSERT_SV(66, LinearFlatMap, String, Value);
+TEST_MAP_INSERT_SV(66, InlineLinearFlatMap, String, Value, 66);
+
+/**
+ * <int, lepus::Value>
+ * data count
+ *   0~256: LinearFlatMap best
+ *   =36: std::unordered_map == OrderedFlatMap
+ *   > 256: std::unordered_map best
+ */
 TEST_MAP_INSERT_IV(8, map, int, Value);
 TEST_MAP_INSERT_IV(8, unordered_map, int, Value);
 TEST_MAP_INSERT_IV(8, OrderedFlatMap, int, Value);
@@ -241,9 +385,30 @@ TEST_MAP_INSERT_IV(18, map, int, Value);
 TEST_MAP_INSERT_IV(18, unordered_map, int, Value);
 TEST_MAP_INSERT_IV(18, OrderedFlatMap, int, Value);
 TEST_MAP_INSERT_IV(18, InlineOrderedFlatMap, int, Value, 18);
+TEST_MAP_INSERT_IV(18, LinearFlatMap, int, Value);
+TEST_MAP_INSERT_IV(18, InlineLinearFlatMap, int, Value, 18);
+
+TEST_MAP_INSERT_IV(36, map, int, Value);
+TEST_MAP_INSERT_IV(36, unordered_map, int, Value);
+TEST_MAP_INSERT_IV(36, OrderedFlatMap, int, Value);
+TEST_MAP_INSERT_IV(36, InlineOrderedFlatMap, int, Value, 36);
 TEST_MAP_INSERT_IV(36, LinearFlatMap, int, Value);
 TEST_MAP_INSERT_IV(36, InlineLinearFlatMap, int, Value, 36);
 
+TEST_MAP_INSERT_IV(256, map, int, Value);
+TEST_MAP_INSERT_IV(256, unordered_map, int, Value);
+TEST_MAP_INSERT_IV(256, OrderedFlatMap, int, Value);
+TEST_MAP_INSERT_IV(256, InlineOrderedFlatMap, int, Value, 256);
+TEST_MAP_INSERT_IV(256, LinearFlatMap, int, Value);
+TEST_MAP_INSERT_IV(256, InlineLinearFlatMap, int, Value, 256);
+
+/**
+ * <lepus::String, lepus::String>
+ * data count
+ *   0~80: LinearFlatMap best
+ *   =24: std::unordered_map == OrderedFlatMap
+ *   > 80: std::unordered_map best
+ */
 TEST_MAP_INSERT_SS(8, map, String, String);
 TEST_MAP_INSERT_SS(8, unordered_map, String, String);
 TEST_MAP_INSERT_SS(8, OrderedFlatMap, String, String);
@@ -255,8 +420,15 @@ TEST_MAP_INSERT_SS(24, map, String, String);
 TEST_MAP_INSERT_SS(24, unordered_map, String, String);
 TEST_MAP_INSERT_SS(24, OrderedFlatMap, String, String);
 TEST_MAP_INSERT_SS(24, InlineOrderedFlatMap, String, String, 24);
-TEST_MAP_INSERT_SS(36, LinearFlatMap, String, String);
-TEST_MAP_INSERT_SS(36, InlineLinearFlatMap, String, String, 36);
+TEST_MAP_INSERT_SS(24, LinearFlatMap, String, String);
+TEST_MAP_INSERT_SS(24, InlineLinearFlatMap, String, String, 24);
+
+TEST_MAP_INSERT_SS(80, map, String, String);
+TEST_MAP_INSERT_SS(80, unordered_map, String, String);
+TEST_MAP_INSERT_SS(80, OrderedFlatMap, String, String);
+TEST_MAP_INSERT_SS(80, InlineOrderedFlatMap, String, String, 80);
+TEST_MAP_INSERT_SS(80, LinearFlatMap, String, String);
+TEST_MAP_INSERT_SS(80, InlineLinearFlatMap, String, String, 80);
 
 #define TEST_MAP_FIND_I(DATA_COUNT, NOT_FOUND_COUNT, MAP, ...)         \
   TEST_FUNC_MAP_FIND(I, DATA_COUNT, NOT_FOUND_COUNT, MAP, __VA_ARGS__) \

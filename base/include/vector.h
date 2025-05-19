@@ -164,7 +164,7 @@ struct VectorPrototype {
 
   VectorPrototype() = default;
 
-  size_t size() const { return count_; }
+  [[maybe_unused]] size_t size() const { return count_; }
 
   bool empty() const { return count_ == 0; }
 
@@ -1433,13 +1433,54 @@ using Stack = std::stack<T, Vector<T>>;
 template <class T, size_t N>
 using InlineStack = std::stack<T, InlineVector<T, N>>;
 
+template <bool Flag>
+struct MapStatisticsBase;
+
+enum class MapStatisticsFindKind {
+  kFind,                 // find(), contains() or [] to find a value
+  kInsertFindCollision,  // key found before insert
+  kInsertFind,           // key not found before insert
+};
+
+template <>
+struct MapStatisticsBase<true> {
+  mutable uint32_t max_count{0};
+  mutable uint32_t insert_count{0};
+  mutable uint32_t erase_count{0};
+  mutable uint32_t total_find_count{0};
+  mutable uint32_t find_count{0};
+  mutable uint32_t insert_find_collision_count{0};
+
+  ~MapStatisticsBase();
+
+  void UpdateMaxCount(size_t v) const;
+
+  void IncreaseInsertCount() const { insert_count++; }
+
+  void IncreaseEraseCount() const { erase_count++; }
+
+  void RecordFind(MapStatisticsFindKind kind, size_t find_of_count) const;
+
+  static void IncreaseFindOfCount(MapStatisticsFindKind kind,
+                                  size_t find_of_count);
+};
+
+template <>
+struct MapStatisticsBase<false> {
+  void UpdateMaxCount([[maybe_unused]] size_t v) const {}
+  void IncreaseInsertCount() const {}
+  void IncreaseEraseCount() const {}
+  void RecordFind([[maybe_unused]] MapStatisticsFindKind kind,
+                  [[maybe_unused]] size_t find_of_count) const {}
+};
+
 /**
  * @brief Base storage type for binary-search array and linear search array.
  * It provides definitions and interfaces which have nothing to do with
  * query method of key.
  */
-template <class K, class T, size_t N>
-struct KeyValueArray {
+template <class K, class T, size_t N, bool Stat>
+struct KeyValueArray : protected MapStatisticsBase<Stat> {
   static constexpr auto is_map = !std::is_void_v<T>;
 
   using key_type = K;
@@ -1464,8 +1505,11 @@ struct KeyValueArray {
         const_cast<store_container_type*>(&array_));
   }
 
-  template <class K2, class T2, size_t N2>
+  template <class K2, class T2, size_t N2, bool Stat2>
   friend struct KeyValueArray;
+
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+  using MapStatisticsBase<Stat>::IncreaseEraseCount;
 
  public:
   using iterator = typename container_type::iterator;
@@ -1477,22 +1521,34 @@ struct KeyValueArray {
  public:
   KeyValueArray() = default;
 
-  template <size_t N2>
-  KeyValueArray(const KeyValueArray<K, T, N2>& other) : array_(other.array_) {}
+  KeyValueArray(Vector<store_value_type>&& source_array)
+      : array_(std::move(source_array)) {
+    UpdateMaxCount(array_.size());
+  }
 
   template <size_t N2>
-  KeyValueArray(KeyValueArray<K, T, N2>&& other)
-      : array_(std::move(other.array_)) {}
+  KeyValueArray(const KeyValueArray<K, T, N2, Stat>& other)
+      : array_(other.array_) {
+    UpdateMaxCount(array_.size());
+  }
 
   template <size_t N2>
-  KeyValueArray& operator=(const KeyValueArray<K, T, N2>& other) {
-    this->array_ = other.array_;
+  KeyValueArray(KeyValueArray<K, T, N2, Stat>&& other)
+      : array_(std::move(other.array_)) {
+    UpdateMaxCount(array_.size());
+  }
+
+  template <size_t N2>
+  KeyValueArray& operator=(const KeyValueArray<K, T, N2, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  KeyValueArray& operator=(KeyValueArray<K, T, N2>&& other) {
-    this->array_ = std::move(other.array_);
+  KeyValueArray& operator=(KeyValueArray<K, T, N2, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
@@ -1534,18 +1590,19 @@ struct KeyValueArray {
   const_reverse_iterator crend() const { return array().crend(); }
 
   iterator erase(iterator pos) {
+    IncreaseEraseCount();
     return reinterpret_cast<iterator>(
         array_.erase(reinterpret_cast<store_iterator>(pos)));
   }
 
   template <size_t N2>
-  bool operator==(const KeyValueArray<K, T, N2>& other) const {
-    return this->array_ == other.array_;
+  bool operator==(const KeyValueArray<K, T, N2, Stat>& other) const {
+    return array_ == other.array_;
   }
 
   template <size_t N2>
-  bool operator!=(const KeyValueArray<K, T, N2>& other) const {
-    return this->array_ != other.array_;
+  bool operator!=(const KeyValueArray<K, T, N2, Stat>& other) const {
+    return array_ != other.array_;
   }
 
  protected:
@@ -1587,22 +1644,27 @@ struct KeyValueArray {
  * When implementing custom Compare method. Use f(const K&, const K&) as
  * signature to avoid unnecessary copy.
  */
-template <class K, class T, size_t N, class Compare = std::less<K>>
-struct BinarySearchArray : public KeyValueArray<K, T, N> {
+template <class K, class T, size_t N, class Compare, bool Stat>
+struct BinarySearchArray : public KeyValueArray<K, T, N, Stat> {
  protected:
-  template <class K2, class T2, size_t N2, class Compare2>
+  template <class K2, class T2, size_t N2, class Compare2, bool Stat2>
   friend struct BinarySearchArray;
 
-  using KeyValueArray<K, T, N>::array_;
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+  using MapStatisticsBase<Stat>::IncreaseInsertCount;
+  using MapStatisticsBase<Stat>::IncreaseEraseCount;
+  using MapStatisticsBase<Stat>::RecordFind;
+
+  using KeyValueArray<K, T, N, Stat>::array_;
 
  public:
-  using typename KeyValueArray<K, T, N>::value_type;
-  using typename KeyValueArray<K, T, N>::iterator;
-  using typename KeyValueArray<K, T, N>::const_iterator;
-  using typename KeyValueArray<K, T, N>::store_iterator;
-  using KeyValueArray<K, T, N>::begin;
-  using KeyValueArray<K, T, N>::end;
-  using KeyValueArray<K, T, N>::erase;
+  using typename KeyValueArray<K, T, N, Stat>::value_type;
+  using typename KeyValueArray<K, T, N, Stat>::iterator;
+  using typename KeyValueArray<K, T, N, Stat>::const_iterator;
+  using typename KeyValueArray<K, T, N, Stat>::store_iterator;
+  using KeyValueArray<K, T, N, Stat>::begin;
+  using KeyValueArray<K, T, N, Stat>::end;
+  using KeyValueArray<K, T, N, Stat>::erase;
 
  public:
   BinarySearchArray() = default;
@@ -1614,23 +1676,26 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
   }
 
   template <size_t N2>
-  BinarySearchArray(const BinarySearchArray<K, T, N2, Compare>& other)
-      : KeyValueArray<K, T, N>(other) {}
+  BinarySearchArray(const BinarySearchArray<K, T, N2, Compare, Stat>& other)
+      : KeyValueArray<K, T, N, Stat>(other) {}
 
   template <size_t N2>
-  BinarySearchArray(BinarySearchArray<K, T, N2, Compare>&& other)
-      : KeyValueArray<K, T, N>(std::move(other)) {}
+  BinarySearchArray(BinarySearchArray<K, T, N2, Compare, Stat>&& other)
+      : KeyValueArray<K, T, N, Stat>(std::move(other)) {}
 
   template <size_t N2>
   BinarySearchArray& operator=(
-      const BinarySearchArray<K, T, N2, Compare>& other) {
-    this->array_ = other.array_;
+      const BinarySearchArray<K, T, N2, Compare, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  BinarySearchArray& operator=(BinarySearchArray<K, T, N2, Compare>&& other) {
-    this->array_ = std::move(other.array_);
+  BinarySearchArray& operator=(
+      BinarySearchArray<K, T, N2, Compare, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
@@ -1638,8 +1703,10 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
     auto pos = lower_bound(*reinterpret_cast<const K*>(&value));
     if (pos != end() && *reinterpret_cast<const K*>(pos) ==
                             *reinterpret_cast<const K*>(&value)) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};  // duplicate
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(
                   array_.insert(reinterpret_cast<store_iterator>(pos), value)),
               true};
@@ -1650,8 +1717,10 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
     auto pos = lower_bound(*reinterpret_cast<const K*>(&value));
     if (pos != end() && *reinterpret_cast<const K*>(pos) ==
                             *reinterpret_cast<const K*>(&value)) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};  // duplicate
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(array_.insert(
                   reinterpret_cast<store_iterator>(pos), std::move(value))),
               true};
@@ -1659,6 +1728,8 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
   }
 
   size_t erase(const K& key) {
+    IncreaseEraseCount();
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
       array_.erase(reinterpret_cast<store_iterator>(pos));
@@ -1669,6 +1740,7 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
   }
 
   iterator find(const K& key) {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
       return pos;
@@ -1678,6 +1750,7 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
   }
 
   const_iterator find(const K& key) const {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
       return pos;
@@ -1693,13 +1766,15 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
   bool is_data_ordered() const { return true; }
 
   template <size_t N2>
-  bool operator==(const BinarySearchArray<K, T, N2, Compare>& other) const {
-    return this->array_ == other.array_;
+  bool operator==(
+      const BinarySearchArray<K, T, N2, Compare, Stat>& other) const {
+    return array_ == other.array_;
   }
 
   template <size_t N2>
-  bool operator!=(const BinarySearchArray<K, T, N2, Compare>& other) const {
-    return this->array_ != other.array_;
+  bool operator!=(
+      const BinarySearchArray<K, T, N2, Compare, Stat>& other) const {
+    return array_ != other.array_;
   }
 
  protected:
@@ -1720,22 +1795,28 @@ struct BinarySearchArray : public KeyValueArray<K, T, N> {
  * amount of data is relatively small, and the number of container traversals is
  * far greater than the number of searches.
  */
-template <class K, class T, size_t N>
-struct LinearSearchArray : public KeyValueArray<K, T, N> {
+template <class K, class T, size_t N, bool Stat>
+struct LinearSearchArray : public KeyValueArray<K, T, N, Stat> {
  protected:
-  template <class K2, class T2, size_t N2>
+  template <class K2, class T2, size_t N2, bool Stat2>
   friend struct LinearSearchArray;
 
-  using KeyValueArray<K, T, N>::array_;
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+  using MapStatisticsBase<Stat>::IncreaseInsertCount;
+  using MapStatisticsBase<Stat>::IncreaseEraseCount;
+  using MapStatisticsBase<Stat>::RecordFind;
+
+  using KeyValueArray<K, T, N, Stat>::array_;
 
  public:
-  using typename KeyValueArray<K, T, N>::value_type;
-  using typename KeyValueArray<K, T, N>::iterator;
-  using typename KeyValueArray<K, T, N>::const_iterator;
-  using typename KeyValueArray<K, T, N>::store_iterator;
-  using KeyValueArray<K, T, N>::begin;
-  using KeyValueArray<K, T, N>::end;
-  using KeyValueArray<K, T, N>::erase;
+  using typename KeyValueArray<K, T, N, Stat>::value_type;
+  using typename KeyValueArray<K, T, N, Stat>::store_value_type;
+  using typename KeyValueArray<K, T, N, Stat>::iterator;
+  using typename KeyValueArray<K, T, N, Stat>::const_iterator;
+  using typename KeyValueArray<K, T, N, Stat>::store_iterator;
+  using KeyValueArray<K, T, N, Stat>::begin;
+  using KeyValueArray<K, T, N, Stat>::end;
+  using KeyValueArray<K, T, N, Stat>::erase;
 
  public:
   LinearSearchArray() = default;
@@ -1746,31 +1827,44 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
     }
   }
 
-  template <size_t N2>
-  LinearSearchArray(const LinearSearchArray<K, T, N2>& other)
-      : KeyValueArray<K, T, N>(other) {}
+  LinearSearchArray(Vector<store_value_type>&& source_array)
+      : KeyValueArray<K, T, N, Stat>(std::move(source_array)) {}
 
-  template <size_t N2>
-  LinearSearchArray(LinearSearchArray<K, T, N2>&& other)
-      : KeyValueArray<K, T, N>(std::move(other)) {}
-
-  template <size_t N2>
-  LinearSearchArray& operator=(const LinearSearchArray<K, T, N2>& other) {
-    this->array_ = other.array_;
+  LinearSearchArray& operator=(Vector<store_value_type>&& source_array) {
+    array_ = std::move(source_array);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  LinearSearchArray& operator=(LinearSearchArray<K, T, N2>&& other) {
-    this->array_ = std::move(other.array_);
+  LinearSearchArray(const LinearSearchArray<K, T, N2, Stat>& other)
+      : KeyValueArray<K, T, N, Stat>(other) {}
+
+  template <size_t N2>
+  LinearSearchArray(LinearSearchArray<K, T, N2, Stat>&& other)
+      : KeyValueArray<K, T, N, Stat>(std::move(other)) {}
+
+  template <size_t N2>
+  LinearSearchArray& operator=(const LinearSearchArray<K, T, N2, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
+    return *this;
+  }
+
+  template <size_t N2>
+  LinearSearchArray& operator=(LinearSearchArray<K, T, N2, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   std::pair<iterator, bool> insert(const value_type& value) {
     auto pos = find_exact(*reinterpret_cast<const K*>(&value));
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};  // duplicate
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(&array_.emplace_back(value)), true};
     }
   }
@@ -1778,8 +1872,10 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
   std::pair<iterator, bool> insert(value_type&& value) {
     auto pos = find_exact(*reinterpret_cast<const K*>(&value));
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};  // duplicate
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {
           reinterpret_cast<iterator>(&array_.emplace_back(std::move(value))),
           true};
@@ -1787,6 +1883,8 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
   }
 
   size_t erase(const K& key) {
+    IncreaseEraseCount();
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = find_exact(key);
     if (pos != nullptr) {
       array_.erase(reinterpret_cast<store_iterator>(pos));
@@ -1797,6 +1895,7 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
   }
 
   iterator find(const K& key) {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = find_exact(key);
     if (pos != nullptr) {
       return pos;
@@ -1806,6 +1905,7 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
   }
 
   const_iterator find(const K& key) const {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = find_exact(key);
     if (pos != nullptr) {
       return pos;
@@ -1814,20 +1914,23 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
     }
   }
 
-  bool contains(const K& key) const { return find_exact(key) != nullptr; }
+  bool contains(const K& key) const {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
+    return find_exact(key) != nullptr;
+  }
 
   size_t count(const K& key) const { return contains(key) ? 1 : 0; }
 
   bool is_data_ordered() const { return false; }
 
   template <size_t N2>
-  bool operator==(const LinearSearchArray<K, T, N2>& other) const {
-    return this->array_ == other.array_;
+  bool operator==(const LinearSearchArray<K, T, N2, Stat>& other) const {
+    return array_ == other.array_;
   }
 
   template <size_t N2>
-  bool operator!=(const LinearSearchArray<K, T, N2>& other) const {
-    return this->array_ != other.array_;
+  bool operator!=(const LinearSearchArray<K, T, N2, Stat>& other) const {
+    return array_ != other.array_;
   }
 
  protected:
@@ -1841,21 +1944,26 @@ struct LinearSearchArray : public KeyValueArray<K, T, N> {
   }
 };
 
-template <class K, class T, size_t N, class Compare = std::less<K>>
-struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
+template <class K, class T, size_t N, class Compare, bool Stat>
+struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare, Stat> {
  protected:
-  template <class K2, class T2, size_t N2, class Compare2>
+  template <class K2, class T2, size_t N2, class Compare2, bool Stat2>
   friend struct BinarySearchMap;
 
-  using KeyValueArray<K, T, N>::array_;
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+  using MapStatisticsBase<Stat>::IncreaseInsertCount;
+  using MapStatisticsBase<Stat>::IncreaseEraseCount;
+  using MapStatisticsBase<Stat>::RecordFind;
+
+  using KeyValueArray<K, T, N, Stat>::array_;
 
  public:
-  using typename BinarySearchArray<K, T, N, Compare>::value_type;
-  using typename BinarySearchArray<K, T, N, Compare>::iterator;
-  using typename BinarySearchArray<K, T, N, Compare>::store_iterator;
-  using BinarySearchArray<K, T, N, Compare>::insert;
-  using BinarySearchArray<K, T, N, Compare>::lower_bound;
-  using KeyValueArray<K, T, N>::end;
+  using typename BinarySearchArray<K, T, N, Compare, Stat>::value_type;
+  using typename BinarySearchArray<K, T, N, Compare, Stat>::iterator;
+  using typename BinarySearchArray<K, T, N, Compare, Stat>::store_iterator;
+  using BinarySearchArray<K, T, N, Compare, Stat>::insert;
+  using BinarySearchArray<K, T, N, Compare, Stat>::lower_bound;
+  using KeyValueArray<K, T, N, Stat>::end;
 
   BinarySearchMap() = default;
   BinarySearchMap(std::initializer_list<value_type> list) {
@@ -1866,22 +1974,25 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   }
 
   template <size_t N2>
-  BinarySearchMap(const BinarySearchMap<K, T, N2, Compare>& other)
-      : BinarySearchArray<K, T, N, Compare>(other) {}
+  BinarySearchMap(const BinarySearchMap<K, T, N2, Compare, Stat>& other)
+      : BinarySearchArray<K, T, N, Compare, Stat>(other) {}
 
   template <size_t N2>
-  BinarySearchMap(BinarySearchMap<K, T, N2, Compare>&& other)
-      : BinarySearchArray<K, T, N, Compare>(std::move(other)) {}
+  BinarySearchMap(BinarySearchMap<K, T, N2, Compare, Stat>&& other)
+      : BinarySearchArray<K, T, N, Compare, Stat>(std::move(other)) {}
 
   template <size_t N2>
-  BinarySearchMap& operator=(const BinarySearchMap<K, T, N2, Compare>& other) {
-    this->array_ = other.array_;
+  BinarySearchMap& operator=(
+      const BinarySearchMap<K, T, N2, Compare, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  BinarySearchMap& operator=(BinarySearchMap<K, T, N2, Compare>&& other) {
-    this->array_ = std::move(other.array_);
+  BinarySearchMap& operator=(BinarySearchMap<K, T, N2, Compare, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
@@ -1891,6 +2002,7 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   }
 
   T& at(const K& key) {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
       return pos->second;
@@ -1899,6 +2011,7 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   }
 
   const T& at(const K& key) const {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
       return pos->second;
@@ -1910,9 +2023,11 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   std::pair<iterator, bool> insert_or_assign(const K& key, V&& value) {
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       pos->second = std::forward<V>(value);
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(array_.emplace(
                   reinterpret_cast<store_iterator>(pos),
                   std::piecewise_construct, std::forward_as_tuple(key),
@@ -1925,9 +2040,11 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   std::pair<iterator, bool> insert_or_assign(K&& key, V&& value) {
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       pos->second = std::forward<V>(value);
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {
           reinterpret_cast<iterator>(array_.emplace(
               reinterpret_cast<store_iterator>(pos), std::piecewise_construct,
@@ -1941,8 +2058,10 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   std::pair<iterator, bool> emplace(const K& key, Args&&... args) {
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(array_.emplace(
                   reinterpret_cast<store_iterator>(pos),
                   std::piecewise_construct, std::forward_as_tuple(key),
@@ -1955,8 +2074,10 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   std::pair<iterator, bool> emplace(K&& key, Args&&... args) {
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {
           reinterpret_cast<iterator>(array_.emplace(
               reinterpret_cast<store_iterator>(pos), std::piecewise_construct,
@@ -1981,8 +2102,10 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
     // Do emplace.
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};  // key is discarded
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {
           reinterpret_cast<iterator>(array_.emplace(
               reinterpret_cast<store_iterator>(pos), std::piecewise_construct,
@@ -1992,21 +2115,23 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   }
 
   template <size_t N2>
-  bool operator==(const BinarySearchMap<K, T, N2, Compare>& other) const {
-    return this->array_ == other.array_;
+  bool operator==(const BinarySearchMap<K, T, N2, Compare, Stat>& other) const {
+    return array_ == other.array_;
   }
 
   template <size_t N2>
-  bool operator!=(const BinarySearchMap<K, T, N2, Compare>& other) const {
-    return this->array_ != other.array_;
+  bool operator!=(const BinarySearchMap<K, T, N2, Compare, Stat>& other) const {
+    return array_ != other.array_;
   }
 
  protected:
   iterator try_insert(const K& key) {
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return pos;
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return reinterpret_cast<iterator>(array_.emplace(
           reinterpret_cast<store_iterator>(pos), std::piecewise_construct,
           std::forward_as_tuple(key), std::tuple<>()));
@@ -2016,8 +2141,10 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   iterator try_insert(K&& key) {
     auto pos = lower_bound(key);
     if (pos != end() && *reinterpret_cast<const K*>(pos) == key) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return pos;
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return reinterpret_cast<iterator>(array_.emplace(
           reinterpret_cast<store_iterator>(pos), std::piecewise_construct,
           std::forward_as_tuple(std::move(key)), std::tuple<>()));
@@ -2025,17 +2152,19 @@ struct BinarySearchMap : public BinarySearchArray<K, T, N, Compare> {
   }
 };
 
-template <class K, size_t N, class Compare = std::less<K>>
-struct BinarySearchSet : public BinarySearchArray<K, void, N, Compare> {
+template <class K, size_t N, class Compare, bool Stat>
+struct BinarySearchSet : public BinarySearchArray<K, void, N, Compare, Stat> {
  protected:
-  template <class K2, size_t N2, class Compare2>
+  template <class K2, size_t N2, class Compare2, bool Stat2>
   friend struct BinarySearchSet;
 
-  using BinarySearchArray<K, void, N, Compare>::array_;
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+
+  using BinarySearchArray<K, void, N, Compare, Stat>::array_;
 
  public:
-  using typename BinarySearchArray<K, void, N, Compare>::value_type;
-  using BinarySearchArray<K, void, N, Compare>::insert;
+  using typename BinarySearchArray<K, void, N, Compare, Stat>::value_type;
+  using BinarySearchArray<K, void, N, Compare, Stat>::insert;
 
   BinarySearchSet() = default;
   BinarySearchSet(std::initializer_list<value_type> list) {
@@ -2046,51 +2175,60 @@ struct BinarySearchSet : public BinarySearchArray<K, void, N, Compare> {
   }
 
   template <size_t N2>
-  BinarySearchSet(const BinarySearchSet<K, N2, Compare>& other)
-      : BinarySearchArray<K, void, N, Compare>(other) {}
+  BinarySearchSet(const BinarySearchSet<K, N2, Compare, Stat>& other)
+      : BinarySearchArray<K, void, N, Compare, Stat>(other) {}
 
   template <size_t N2>
-  BinarySearchSet(BinarySearchSet<K, N2, Compare>&& other)
-      : BinarySearchArray<K, void, N, Compare>(std::move(other)) {}
+  BinarySearchSet(BinarySearchSet<K, N2, Compare, Stat>&& other)
+      : BinarySearchArray<K, void, N, Compare, Stat>(std::move(other)) {}
 
   template <size_t N2>
-  BinarySearchSet& operator=(const BinarySearchSet<K, N2, Compare>& other) {
-    this->array_ = other.array_;
+  BinarySearchSet& operator=(
+      const BinarySearchSet<K, N2, Compare, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  BinarySearchSet& operator=(BinarySearchSet<K, N2, Compare>&& other) {
-    this->array_ = std::move(other.array_);
+  BinarySearchSet& operator=(BinarySearchSet<K, N2, Compare, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  bool operator==(const BinarySearchSet<K, N2, Compare>& other) const {
-    return this->array_ == other.array_;
+  bool operator==(const BinarySearchSet<K, N2, Compare, Stat>& other) const {
+    return array_ == other.array_;
   }
 
   template <size_t N2>
-  bool operator!=(const BinarySearchSet<K, N2, Compare>& other) const {
-    return this->array_ != other.array_;
+  bool operator!=(const BinarySearchSet<K, N2, Compare, Stat>& other) const {
+    return array_ != other.array_;
   }
 };
 
-template <class K, class T, size_t N>
-struct LinearSearchMap : public LinearSearchArray<K, T, N> {
+template <class K, class T, size_t N, bool Stat>
+struct LinearSearchMap : public LinearSearchArray<K, T, N, Stat> {
  protected:
-  template <class K2, class T2, size_t N2>
+  template <class K2, class T2, size_t N2, bool Stat2>
   friend struct LinearSearchMap;
 
-  using KeyValueArray<K, T, N>::array_;
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+  using MapStatisticsBase<Stat>::IncreaseInsertCount;
+  using MapStatisticsBase<Stat>::IncreaseEraseCount;
+  using MapStatisticsBase<Stat>::RecordFind;
+
+  using KeyValueArray<K, T, N, Stat>::array_;
 
  public:
-  using typename LinearSearchArray<K, T, N>::value_type;
-  using typename LinearSearchArray<K, T, N>::iterator;
-  using typename LinearSearchArray<K, T, N>::store_iterator;
-  using LinearSearchArray<K, T, N>::insert;
-  using LinearSearchArray<K, T, N>::find_exact;
-  using KeyValueArray<K, T, N>::end;
+  using typename LinearSearchArray<K, T, N, Stat>::value_type;
+  using typename LinearSearchArray<K, T, N, Stat>::store_value_type;
+  using typename LinearSearchArray<K, T, N, Stat>::iterator;
+  using typename LinearSearchArray<K, T, N, Stat>::store_iterator;
+  using LinearSearchArray<K, T, N, Stat>::insert;
+  using LinearSearchArray<K, T, N, Stat>::find_exact;
+  using KeyValueArray<K, T, N, Stat>::end;
 
   LinearSearchMap() = default;
   LinearSearchMap(std::initializer_list<value_type> list) {
@@ -2100,23 +2238,34 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
     }
   }
 
-  template <size_t N2>
-  LinearSearchMap(const LinearSearchMap<K, T, N2>& other)
-      : LinearSearchArray<K, T, N>(other) {}
+  LinearSearchMap(Vector<store_value_type>&& source_array)
+      : LinearSearchArray<K, T, N, Stat>(std::move(source_array)) {}
 
-  template <size_t N2>
-  LinearSearchMap(LinearSearchMap<K, T, N2>&& other)
-      : LinearSearchArray<K, T, N>(std::move(other)) {}
-
-  template <size_t N2>
-  LinearSearchMap& operator=(const LinearSearchMap<K, T, N2>& other) {
-    this->array_ = other.array_;
+  LinearSearchMap& operator=(Vector<store_value_type>&& source_array) {
+    array_ = std::move(source_array);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  LinearSearchMap& operator=(LinearSearchMap<K, T, N2>&& other) {
-    this->array_ = std::move(other.array_);
+  LinearSearchMap(const LinearSearchMap<K, T, N2, Stat>& other)
+      : LinearSearchArray<K, T, N, Stat>(other) {}
+
+  template <size_t N2>
+  LinearSearchMap(LinearSearchMap<K, T, N2, Stat>&& other)
+      : LinearSearchArray<K, T, N, Stat>(std::move(other)) {}
+
+  template <size_t N2>
+  LinearSearchMap& operator=(const LinearSearchMap<K, T, N2, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
+    return *this;
+  }
+
+  template <size_t N2>
+  LinearSearchMap& operator=(LinearSearchMap<K, T, N2, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
@@ -2126,6 +2275,7 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   }
 
   T& at(const K& key) {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = find_exact(key);
     if (pos != nullptr) {
       return pos->second;
@@ -2134,6 +2284,7 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   }
 
   const T& at(const K& key) const {
+    RecordFind(MapStatisticsFindKind::kFind, array_.size());
     auto pos = find_exact(key);
     if (pos != nullptr) {
       return pos->second;
@@ -2145,9 +2296,11 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   std::pair<iterator, bool> insert_or_assign(const K& key, V&& value) {
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       pos->second = std::forward<V>(value);
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(&array_.emplace_back(
                   std::piecewise_construct, std::forward_as_tuple(key),
                   std::forward_as_tuple(std::forward<V>(value)))),
@@ -2159,9 +2312,11 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   std::pair<iterator, bool> insert_or_assign(K&& key, V&& value) {
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       pos->second = std::forward<V>(value);
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {
           reinterpret_cast<iterator>(&array_.emplace_back(
               std::piecewise_construct, std::forward_as_tuple(std::move(key)),
@@ -2174,8 +2329,10 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   std::pair<iterator, bool> emplace(const K& key, Args&&... args) {
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(&array_.emplace_back(
                   std::piecewise_construct, std::forward_as_tuple(key),
                   std::forward_as_tuple(std::forward<Args>(args)...))),
@@ -2187,8 +2344,10 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   std::pair<iterator, bool> emplace(K&& key, Args&&... args) {
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {
           reinterpret_cast<iterator>(&array_.emplace_back(
               std::piecewise_construct, std::forward_as_tuple(std::move(key)),
@@ -2212,8 +2371,10 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
     // Do emplace.
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return {pos, false};  // key is discarded
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return {reinterpret_cast<iterator>(&array_.emplace_back(
                   std::piecewise_construct,
                   std::forward_as_tuple(std::move(key)), std::move(args2))),
@@ -2222,21 +2383,23 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   }
 
   template <size_t N2>
-  bool operator==(const LinearSearchMap<K, T, N2>& other) const {
-    return this->array_ == other.array_;
+  bool operator==(const LinearSearchMap<K, T, N2, Stat>& other) const {
+    return array_ == other.array_;
   }
 
   template <size_t N2>
-  bool operator!=(const LinearSearchMap<K, T, N2>& other) const {
-    return this->array_ != other.array_;
+  bool operator!=(const LinearSearchMap<K, T, N2, Stat>& other) const {
+    return array_ != other.array_;
   }
 
  protected:
   iterator try_insert(const K& key) {
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return pos;
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return reinterpret_cast<iterator>(
           &array_.emplace_back(std::piecewise_construct,
                                std::forward_as_tuple(key), std::tuple<>()));
@@ -2246,8 +2409,10 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   iterator try_insert(K&& key) {
     auto pos = find_exact(key);
     if (pos != nullptr) {
+      RecordFind(MapStatisticsFindKind::kInsertFindCollision, array_.size());
       return pos;
     } else {
+      RecordFind(MapStatisticsFindKind::kInsertFind, array_.size());
       return reinterpret_cast<iterator>(&array_.emplace_back(
           std::piecewise_construct, std::forward_as_tuple(std::move(key)),
           std::tuple<>()));
@@ -2255,17 +2420,20 @@ struct LinearSearchMap : public LinearSearchArray<K, T, N> {
   }
 };
 
-template <class K, size_t N>
-struct LinearSearchSet : public LinearSearchArray<K, void, N> {
+template <class K, size_t N, bool Stat>
+struct LinearSearchSet : public LinearSearchArray<K, void, N, Stat> {
  protected:
-  template <class K2, size_t N2>
+  template <class K2, size_t N2, bool Stat2>
   friend struct LinearSearchSet;
 
-  using LinearSearchArray<K, void, N>::array_;
+  using MapStatisticsBase<Stat>::UpdateMaxCount;
+
+  using LinearSearchArray<K, void, N, Stat>::array_;
 
  public:
-  using typename LinearSearchArray<K, void, N>::value_type;
-  using LinearSearchArray<K, void, N>::insert;
+  using typename LinearSearchArray<K, void, N, Stat>::value_type;
+  using typename LinearSearchArray<K, void, N, Stat>::store_value_type;
+  using LinearSearchArray<K, void, N, Stat>::insert;
 
   LinearSearchSet() = default;
   LinearSearchSet(std::initializer_list<value_type> list) {
@@ -2275,60 +2443,81 @@ struct LinearSearchSet : public LinearSearchArray<K, void, N> {
     }
   }
 
-  template <size_t N2>
-  LinearSearchSet(const LinearSearchSet<K, N2>& other)
-      : LinearSearchArray<K, void, N>(other) {}
+  LinearSearchSet(Vector<store_value_type>&& source_array)
+      : LinearSearchArray<K, void, N, Stat>(std::move(source_array)) {}
 
-  template <size_t N2>
-  LinearSearchSet(LinearSearchSet<K, N2>&& other)
-      : LinearSearchArray<K, void, N>(std::move(other)) {}
-
-  template <size_t N2>
-  LinearSearchSet& operator=(const LinearSearchSet<K, N2>& other) {
-    this->array_ = other.array_;
+  LinearSearchSet& operator=(Vector<store_value_type>&& source_array) {
+    array_ = std::move(source_array);
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  LinearSearchSet& operator=(LinearSearchSet<K, N2>&& other) {
-    this->array_ = std::move(other.array_);
+  LinearSearchSet(const LinearSearchSet<K, N2, Stat>& other)
+      : LinearSearchArray<K, void, N, Stat>(other) {}
+
+  template <size_t N2>
+  LinearSearchSet(LinearSearchSet<K, N2, Stat>&& other)
+      : LinearSearchArray<K, void, N, Stat>(std::move(other)) {}
+
+  template <size_t N2>
+  LinearSearchSet& operator=(const LinearSearchSet<K, N2, Stat>& other) {
+    array_ = other.array_;
+    UpdateMaxCount(array_.size());
     return *this;
   }
 
   template <size_t N2>
-  bool operator==(const LinearSearchSet<K, N2>& other) const {
-    return this->array_ == other.array_;
+  LinearSearchSet& operator=(LinearSearchSet<K, N2, Stat>&& other) {
+    array_ = std::move(other.array_);
+    UpdateMaxCount(array_.size());
+    return *this;
   }
 
   template <size_t N2>
-  bool operator!=(const LinearSearchSet<K, N2>& other) const {
-    return this->array_ != other.array_;
+  bool operator==(const LinearSearchSet<K, N2, Stat>& other) const {
+    return array_ == other.array_;
+  }
+
+  template <size_t N2>
+  bool operator!=(const LinearSearchSet<K, N2, Stat>& other) const {
+    return array_ != other.array_;
   }
 };
 
 template <class K, class T, class Compare = std::less<K>>
-using OrderedFlatMap = BinarySearchMap<K, T, 0, Compare>;
+using OrderedFlatMap = BinarySearchMap<K, T, 0, Compare, false>;
 
 template <class K, class T, size_t N, class Compare = std::less<K>>
-using InlineOrderedFlatMap = BinarySearchMap<K, T, N, Compare>;
+using InlineOrderedFlatMap = BinarySearchMap<K, T, N, Compare, false>;
 
 template <class K, class Compare = std::less<K>>
-using OrderedFlatSet = BinarySearchSet<K, 0, Compare>;
+using OrderedFlatSet = BinarySearchSet<K, 0, Compare, false>;
 
 template <class K, size_t N, class Compare = std::less<K>>
-using InlineOrderedFlatSet = BinarySearchSet<K, N, Compare>;
+using InlineOrderedFlatSet = BinarySearchSet<K, N, Compare, false>;
 
 template <class K, class T>
-using LinearFlatMap = LinearSearchMap<K, T, 0>;
+using LinearFlatMap = LinearSearchMap<K, T, 0, false>;
 
 template <class K, class T, size_t N>
-using InlineLinearFlatMap = LinearSearchMap<K, T, N>;
+using InlineLinearFlatMap = LinearSearchMap<K, T, N, false>;
 
 template <class K>
-using LinearFlatSet = LinearSearchSet<K, 0>;
+using LinearFlatSet = LinearSearchSet<K, 0, false>;
 
 template <class K, size_t N>
-using InlineLinearFlatSet = LinearSearchSet<K, N>;
+using InlineLinearFlatSet = LinearSearchSet<K, N, false>;
+
+static_assert(sizeof(OrderedFlatMap<int, int>) ==
+              sizeof(Vector<std::pair<int, int>>));
+
+static_assert(sizeof(OrderedFlatSet<int>) == sizeof(Vector<int>));
+
+static_assert(sizeof(LinearFlatMap<int, int>) ==
+              sizeof(Vector<std::pair<int, int>>));
+
+static_assert(sizeof(LinearFlatSet<int>) == sizeof(Vector<int>));
 
 }  // namespace base
 }  // namespace lynx
