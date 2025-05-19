@@ -237,6 +237,17 @@ inline constexpr const char* const UPDATE_META_DATA = "UpdateMetaData";
 inline constexpr const char* const FROM_BINARY = "FromBinary";
 inline constexpr const char* const DATA_PROCESSOR = "dataProcessor";
 
+/** PIPELINE_START  */
+inline constexpr const char* const LYNX_PIPELINE_RUN_PIXEL = "RunPixelPipeline";
+inline constexpr const char* const LYNX_PIPELINE_TRIGGER_RESOLVE =
+    "TriggerResolve";
+inline constexpr const char* const LYNX_PIPELINE_TRIGGER_LAYOUT =
+    "TriggerLayout";
+inline constexpr const char* const LYNX_PIPELINE_FLUSH_UI_OPERATION =
+    "FlushUiOperation";
+
+/** PIPELINE_END */
+
 inline constexpr const char* const TEMPLATE_ENTRY_HOLDER_FIND_ENTRY =
     "TemplateEntryHolder::FindEntry";
 inline constexpr const char* const TEMPLATE_ENTRY_HOLDER_FIND_TEMPLATE_ENTRY =

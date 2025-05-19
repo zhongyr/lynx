@@ -3175,5 +3175,48 @@ bool TemplateAssembler::LoadTemplateForSSRRuntime(std::vector<uint8_t> source) {
   return true;
 }
 
+// starts run pixel pipeline process;
+void TemplateAssembler::RunPixelPipeline() {
+  auto* current_pipeline_context = GetCurrentPipelineContext();
+  auto pipeline_option = current_pipeline_context->GetOptions();
+  TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_PIPELINE_RUN_PIXEL,
+              [&pipeline_option](lynx::perfetto::EventContext ctx) {
+                ctx.event()->add_debug_annotations(
+                    "pipeline_id", pipeline_option->pipeline_id);
+              });
+  if (!current_pipeline_context->GetOptions()->enable_unified_pixel_pipeline) {
+    // quick rejection for pixel pipeline;
+    return;
+  }
+  if (current_pipeline_context->IsResolveRequested()) {
+    TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_PIPELINE_TRIGGER_LAYOUT);
+    // trigger resolve;
+    // TODO(nihao.royal): remove page_proxy, and make LynxEngine owns
+    // element_manager;
+    page_proxy()->element_manager()->ResolveStyle(pipeline_option,
+                                                  pipeline_option->target_node);
+    current_pipeline_context->ResetResolveRequested();
+  }
+
+  // TODO(@yangguangzhao): Advance Pipeline Lifecycle State;
+  if (current_pipeline_context->IsLayoutRequested()) {
+    TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_PIPELINE_TRIGGER_LAYOUT);
+    // Execute Layout Job.
+    // Maybe Happened On Layout Thread. Trigger layout by engine here;
+    // TODO(@chennengshi): Refactoring this to invoke layout by LynxEngine;
+    page_proxy()->element_manager()->RequestLayout(pipeline_option);
+    current_pipeline_context->ResetLayoutRequested();
+  }
+
+  // TODO(@yangguangzhao): Advance Pipeline Lifecycle State;
+  // Execute Flush UI OP;
+  if (current_pipeline_context->IsFlushUIOperationRequested()) {
+    TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_PIPELINE_FLUSH_UI_OPERATION);
+    page_proxy()->element_manager()->painting_context()->Flush();
+    current_pipeline_context->ResetFlushUIOperationRequested();
+  }
+
+  // TODO(@yangguangzhao): Advance Pipeline Lifecycle State;
+}
 }  // namespace tasm
 }  // namespace lynx

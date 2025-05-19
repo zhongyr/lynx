@@ -97,5 +97,30 @@ std::size_t PipelineContext::GetHash() {
   return hash_;
 }
 
+void PipelineContext::ResetResolveRequested() {
+  if (!options_) {
+    LOGE("options is nullptr");
+    return;
+  }
+  options_->resolve_requested = false;
+  options_->target_node = nullptr;
+}
+
+void PipelineContext::ResetLayoutRequested() {
+  if (!options_) {
+    LOGE("options is nullptr");
+    return;
+  }
+  options_->layout_requested = false;
+}
+
+void PipelineContext::ResetFlushUIOperationRequested() {
+  if (!options_) {
+    LOGE("options is nullptr");
+    return;
+  }
+  options_->flush_ui_requested = false;
+}
+
 }  // namespace tasm
 }  // namespace lynx

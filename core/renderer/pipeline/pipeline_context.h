@@ -41,6 +41,10 @@ class PipelineContext {
   void RequestFlushUIOperation(bool flush);
   void MarkReload(bool reload);
 
+  void ResetResolveRequested();
+  void ResetLayoutRequested();
+  void ResetFlushUIOperationRequested();
+
  private:
   explicit PipelineContext(const PipelineVersion& version);
 

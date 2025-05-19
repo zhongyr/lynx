@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/include/closure.h"
 #include "core/base/threading/task_runner_manufactor.h"
 #include "core/base/utils/any.h"
 #include "core/inspector/observer/inspector_element_observer.h"
@@ -920,6 +921,13 @@ class ElementManager : public ElementContextDelegate {
       std::shared_ptr<PipelineOptions> &option, Element *root = nullptr);
 
   /**
+   * Used By RunPixelPipeline Process.
+   *
+   */
+  void ResolveStyle(std::shared_ptr<PipelineOptions> &option,
+                    Element *root = nullptr);
+
+  /**
    * Generate ID for element
    */
   int32_t GenerateElementID();
@@ -1064,13 +1072,13 @@ class ElementManager : public ElementContextDelegate {
   void LegacyHandleLayoutTask(FiberElement *target,
                               base::MoveOnlyClosure<void> operation);
 
- protected:
   /**
    * call this function to request layout
    * @param options the pipeline options passed to layout context
    */
   void RequestLayout(const std::shared_ptr<PipelineOptions> &options);
 
+ protected:
   /**
    * call this function after exec OnPatchFinishForFiber
    */
@@ -1090,15 +1098,19 @@ class ElementManager : public ElementContextDelegate {
  private:
   // Do not call this function directly; it needs to be called from
   // OnPatchFinish.
-  void OnPatchFinishForRadon(std::shared_ptr<PipelineOptions> &option);
+  void OnPatchFinishForRadon(
+      std::shared_ptr<PipelineOptions> &option,
+      base::MoveOnlyClosure<void, bool> patch_finish_callback);
   /**
    * a special onPatchFinish function for fiber
    * @param option options for onPatchFinish
    */
   // Do not call this function directly; it needs to be called from
   // OnPatchFinish.
-  void OnPatchFinishForFiber(std::shared_ptr<PipelineOptions> &option,
-                             FiberElement *root = nullptr);
+  void OnPatchFinishForFiber(
+      std::shared_ptr<PipelineOptions> &option,
+      base::MoveOnlyClosure<void, bool> patch_finish_callback,
+      FiberElement *root = nullptr);
   void WillDestroy();
   ElementManager(const ElementManager &) = delete;
   ElementManager &operator=(const ElementManager &) = delete;

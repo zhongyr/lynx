@@ -63,6 +63,8 @@ struct ListItemLifeOption {
   uint64_t end_layout_time_{0};
 };
 
+class Element;
+
 struct PipelineOptions {
   // TODO(kechenglong): impl ToLepusValue here.
   // Default constructor that generates a unique PipelineID
@@ -138,6 +140,7 @@ struct PipelineOptions {
   bool resolve_requested{false};
   bool layout_requested{false};
   bool flush_ui_requested{false};
+  Element* target_node{nullptr};
   // Whether the current template has been reloaded.
   bool reload{false};
 

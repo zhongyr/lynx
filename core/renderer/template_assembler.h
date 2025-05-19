@@ -559,6 +559,10 @@ class TemplateAssembler final
   bool UpdateConfig(const lepus::Value& config, bool noticeDelegate,
                     std::shared_ptr<PipelineOptions>& pipeline_options);
 
+  PipelineContext* GetCurrentPipelineContext() {
+    return pipeline_context_manager_->GetCurrentPipelineContext();
+  }
+
   std::string TranslateResourceForTheme(const std::string& res_id,
                                         const std::string& theme_key) {
     std::string result;
@@ -715,6 +719,9 @@ class TemplateAssembler final
   }
 
   const PageOptions& GetPageOptions() const { return page_options_; }
+
+  // Start pixel pipeline process;
+  void RunPixelPipeline();
 
  private:
   friend class TemplateBinaryReader;

@@ -615,7 +615,8 @@ void ElementManager::OnFinishUpdateProps(
 }
 
 void ElementManager::OnPatchFinishForRadon(
-    std::shared_ptr<PipelineOptions> &options) {
+    std::shared_ptr<PipelineOptions> &options,
+    base::MoveOnlyClosure<void, bool> patch_finish_callback) {
   TRACE_EVENT(LYNX_TRACE_CATEGORY_VITALS, ELEMENT_MANAGER_ON_PATCH_FINISH);
   catalyzer_->painting_context()->FinishTasmOperation(options);
 
@@ -628,6 +629,7 @@ void ElementManager::OnPatchFinishForRadon(
     LOGI("ElementManager::OnPatchFinishNoPatch!");
     catalyzer_->painting_context()->FinishLayoutOperation(options);
     delegate_->OnUpdateDataWithoutChange();
+    patch_finish_callback(false);
   } else {
     LOGI("ElementManager::OnPatchFinish");
     TRACE_EVENT(LYNX_TRACE_CATEGORY, ELEMENT_MANAGER_ON_PATCH_FINISH_INNER,
@@ -646,7 +648,7 @@ void ElementManager::OnPatchFinishForRadon(
       }
     }
     dirty_stacking_contexts_.clear();
-    RequestLayout(options);
+    patch_finish_callback(true);
   }
   need_layout_ = false;
 }
@@ -1145,10 +1147,52 @@ void ElementManager::OnPatchFinish(std::shared_ptr<PipelineOptions> &option,
     LOGE("ElementManager::OnPatchFinish failed since element is nullptr.");
     return;
   }
+
+  base::MoveOnlyClosure<void, bool> patch_finish_callback =
+      [&option, self = this](bool has_patch) {
+        if (has_patch) {
+          self->RequestLayout(option);
+        }
+      };
   if (element->is_radon_element()) {
-    OnPatchFinishForRadon(option);
+    // in radon, we just need to do requestLayout;
+    OnPatchFinishForRadon(option, std::move(patch_finish_callback));
   } else if (element->is_fiber_element()) {
-    OnPatchFinishForFiber(option, static_cast<FiberElement *>(element));
+    // in fiber, do element style resolve and request layout;
+    OnPatchFinishForFiber(option, std::move(patch_finish_callback),
+                          static_cast<FiberElement *>(element));
+  }
+  if (option->need_timestamps) {
+    report::EventTracker::UpdateGenericInfo(
+        instance_id_, kEventDomSizeKey,
+        static_cast<int64_t>(element_count_.load()));
+  }
+}
+
+void ElementManager::ResolveStyle(std::shared_ptr<PipelineOptions> &option,
+                                  Element *element) {
+  if (element == nullptr) {
+    element = static_cast<Element *>(root());
+  }
+  if (!element) {
+    LOGE("ElementManager::OnPatchFinish failed since element is nullptr.");
+    return;
+  }
+  base::MoveOnlyClosure<void, bool> patch_finish_callback =
+      [&option](bool has_patch) {
+        if (has_patch) {
+          option->layout_requested = true;
+        } else {
+          option->layout_requested = false;
+        }
+      };
+  if (element->is_radon_element()) {
+    // in radon, we just need to do requestLayout;
+    OnPatchFinishForRadon(option, std::move(patch_finish_callback));
+  } else if (element->is_fiber_element()) {
+    // in fiber, do element style resolve and request layout;
+    OnPatchFinishForFiber(option, std::move(patch_finish_callback),
+                          static_cast<FiberElement *>(element));
   }
   if (option->need_timestamps) {
     report::EventTracker::UpdateGenericInfo(
@@ -1158,7 +1202,9 @@ void ElementManager::OnPatchFinish(std::shared_ptr<PipelineOptions> &option,
 }
 
 void ElementManager::OnPatchFinishForFiber(
-    std::shared_ptr<PipelineOptions> &options, FiberElement *element) {
+    std::shared_ptr<PipelineOptions> &options,
+    base::MoveOnlyClosure<void, bool> patch_finish_callback,
+    FiberElement *element) {
   TRACE_EVENT(LYNX_TRACE_CATEGORY, ELEMENT_MANAGER_ON_PATCH_FINISH_FOR_FIBER);
   if (options->need_timestamps) {
     painting_context()->MarkUIOperationQueueFlushTiming(
@@ -1217,6 +1263,7 @@ void ElementManager::OnPatchFinishForFiber(
     OnListComponentUpdated(options);
     catalyzer_->painting_context()->FinishLayoutOperation(options);
     delegate_->OnUpdateDataWithoutChange();
+    patch_finish_callback(false);
   } else {
     LOGI("ElementManager::OnPatchFinishForFiber WithPatch!");
     {
@@ -1227,7 +1274,7 @@ void ElementManager::OnPatchFinishForFiber(
       }
     }
     dirty_stacking_contexts_.clear();
-    RequestLayout(options);
+    patch_finish_callback(true);
     need_layout_ = false;
   }
 
