@@ -20,18 +20,16 @@ namespace shell {
 void LynxRuntimeProxyImpl::CallJSFunction(std::string module_id,
                                           std::string method_id,
                                           std::unique_ptr<pub::Value> params) {
-  CallJSFunction(module_id, method_id,
-                 [params = std::move(params)](auto& runtime) mutable {
-                   return std::move(params);
-                 });
+  CallJSFunction(module_id, method_id, [params = std::move(params)]() mutable {
+    return std::move(params);
+  });
 }
 
 void LynxRuntimeProxyImpl::CallJSApiCallbackWithValue(
     int32_t callback_id, std::unique_ptr<pub::Value> params) {
   CallJSApiCallbackWithValue(
-      callback_id, [params = std::move(params)](auto& runtime) mutable {
-        return std::move(params);
-      });
+      callback_id,
+      [params = std::move(params)]() mutable { return std::move(params); });
 }
 
 void LynxRuntimeProxyImpl::CallJSIntersectionObserver(
@@ -39,9 +37,7 @@ void LynxRuntimeProxyImpl::CallJSIntersectionObserver(
     std::unique_ptr<pub::Value> params) {
   CallJSIntersectionObserver(
       observer_id, callback_id,
-      [params = std::move(params)](auto& runtime) mutable {
-        return std::move(params);
-      });
+      [params = std::move(params)]() mutable { return std::move(params); });
 }
 
 void LynxRuntimeProxyImpl::CallJSFunction(std::string module_id,
@@ -57,10 +53,17 @@ void LynxRuntimeProxyImpl::CallJSFunction(std::string module_id,
     auto task = [&runtime, module_id = std::move(module_id),
                  method_id = std::move(method_id), getter = std::move(getter)] {
       auto js_runtime = runtime->GetJSRuntime();
-      auto params = getter(js_runtime);
-      if (js_runtime == nullptr || params == nullptr) {
+      if (js_runtime == nullptr) {
         LOGE(
-            "try call js module before js context is ready or args is nullptr! "
+            "try call js module before js context is ready! "
+            "module:"
+            << module_id << " method:" << method_id << &runtime);
+        return;
+      }
+      auto params = getter();
+      if (params == nullptr) {
+        LOGE(
+            "try call js module args is nullptr! "
             "module:"
             << module_id << " method:" << method_id << &runtime);
         return;
@@ -147,11 +150,17 @@ void LynxRuntimeProxyImpl::CallJSApiCallbackWithValue(int32_t callback_id,
   }
   actor_->Act([callback_id, getter = std::move(getter)](auto& runtime) {
     auto js_runtime = runtime->GetJSRuntime();
-    auto params = getter(js_runtime);
-    if (js_runtime == nullptr || params == nullptr) {
+    if (js_runtime == nullptr) {
       LOGR(
-          "try CallJSApiCallbackWithValue before js context is ready or params "
-          "is nullptr."
+          "try CallJSApiCallbackWithValue before js context is ready "
+          "callback_id:"
+          << callback_id << &runtime);
+      return;
+    }
+    auto params = getter();
+    if (params == nullptr) {
+      LOGR(
+          "try CallJSApiCallbackWithValue params is nullptr."
           "callback_id:"
           << callback_id << &runtime);
       return;
@@ -173,11 +182,17 @@ void LynxRuntimeProxyImpl::CallJSIntersectionObserver(int32_t observer_id,
   actor_->Act([observer_id, callback_id,
                getter = std::move(getter)](auto& runtime) {
     auto js_runtime = runtime->GetJSRuntime();
-    auto params = getter(js_runtime);
-    if (js_runtime == nullptr || params == nullptr) {
+    if (js_runtime == nullptr) {
       LOGE(
-          "try CallJSIntersectionObserver before js context is ready or params "
-          "is nullptr! "
+          "try CallJSIntersectionObserver before js context is ready "
+          "observer_id:"
+          << observer_id << " callback_id:" << callback_id << &runtime);
+      return;
+    }
+    auto params = getter();
+    if (params == nullptr) {
+      LOGE(
+          "try CallJSIntersectionObserver params is nullptr! "
           "observer_id:"
           << observer_id << " callback_id:" << callback_id << &runtime);
       return;
