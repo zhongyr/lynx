@@ -134,9 +134,11 @@ class ListItemSchedulerAdapterTest
     if (enable_batch_layout_operation) {
       LynxEnv::GetInstance().external_env_map_
           [LynxEnv::Key::ENABLE_BATCH_LAYOUT_TASK_WITH_SYNC_LAYOUT] = "true";
+      manager->enable_batch_layout_task_with_sync_layout_ = true;
     } else {
       LynxEnv::GetInstance().external_env_map_
           [LynxEnv::Key::ENABLE_BATCH_LAYOUT_TASK_WITH_SYNC_LAYOUT] = "false";
+      manager->enable_batch_layout_task_with_sync_layout_ = false;
     }
     const_cast<DynamicCSSConfigs&>(manager->GetDynamicCSSConfigs())
         .unify_vw_vh_behavior_ = true;
@@ -145,6 +147,7 @@ class ListItemSchedulerAdapterTest
   void TearDown() override {
     LynxEnv::GetInstance().external_env_map_
         [LynxEnv::Key::ENABLE_BATCH_LAYOUT_TASK_WITH_SYNC_LAYOUT] = "false";
+    manager->enable_batch_layout_task_with_sync_layout_ = false;
   }
 
  protected:

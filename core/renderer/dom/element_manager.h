@@ -1078,6 +1078,10 @@ class ElementManager : public ElementContextDelegate {
    */
   void RequestLayout(const std::shared_ptr<PipelineOptions> &options);
 
+  inline bool GetEnableBatchLayoutTaskWithSyncLayout() {
+    return enable_batch_layout_task_with_sync_layout_;
+  }
+
  protected:
   /**
    * call this function after exec OnPatchFinishForFiber
@@ -1172,6 +1176,7 @@ class ElementManager : public ElementContextDelegate {
 
   bool enable_layout_only_{true};
   bool dom_tree_enabled_{true};
+  bool enable_batch_layout_task_with_sync_layout_{false};
 
   LynxEnvConfig lynx_env_config_;
   std::shared_ptr<PageConfig> config_;

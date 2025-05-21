@@ -1416,7 +1416,9 @@ void FiberElement::FlushActionsAsRoot() {
 
   ParallelFlushAsRoot();
   FlushActions();
-  element_context_delegate_->FlushEnqueuedTasks();
+  if (element_manager()->GetEnableBatchLayoutTaskWithSyncLayout()) {
+    element_context_delegate_->FlushEnqueuedTasks();
+  }
 }
 
 void FiberElement::FlushSelf() {
@@ -2567,7 +2569,7 @@ void FiberElement::CheckHasInlineContainer(Element *parent) {
 }
 
 void FiberElement::EnqueueLayoutTask(base::MoveOnlyClosure<void> operation) {
-  if (LynxEnv::GetInstance().EnableBatchLayoutTaskWithSyncLayout()) {
+  if (element_manager()->GetEnableBatchLayoutTaskWithSyncLayout()) {
     element_context_delegate_->EnqueueTask(std::move(operation));
   } else {
     element_manager()->LegacyHandleLayoutTask(this, std::move(operation));
@@ -3403,7 +3405,9 @@ void FiberElement::UpdateDynamicElementStyleRecursively(uint32_t style,
 void FiberElement::UpdateDynamicElementStyle(uint32_t style,
                                              bool force_update) {
   UpdateDynamicElementStyleRecursively(style, force_update);
-  element_context_delegate_->FlushEnqueuedTasks();
+  if (element_manager()->GetEnableBatchLayoutTaskWithSyncLayout()) {
+    element_context_delegate_->FlushEnqueuedTasks();
+  }
 }
 
 void FiberElement::SetCSSID(int32_t id) {
@@ -3526,7 +3530,7 @@ void FiberElement::UpdateLengthContextValueForAllElement(
 // TODO: Move this method out of fiber_element when a more general render root
 // is introduced.
 void FiberElement::AsyncResolveSubtreeProperty() {
-  if (LynxEnv::GetInstance().EnableBatchLayoutTaskWithSyncLayout()) {
+  if (element_manager()->GetEnableBatchLayoutTaskWithSyncLayout()) {
     if (element_manager()->GetEnableParallelElement() &&
         ((dirty_ & ~kDirtyTree) != 0) && element_context_delegate_ &&
         element_context_delegate_->IsListItemElementContext()) {
@@ -3577,7 +3581,7 @@ void FiberElement::AsyncResolveSubtreeProperty() {
 void FiberElement::CreateListItemScheduler(
     list::BatchRenderStrategy batch_render_strategy,
     ElementContextDelegate *parent_context, bool continuous_resolve_tree) {
-  if (LynxEnv::GetInstance().EnableBatchLayoutTaskWithSyncLayout()) {
+  if (element_manager()->GetEnableBatchLayoutTaskWithSyncLayout()) {
     std::shared_ptr<ElementContextDelegate> element_context_delegate_ptr =
         std::make_shared<ListItemSchedulerAdapter>(this, batch_render_strategy,
                                                    parent_context,

@@ -132,7 +132,10 @@ void ListItemSchedulerAdapter::ResolveElementTree(
       // reduce tasks.
       render_root_->FlushActions();
     }
-    FlushEnqueuedTasks();
+    if (render_root_->element_manager()
+            ->GetEnableBatchLayoutTaskWithSyncLayout()) {
+      FlushEnqueuedTasks();
+    }
   }
 }
 
@@ -144,7 +147,10 @@ ListItemSchedulerAdapter::GenerateReduceTaskForResolveElementTree() {
       ConsumeResolveElementTreeReduceTasks();
     }
 
-    FlushEnqueuedTasks();
+    if (render_root_->element_manager()
+            ->GetEnableBatchLayoutTaskWithSyncLayout()) {
+      FlushEnqueuedTasks();
+    }
   });
 }
 

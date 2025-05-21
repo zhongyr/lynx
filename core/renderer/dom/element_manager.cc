@@ -174,6 +174,8 @@ ElementManager::ElementManager(
   enable_new_animator_radon_ = false;
   element_context_task_queue_ = std::make_unique<ElementContextTaskQueue>(
       [this]() { return GetParallelWithSyncLayout(); });
+  enable_batch_layout_task_with_sync_layout_ =
+      LynxEnv::GetInstance().EnableBatchLayoutTaskWithSyncLayout();
 }
 
 static bool EnableLayoutOnlyStatistic() {
