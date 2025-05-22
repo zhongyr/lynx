@@ -35,6 +35,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) UIColor* backgroundColor;
 @property(nonatomic, readonly) BOOL enableSizeOptimization;
 
+@property(nonatomic, readonly) BOOL forbidTimeFreeze;
+
 // Record file and source file requestCachePolicy, default is
 // NSURLRequestReloadIgnoringLocalCacheData
 @property(nonatomic) NSURLRequestCachePolicy requestCachePolicy;

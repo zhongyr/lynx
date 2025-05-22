@@ -540,11 +540,14 @@ static const int kVirtual = 1 << 2;
 
       builder.fetcher = strongSelf->_dynamicComponentFetcher;
 
-      NSString* filePath = [TestBenchReplayDataModule replayTimeEnvJScript];
+      NSMutableArray* preloadJSPaths = [[NSMutableArray alloc] init];
+      if (![self.replayConfig forbidTimeFreeze]) {
+        [preloadJSPaths addObject:[TestBenchReplayDataModule replayTimeEnvJScript]];
+      }
       NSString* groupName = @"ark";
       if (strongSelf->_lynxGroup == nil) {
         LynxGroupOption* groupOption = [[LynxGroupOption alloc] init];
-        groupOption.preloadJSPaths = @[ filePath ];
+        groupOption.preloadJSPaths = preloadJSPaths;
         strongSelf->_lynxGroup = [[LynxGroup alloc] initWithName:groupName
                                              withLynxGroupOption:groupOption];
       }

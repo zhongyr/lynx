@@ -32,6 +32,10 @@
                                                 forKey:@"enableSizeOptimization"
                                           defaultValue:NO];
 
+    _forbidTimeFreeze = [TestBenchURLAnalyzer getQueryBooleanParameter:baseURL
+                                                                forKey:@"forbidTimeFreeze"
+                                                          defaultValue:NO];
+
     _createWhenReload = [TestBenchURLAnalyzer getQueryBooleanParameter:baseURL
                                                                 forKey:@"createWhenReload"
                                                           defaultValue:NO];

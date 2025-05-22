@@ -177,6 +177,8 @@ public class TestBenchActionManager {
   private boolean mLandScape;
   private boolean mEnableAirStrictMode;
   private boolean mEnableSizeOptimization;
+  private boolean mForbidTimeFreeze;
+  private List<String> mPreloadScripts;
   private LynxGroup mLynxGroup;
   private float mRawFontScale;
   private String mSourceURL;
@@ -345,6 +347,8 @@ public class TestBenchActionManager {
     mScreenHeight = dm.heightPixels;
     mDensity = dm.density;
     mEnableSizeOptimization = false;
+    mForbidTimeFreeze = false;
+    mPreloadScripts = new ArrayList<>();
     mHandler = new Handler(Looper.getMainLooper()) {
       @Override
       public void handleMessage(Message msg) {
@@ -447,6 +451,10 @@ public class TestBenchActionManager {
     return mComponentList;
   }
 
+  public String[] getTestBenchPreloadScripts() {
+    return mPreloadScripts.toArray(new String[0]);
+  }
+
   public void startWithUrl(@NonNull String url) {
     if (!url.startsWith(TestBenchEnv.getInstance().mTestBenchUrlPrefix)) {
       return;
@@ -496,6 +504,7 @@ public class TestBenchActionManager {
     mBackgroundColor = Color.argb(colorValues[3], colorValues[0], colorValues[1], colorValues[2]);
     mViewGroup.setBackgroundColor(mBackgroundColor);
     mEnableSizeOptimization = queryMap.getBoolean("enableSizeOptimization", false);
+    mForbidTimeFreeze = queryMap.getBoolean("forbidTimeFreeze", false);
 
     create();
   }
@@ -927,6 +936,9 @@ public class TestBenchActionManager {
         builder.setDynamicComponentFetcher(mDynamicFetcher);
         if (mRawFontScale != -1) {
           builder.setFontScale(mRawFontScale);
+        }
+        if (!mForbidTimeFreeze) {
+          mPreloadScripts.add(new TestBenchReplayDataModule(mContext).replayTimeEnvJScript());
         }
         onLynxViewWillBuild(this, builder);
         mLynxView = builder.build(mContext);
