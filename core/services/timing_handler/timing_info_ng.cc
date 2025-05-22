@@ -147,9 +147,7 @@ std::unique_ptr<lynx::pub::Value> TimingInfoNg::GetLoadBundleEntry(
     const lynx::tasm::PipelineID& pipeline_id) {
   static const std::initializer_list<std::string> pick_keys = {
       kLoadBundleStart, kLoadBundleEnd,       kParseStart,
-      kParseEnd,        kLoadBackgroundStart, kLoadBackgroundEnd,
-      kVerifyTasmStart, kVerifyTasmEnd,       kFfiStart,
-      kFfiEnd};
+      kParseEnd,        kLoadBackgroundStart, kLoadBackgroundEnd};
   // check is and get base pipeline entry
   std::unique_ptr<lynx::pub::Value> pipeline_entry = nullptr;
   if (std::find(pick_keys.begin(), pick_keys.end(), current_key) ==

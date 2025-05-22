@@ -83,7 +83,6 @@ void LynxEngine::LoadTemplate(
               "instance_id", instance_id_);
   tasm::TimingCollector::Scope<Delegate> scope(delegate_.get(),
                                                pipeline_options);
-  tasm::TimingCollector::Instance()->Mark(tasm::timing::kFfiEnd);
   tasm::timing::LongTaskMonitor::Scope longTaskScope(
       tasm_->GetPageOptions(), tasm::timing::kLoadTemplateTask,
       tasm::timing::kTaskNameLynxEngineLoadTemplate);
@@ -100,7 +99,6 @@ void LynxEngine::LoadTemplateBundle(
               "instance_id", instance_id_);
   tasm::TimingCollector::Scope<Delegate> scope(delegate_.get(),
                                                pipeline_options);
-  tasm::TimingCollector::Instance()->Mark(tasm::timing::kFfiEnd);
   tasm::timing::LongTaskMonitor::Scope longTaskScope(
       tasm_->GetPageOptions(), tasm::timing::kLoadTemplateTask,
       tasm::timing::kTaskNameLynxEngineLoadTemplate);
@@ -165,7 +163,6 @@ void LynxEngine::ReloadTemplate(
   update_page_option.native_update_data_order_ = native_update_data_order;
   tasm::TimingCollector::Scope<Delegate> scope(delegate_.get(),
                                                pipeline_options);
-  tasm::TimingCollector::Instance()->Mark(tasm::timing::kFfiEnd);
   tasm::timing::LongTaskMonitor::Scope longTaskScope(
       tasm_->GetPageOptions(), tasm::timing::kLoadTemplateTask,
       tasm::timing::kTaskNameLynxEngineReloadTemplate);
