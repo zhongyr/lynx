@@ -738,7 +738,8 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
       LynxEventReporter.moveExtraParams(lastInstanceId, mLynxContext.getInstanceId());
     }
 
-    if (!"none".equals(BuildConfig.JS_ENGINE_TYPE)) {
+    if (!"none".equals(BuildConfig.JS_ENGINE_TYPE)
+        && (null != mLynxContext && !mLynxContext.isEmbeddedModeOn())) {
       if (mRuntime != null) {
         mModuleFactory = mRuntime.getModuleFactory();
         mModuleFactory.setContext(mLynxContext);

@@ -375,7 +375,9 @@ LYNX_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder*)aDecoder)
   [_devTool onTemplateAssemblerCreated:(intptr_t)shell_.get()];
 
   // Runtime
-  [self setUpRuntimeWithLastInstanceId:lastInstanceId];
+  if (_embeddedMode == UNSET) {
+    [self setUpRuntimeWithLastInstanceId:lastInstanceId];
+  }
 
   // Update info
   [self updateNativeTheme];
