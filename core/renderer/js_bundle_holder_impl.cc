@@ -13,13 +13,14 @@ void JsBundleHolderImpl::SetEnable(bool enable) { enable_.store(enable); }
 
 std::optional<piper::JsBundle> JsBundleHolderImpl::GetJSBundleFromBT(
     const std::string& url) {
-  if (!enable_.load()) {
-    return std::nullopt;
-  }
   std::unique_lock<std::mutex> lock(mutex_);
   auto bundle = GetJSBundleInternal(url);
   if (bundle) {
     return bundle;
+  }
+
+  if (!enable_.load()) {
+    return std::nullopt;
   }
 
   // check if this url is being requested
@@ -50,11 +51,6 @@ std::optional<piper::JsBundle> JsBundleHolderImpl::GetJSBundleInternal(
 
 void JsBundleHolderImpl::InsertJSBundle(const std::string& url,
                                         const piper::JsBundle& js_bundle) {
-  // will dismiss the JsBundle of DEFAULT_ENTRY_NAME, but it will not be got by
-  // js so it's acceptable
-  if (!enable_.load()) {
-    return;
-  }
   std::unique_lock<std::mutex> lock(mutex_);
   js_bundle_map_.emplace(url, js_bundle);
 }
