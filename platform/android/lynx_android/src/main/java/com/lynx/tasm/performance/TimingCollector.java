@@ -17,19 +17,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class TimingCollector {
-  // Performance Timing Key
-  public static final String PIPELINE_START = "pipelineStart";
-  public static final String LOAD_BUNDLE_START = "loadBundleStart";
-  public static final String VERIFY_TASM_START = "verifyTasmStart";
-  public static final String VERIFY_TASM_END = "verifyTasmEnd";
-  public static final String FFI_START = "ffiStart";
-  // PipelineOrigin
-  public static final String LOAD_BUNDLE = "loadBundle";
-  public static final String RELOAD_BUNDLE_FROM_NATIVE = "reloadBundleFromNative";
-  // Performance API Key
-  public static final String PIPELINE_ORIGIN = "pipelineOrigin";
-  public static final String TIMESTAMP_MAP = "timestampMap";
-
   private final ReadWriteLock mLock = new ReentrantReadWriteLock();
   @GuardedBy("mLock") private long mNativeTimingCollectorPtr = 0;
 

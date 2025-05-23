@@ -15,7 +15,6 @@
 #include "core/services/event_report/event_tracker_platform_impl.h"
 #include "core/services/timing_handler/timing_constants.h"
 #include "core/services/timing_handler/timing_constants_deprecated.h"
-#include "core/services/timing_handler/timing_utils.h"
 #include "core/services/trace/service_trace_event_def.h"
 
 namespace lynx {

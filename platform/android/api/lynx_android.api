@@ -8377,15 +8377,6 @@ public enum com::lynx::tasm::ThreadStrategyForRendering {
 }
 
 public class com::lynx::tasm::performance::TimingCollector :  {
-  public final String com.lynx.tasm.performance.TimingCollector.PIPELINE_START PIPELINE_START;
-  public final String com.lynx.tasm.performance.TimingCollector.LOAD_BUNDLE_START LOAD_BUNDLE_START;
-  public final String com.lynx.tasm.performance.TimingCollector.VERIFY_TASM_START VERIFY_TASM_START;
-  public final String com.lynx.tasm.performance.TimingCollector.VERIFY_TASM_END VERIFY_TASM_END;
-  public final String com.lynx.tasm.performance.TimingCollector.FFI_START FFI_START;
-  public final String com.lynx.tasm.performance.TimingCollector.LOAD_BUNDLE LOAD_BUNDLE;
-  public final String com.lynx.tasm.performance.TimingCollector.RELOAD_BUNDLE_FROM_NATIVE RELOAD_BUNDLE_FROM_NATIVE;
-  public final String com.lynx.tasm.performance.TimingCollector.PIPELINE_ORIGIN PIPELINE_ORIGIN;
-  public final String com.lynx.tasm.performance.TimingCollector.TIMESTAMP_MAP TIMESTAMP_MAP;
   public com.lynx.tasm.performance.TimingCollector.TimingCollector();
   public void com.lynx.tasm.performance.TimingCollector.init();
   public long com.lynx.tasm.performance.TimingCollector.getNativeTimingCollectorPtr();
@@ -8403,14 +8394,6 @@ public class com::lynx::tasm::TimingHandler :  {
   public final String com.lynx.tasm.TimingHandler.CONTAINER_INIT_END CONTAINER_INIT_END;
   public final String com.lynx.tasm.TimingHandler.PREPARE_TEMPLATE_START PREPARE_TEMPLATE_START;
   public final String com.lynx.tasm.TimingHandler.PREPARE_TEMPLATE_END PREPARE_TEMPLATE_END;
-}
-
-public class com::lynx::tasm::performance::TimingOption :  {
-  public final String com.lynx.tasm.performance.TimingOption.pipelineOrigin pipelineOrigin;
-  public final HashMap<String, Long> com.lynx.tasm.performance.TimingOption.timingInfo timingInfo;
-  public com.lynx.tasm.performance.TimingOption.TimingOption(String pipelineOrigin);
-  public void com.lynx.tasm.performance.TimingOption.setTiming(String key, long msTimingStamp);
-  public JavaOnlyMap com.lynx.tasm.performance.TimingOption.toJavaOnlyMap();
 }
 
 public class com::lynx::tasm::behavior::TouchEventDispatcher :  {

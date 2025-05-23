@@ -110,36 +110,8 @@ void AddToJavaMap(JavaOnlyMap& map, const std::string& key, const T& vec) {
 
 std::shared_ptr<lynx::tasm::PipelineOptions> ProcessLoadTemplateTimingOption(
     JNIEnv* env, jlong ptr, jobject j_timing_option) {
-  auto timing_option =
-      lynx::tasm::android::ValueConverterAndroid::ConvertJavaOnlyMapToLepus(
-          env, j_timing_option);
-  // Process TimingOption, generate PipelineOptions
-  const auto& pipeline_origin =
-      timing_option
-          .GetProperty(BASE_STATIC_STRING(lynx::tasm::timing::kPipelineOrigin))
-          .StdString();
-  uint64_t pipeline_start_timestamp =
-      timing_option
-          .GetProperty(BASE_STATIC_STRING(lynx::tasm::timing::kPipelineStart))
-          .UInt64();
-  std::shared_ptr<lynx::tasm::PipelineOptions> pipeline_options =
-      std::make_shared<lynx::tasm::PipelineOptions>();
-  pipeline_options->pipeline_origin = pipeline_origin;
-  pipeline_options->pipeline_start_timestamp = pipeline_start_timestamp;
-  pipeline_options->need_timestamps = true;
-  reinterpret_cast<LynxShell*>(ptr)->OnPipelineStart(
-      pipeline_options->pipeline_id, pipeline_origin, pipeline_start_timestamp);
-  // mark all timing
-  auto timingStampMap = timing_option.GetProperty(
-      BASE_STATIC_STRING(lynx::tasm::timing::kTimestampMap));
-  lynx::tasm::ForEachLepusValue(
-      timingStampMap,
-      [&ptr, &pipeline_options](const lynx::lepus::Value& timingKey,
-                                const lynx::lepus::Value& timingStamp) {
-        reinterpret_cast<LynxShell*>(ptr)->SetTiming(
-            timingStamp.UInt64(), timingKey.StdString(),
-            pipeline_options->pipeline_id);
-      });
+  // TODO(zhangkaijie.9): process TimingOption
+  std::shared_ptr<lynx::tasm::PipelineOptions> pipeline_options = nullptr;
   return pipeline_options;
 }
 
@@ -662,10 +634,10 @@ void ReloadTemplate(JNIEnv* env, jclass jcaller, jlong ptr, jlong lifecycle,
   if (!AtomicLifecycle::TryLock(lifecycle_ptr)) {
     return;
   }
-  reinterpret_cast<LynxShell*>(ptr)->ResetTimingBeforeReload();
+  // reinterpret_cast<LynxShell*>(ptr)->ResetTimingBeforeReload();
   auto pipeline_options =
       ProcessLoadTemplateTimingOption(env, ptr, j_timing_option);
-  pipeline_options->is_reload_template = true;
+  // pipeline_options.is_reload_template = true;
   /*
    * Null j global props -> Nil Value;
    * Empty j global props -> Table Value;
