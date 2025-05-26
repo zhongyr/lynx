@@ -3880,7 +3880,6 @@ public class LynxUIImage : LynxUI, <UIImageView> {
 
 public class LynxUIIntersectionObserver : NSObject {
   public LynxUI* LynxUIIntersectionObserver::attachedUI attachedUI;
-  public NSMutableArray<LynxUIObservationTarget*>* LynxUIIntersectionObserver()::observationTargets observationTargets;
   public instancetype LynxUIIntersectionObserver::initWithManager:observerId:componentId:options:(LynxUIIntersectionObserverManager *manager,[observerId] NSInteger observerId,[componentId] NSString *componentId,[options] NSDictionary *options);
   public instancetype LynxUIIntersectionObserver::initWithOptions:manager:attachedUI:(NSDictionary *options,[manager] LynxUIIntersectionObserverManager *manager,[attachedUI] LynxUI *attachedUI);
   public void LynxUIIntersectionObserver::relativeTo:margins:(NSString *selector,[margins] NSDictionary *margins);

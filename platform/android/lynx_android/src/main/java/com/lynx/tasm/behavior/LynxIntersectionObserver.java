@@ -150,31 +150,22 @@ public class LynxIntersectionObserver {
     this.parseMargin(margins);
   }
 
-  // support id selector and uid
   public void observe(String selector, int callbackId) {
-    if (getContext() == null) {
-      LLog.e(TAG, "observe failed because context is null");
+    if (!selector.startsWith("#"))
       return;
-    }
     LynxBaseUI target = null;
-    if (selector.startsWith("#")) {
-      target = (LynxBaseUI) getContext().findLynxUIByIdSelector(selector.substring(1), mContainer);
-      // for historical reason, to avoid break, if not found in container, finding all element
-      if (target == null) {
-        LLog.w(TAG, "Can't find element, finding in element");
-        if (getRootUIOwner() == null) {
-          LLog.e(TAG, "observe failed because UIOwner is null");
-        } else {
-          target = getRootUIOwner().findLynxUIByIdSelector(selector.substring(1));
-        }
-      }
+    if (getContext() == null) {
+      LLog.e(TAG, "observer failed because context is null");
     } else {
-      try {
-        int uid = Integer.parseInt(selector);
-        target = getContext().findLynxUIBySign(uid);
-      } catch (NumberFormatException e) {
-        LLog.e(TAG, "observe failed because uid is invalid");
-        return;
+      target = (LynxBaseUI) getContext().findLynxUIByIdSelector(selector.substring(1), mContainer);
+    }
+    // for historical reason, to avoid break, if not found in container, finding all element
+    if (target == null) {
+      LLog.w(TAG, "Can't find element, finding in element");
+      if (getRootUIOwner() == null) {
+        LLog.e(TAG, "observer failed because UIOwner is null");
+      } else {
+        target = getRootUIOwner().findLynxUIByIdSelector(selector.substring(1));
       }
     }
 

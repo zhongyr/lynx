@@ -394,8 +394,6 @@ subspec_target("UnitTests") {
     "ui/LynxUI+PropSetterUnitTest.mm",
     "ui/LynxUIExposureUnitTest.h",
     "ui/LynxUIExposureUnitTest.m",
-    "ui/LynxUIIntersectionObserverUnitTest.h",
-    "ui/LynxUIIntersectionObserverUnitTest.m",
     "ui/LynxUIOwner+AccessibilityUnitTest.m",
     "ui/LynxUIOwnerUnitTest.m",
     "ui/LynxUIUnitTest.m",
