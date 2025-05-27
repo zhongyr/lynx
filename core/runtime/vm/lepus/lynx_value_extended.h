@@ -11,10 +11,10 @@ extern "C" {
 
 #include "base/include/value/lynx_value_types.h"
 
-#define MAKE_LYNX_VALUE(val, tag)                                            \
-  {                                                                          \
-    .val_ptr = reinterpret_cast<lynx_value_ptr>(LEPUS_VALUE_GET_INT64(val)), \
-    .type = lynx_value_extended, .tag = tag                                  \
+#define MAKE_LYNX_VALUE(val, tag)                                  \
+  {                                                                \
+    .val_int64 = static_cast<int64_t>(LEPUS_VALUE_GET_INT64(val)), \
+    .type = lynx_value_extended, .tag = tag                        \
   }
 
 lynx_api_status lynx_value_get_bool(lynx_api_env env, lynx_value value,

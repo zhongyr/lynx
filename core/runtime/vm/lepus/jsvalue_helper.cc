@@ -119,6 +119,10 @@ LEPUSValue LEPUSValueHelper::ToJsValue(LEPUSContext* ctx, const lynx_value& val,
     case lynx_value_extended: {
 #if defined(__aarch64__) && !defined(OS_WIN) && !DISABLE_NANBOX
       LEPUSValue v = (LEPUSValue){.as_int64 = val.val_int64};
+#elif defined(LEPUS_NAN_BOXING)
+      // FIXME(chenyouhui): Use LEPUS_NAN_BOXING that is defined in PrimJS
+      // temporarily. The PrimJS should provide a more appropriate interface.
+      LEPUSValue v = val.val_uint64;
 #else
       LEPUSValue v = LEPUS_MKPTR(val.tag, val.val_ptr);
 #endif

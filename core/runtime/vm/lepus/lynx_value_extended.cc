@@ -27,13 +27,17 @@ namespace {
 inline LEPUSValue WrapJSValue(const lynx_value& value) {
 #if defined(__aarch64__) && !defined(OS_WIN) && !DISABLE_NANBOX
   return (LEPUSValue){.as_int64 = value.val_int64};
+#elif defined(LEPUS_NAN_BOXING)
+  // FIXME(chenyouhui): Use LEPUS_NAN_BOXING that is defined in PrimJS
+  // temporarily. The PrimJS should provide a more appropriate interface.
+  return value.val_uint64;
 #else
   return LEPUS_MKPTR(static_cast<int8_t>((value.tag & 0xff)), value.val_ptr);
 #endif
 }
 
 inline lynx_value MakeLynxValue(const LEPUSValue& val) {
-  int64_t val_tag = LEPUS_VALUE_GET_TAG(val);
+  int64_t val_tag = LEPUS_VALUE_GET_NORM_TAG(val);
   int32_t tag =
       (static_cast<int32_t>(
            lynx::lepus::LEPUSValueHelper::LEPUSValueTagToLynxValueType(val_tag))
@@ -131,7 +135,7 @@ lynx_api_status lynx_value_is_integer(lynx_api_env env, lynx_value value,
 lynx_api_status lynx_value_get_integer(lynx_api_env env, lynx_value value,
                                        int64_t* result) {
   LEPUSValue temp_val = WrapJSValue(value);
-  if (LEPUS_VALUE_GET_TAG(temp_val) == LEPUS_TAG_INT) {
+  if (LEPUS_VALUE_GET_NORM_TAG(temp_val) == LEPUS_TAG_INT) {
     *result = LEPUS_VALUE_GET_INT(temp_val);
     return lynx_api_ok;
   }
@@ -326,7 +330,7 @@ lynx_api_status lynx_value_typeof(lynx_api_env env, lynx_value value,
     return lynx_api_invalid_arg;
   }
   LEPUSValue val = WrapJSValue(value);
-  switch (LEPUS_VALUE_GET_TAG(val)) {
+  switch (LEPUS_VALUE_GET_NORM_TAG(val)) {
     case LEPUS_TAG_INT:
       *result = lynx_value_int32;
       break;
@@ -386,9 +390,10 @@ lynx_api_status lynx_value_typeof(lynx_api_env env, lynx_value value,
         } else {
           *result = lynx_value_double;
         }
+      } else {
+        *result = lynx_value_null;
+        LOGE("lynx_value_typeof: unkown jsvalue type  " << value.tag);
       }
-      *result = lynx_value_null;
-      LOGE("lynx_value_typeof: unkown jsvalue type  " << value.tag);
   }
   return lynx_api_ok;
 }

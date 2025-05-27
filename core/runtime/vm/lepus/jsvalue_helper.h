@@ -283,7 +283,7 @@ class LEPUSValueHelper {
   }
 
   static ALWAYS_INLINE int32_t CalculateTag(const LEPUSValue& val) {
-    int64_t val_tag = LEPUS_VALUE_GET_TAG(val);
+    int64_t val_tag = LEPUS_VALUE_GET_NORM_TAG(val);
     int32_t tag =
         (static_cast<int32_t>(LEPUSValueTagToLynxValueType(val_tag)) << 16) |
         (val_tag & 0xff);
