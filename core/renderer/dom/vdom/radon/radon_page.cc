@@ -227,8 +227,6 @@ bool RadonPage::UpdatePage(const lepus::Value &table,
       [&](lynx::perfetto::EventContext ctx) {
         ctx.event()->add_debug_annotations("componentName", "RootComponent");
         ctx.event()->add_debug_annotations("Keys", ConcatenateTableKeys(table));
-        ctx.event()->add_debug_annotations("defaultData",
-                                           ConcatenateTableKeys(data_));
       });
   auto *timing = tasm::timing::LongTaskMonitor::Instance()->GetTopTimingPtr();
   if (timing != nullptr) {
