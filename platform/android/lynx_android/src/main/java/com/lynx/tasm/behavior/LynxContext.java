@@ -1312,7 +1312,12 @@ public abstract class LynxContext extends LynxBaseContext implements ExceptionHa
     return mEnableAutoConcurrency;
   }
 
-  private void initUIExposure() {
+  /**
+   * @brief init UIExposure.
+   * @detail create UIExposure instance and set rootUI & callback for UIExposure. Call only when
+   * necessary to implement lazy loading.
+   */
+  public void initUIExposure() {
     mExposure = new UIExposure();
     LynxUIOwner owner = mLynxUIOwner.get();
     if (owner != null) {
