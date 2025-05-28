@@ -241,6 +241,9 @@ void TemplateAssembler::UpdateGlobalProps(
 #endif
   TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_UPDATE_GLOBAL_PROPS, "need_render",
               need_render);
+  pipeline_context_manager_->CreateAndUpdateCurrentPipelineContext(
+      pipeline_options);
+
   global_props_ = data;
   if (template_loaded_) {
     NotifyGlobalPropsChanged(data);
@@ -248,7 +251,7 @@ void TemplateAssembler::UpdateGlobalProps(
   }
 
   if (EnableFiberArch()) {
-    if (!template_loaded_) {
+    if (!template_loaded_ || !need_render) {
       return;
     }
     auto& context = FindEntry(DEFAULT_ENTRY_NAME)->GetVm();
@@ -271,6 +274,10 @@ void TemplateAssembler::UpdateGlobalProps(
     need_render =
         need_render && template_loaded_ && !page_proxy_.IsServerSideRendering();
     page_proxy_.UpdateGlobalProps(global_props_, need_render, pipeline_options);
+  }
+
+  if (need_render) {
+    RunPixelPipeline();
   }
 }
 
@@ -1155,6 +1162,9 @@ void TemplateAssembler::ReloadFromJS(
     std::shared_ptr<PipelineOptions>& pipeline_options) {
   TRACE_EVENT(LYNX_TRACE_CATEGORY_VITALS, RELOAD_FROM_JS);
   Scope scope(this);
+  pipeline_context_manager_->CreateAndUpdateCurrentPipelineContext(
+      pipeline_options, true /*is_major_updated*/);
+
   LOGI("Lynx ReloadFromJS. url: " << url_);
 
   // get default entry
@@ -1187,6 +1197,8 @@ void TemplateAssembler::ReloadFromJS(
 
   // update template
   UpdateTemplate(data, update_page_option, pipeline_options);
+  // UpdateTemplate will RequestResolve if needed.
+  RunPixelPipeline();
 
   SendFontScaleChanged(font_scale_);
 }
@@ -2017,6 +2029,9 @@ void TemplateAssembler::UpdateDataByPreParsedData(
     return;
   }
 
+  pipeline_context_manager_->CreateAndUpdateCurrentPipelineContext(
+      pipeline_options);
+
   if (page_proxy_.HasSSRRadonPage()) {
     LOGI("TemplateAssembler::Update Data for SSR");
     std::vector<base::String> keys_updated;
@@ -2063,6 +2078,9 @@ void TemplateAssembler::UpdateDataByPreParsedData(
     }
 
     UpdateTemplate(data, update_page_option, pipeline_options);
+
+    // UpdateTemplate will RequestResolve if needed.
+    RunPixelPipeline();
 
     if (pre_painting_) {
       OnNativeAppReady();
