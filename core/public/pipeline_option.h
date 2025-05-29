@@ -135,6 +135,8 @@ struct PipelineOptions {
 #endif
   bool HeldByContext() const { return version != nullptr; }
 
+  bool need_trigger_data_updated_{false};
+
   // flag for unified pixel pipeline
   bool enable_unified_pixel_pipeline{false};
 

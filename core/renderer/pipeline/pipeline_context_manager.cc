@@ -14,7 +14,8 @@ namespace tasm {
 
 PipelineContextManager::PipelineContextManager(
     bool enable_unified_pixel_pipeline)
-    : enable_unified_pixel_pipeline_(enable_unified_pixel_pipeline) {}
+    : enable_unified_pixel_pipeline_(enable_unified_pixel_pipeline),
+      current_version_(PipelineVersion::Create()) {}
 
 PipelineContext* PipelineContextManager::CreateAndUpdateCurrentPipelineContext(
     const std::shared_ptr<PipelineOptions>& pipeline_options,
@@ -28,11 +29,9 @@ PipelineContext* PipelineContextManager::CreateAndUpdateCurrentPipelineContext(
     return GetPipelineContextByVersion(*pipeline_options->version);
   }
 
-  auto current_version = current_pipeline_context_
-                             ? current_pipeline_context_->GetVersion()
-                             : PipelineVersion::Create();
   auto pipeline_context =
-      PipelineContext::Create(current_version, is_major_updated);
+      PipelineContext::Create(current_version_, is_major_updated);
+  current_version_ = pipeline_context->GetVersion();
   if (!pipeline_context) {
     LOGE("create pipeline context get nullptr");
     return nullptr;
@@ -46,6 +45,8 @@ PipelineContext* PipelineContextManager::CreateAndUpdateCurrentPipelineContext(
   pipeline_options->version = &(pipeline_context->GetVersion());
 
   current_pipeline_context_ = pipeline_context.get();
+  DCHECK(pipeline_contexts_.count(current_pipeline_context_->GetVersion()) ==
+         0);
   pipeline_contexts_.emplace(pipeline_context->GetVersion(),
                              std::move(pipeline_context));
 
