@@ -276,7 +276,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     if (mLynxView != null && mTimingCollector != null) {
       mLynxView.setTimingCollector(mTimingCollector, lynxUIRenderer());
     }
-    mGenericInfo = new LynxGenericInfo(mLynxView);
+    mGenericInfo = new LynxGenericInfo();
     mLynxRuntimeOptions = builder.lynxRuntimeOptions;
     mAutoConcurrency = builder.enableAutoConcurrency;
 
@@ -297,8 +297,6 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
       mThreadStrategyForRendering = mAsyncRender ? ThreadStrategyForRendering.MULTI_THREADS
                                                  : ThreadStrategyForRendering.PART_ON_LAYOUT;
     }
-
-    mGenericInfo.updateThreadStrategy(mThreadStrategyForRendering);
 
     mHasEnvPrepared = LynxEnv.inst().isNativeLibraryLoaded();
     mVsyncAlignedFlushEnabled = VSYNC_ALIGNED_FLUSH_EXP_SWITCH
@@ -2566,7 +2564,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
 
     @Override
     public void onPageConfigDecoded(PageConfig config) {
-      PageConfig.attachPageConfig(config, mLynxContext, mGenericInfo, lynxUIRenderer());
+      PageConfig.attachPageConfig(config, mLynxContext, lynxUIRenderer());
     }
 
     @Override
@@ -2861,9 +2859,6 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
   private void onThreadStrategyUpdated() {
     mAsyncRender = (mThreadStrategyForRendering == ThreadStrategyForRendering.MULTI_THREADS
         || mThreadStrategyForRendering == ThreadStrategyForRendering.MOST_ON_TASM);
-    if (mGenericInfo != null) {
-      mGenericInfo.updateThreadStrategy(mThreadStrategyForRendering);
-    }
     if (mLynxContext != null && mLynxContext.enableEventReporter()) {
       LynxEventReporter.updateGenericInfo(LynxEventReporter.PROP_NAME_THREAD_MODE,
           mThreadStrategyForRendering.id(), mLynxContext.getInstanceId());
@@ -2946,8 +2941,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     if (mDevTool != null) {
       mDevTool.attachToDebugBridge(url);
     }
-    PageConfig.attachPageConfig(
-        bundle.getPageConfig(), mLynxContext, mGenericInfo, lynxUIRenderer());
+    PageConfig.attachPageConfig(bundle.getPageConfig(), mLynxContext, lynxUIRenderer());
     timingOption.setTiming(TimingCollector.FFI_START, System.currentTimeMillis());
     nativeLoadTemplateBundleByPreParsedData(mNativePtr, mNativeLifecycle, url,
         bundle.getNativePtr(), isPrePainting ? 1 : 0, nativePtr, read_only, processorName, initData,

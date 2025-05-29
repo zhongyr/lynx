@@ -4493,12 +4493,10 @@ public interface com::lynx::tasm::behavior::LynxGeneratorName {
 }
 
 public class com::lynx::tasm::LynxGenericInfo :  {
-  public com.lynx.tasm.LynxGenericInfo.LynxGenericInfo(LynxView lynxView);
+  public com.lynx.tasm.LynxGenericInfo.LynxGenericInfo();
   public JSONObject com.lynx.tasm.LynxGenericInfo.toJSONObject();
-  public void com.lynx.tasm.LynxGenericInfo.updatePageConfigInfo(PageConfig config);
   public void com.lynx.tasm.LynxGenericInfo.updateLynxUrl(LynxContext lynxContext, String templateURL);
   public String com.lynx.tasm.LynxGenericInfo.getPropValueRelativePath();
-  public void com.lynx.tasm.LynxGenericInfo.updateThreadStrategy(ThreadStrategyForRendering threadStrategyForRendering);
 }
 
 public class abstract com::lynx::tasm::resourceprovider::generic::LynxGenericResourceFetcher :  {
@@ -6746,7 +6744,7 @@ public class com::lynx::tasm::PageConfig :  {
   public boolean com.lynx.tasm.PageConfig.getEnableMultiTouch();
   public double com.lynx.tasm.PageConfig.getEnableLynxScrollFluency();
   public String com.lynx.tasm.PageConfig.toString();
-  public static void com.lynx.tasm.PageConfig.attachPageConfig(PageConfig config, LynxContext lynxContext, LynxGenericInfo genericInfo, ILynxUIRenderer uiRenderer);
+  public static void com.lynx.tasm.PageConfig.attachPageConfig(PageConfig config, LynxContext lynxContext, ILynxUIRenderer uiRenderer);
 }
 
 public class com::lynx::tasm::base::PageReloadHelper :  {

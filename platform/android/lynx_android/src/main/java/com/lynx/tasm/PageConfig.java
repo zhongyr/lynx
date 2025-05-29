@@ -579,12 +579,11 @@ public class PageConfig {
    * loaded.
    * @param config
    * @param lynxContext
-   * @param genericInfo
    * @param uiRenderer
    */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public static void attachPageConfig(PageConfig config, LynxContext lynxContext,
-      LynxGenericInfo genericInfo, ILynxUIRenderer uiRenderer) {
+  public static void attachPageConfig(
+      PageConfig config, LynxContext lynxContext, ILynxUIRenderer uiRenderer) {
     if (config == null) {
       LLog.e(TAG, "PageConfig is null when exec onPageConfigDecoded from TemplateBundle.");
       return;
@@ -592,14 +591,9 @@ public class PageConfig {
 
     if (lynxContext != null) {
       lynxContext.onPageConfigDecoded(config);
-      lynxContext.getFluencyTraceHelper().setPageConfigProbability(
-          config.getEnableLynxScrollFluency());
     } else {
       LLog.e(
           TAG, "lynx context free in used: LynxUI configs may be not valid from TemplateBundle.");
-    }
-    if (genericInfo != null) {
-      genericInfo.updatePageConfigInfo(config);
     }
 
     if (uiRenderer != null) {

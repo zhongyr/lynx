@@ -4,9 +4,11 @@
 
 package com.lynx.tasm;
 
+import static com.lynx.tasm.eventreport.LynxEventReporter.PROP_NAME_RELATIVE_PATH;
+import static com.lynx.tasm.eventreport.LynxEventReporter.PROP_NAME_URL;
+
 import android.net.Uri;
 import android.text.TextUtils;
-import com.lynx.tasm.LynxEnv;
 import com.lynx.tasm.base.LLog;
 import com.lynx.tasm.base.TraceEvent;
 import com.lynx.tasm.base.trace.TraceEventDef;
@@ -14,57 +16,19 @@ import com.lynx.tasm.behavior.LynxContext;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Class hold some info like templateURL, thread strategy, pageConfig and etc.
+ * Class hold some info like templateURL.
  * It's used to report some common useful parameter when report event.
- * Mainly converted to JSONObject by toJSONObject() method,
- * and used as the third argument in API below:
- * @see ILynxEventReporterService#onReportEvent(String, JSONObject, JSONObject)
  */
 public class LynxGenericInfo {
   private static final String TAG = "LynxGenericInfo";
 
-  // GeneralInfo props name:
-  // The last loaded URL in this lynxView, will be updated when lynxView render new template.
-  private final static String PROP_NAME_URL = "url";
-  // the relative_path would be equivalent to the url to remove applicationExternalCacheDir,
-  // applicationFilesDir and LocalDir.
-  // It can be more accurate to filter info by relative_path than by url on the tea platform.
-  private final static String PROP_NAME_RELATIVE_PATH = "relative_path";
-  // The last thread strategy this lynxView is using, will be updated when the lynxView is init.
-  private final static String PROP_NAME_THREAD_MODE = "thread_mode";
-  // Lynx SDK's Version, set by LynxEnv.
-  private final static String PROP_NAME_LYNX_SDK_VERSION = "lynx_sdk_version";
-  // lynx_session_id is an unique id for all living LynxView, constructed with these three info:
-  // A unique device id, timestamp when first LoadTemplate, lynxViewIdentify.
-  // It would be like "$currentTimestamp-$deviceID-$lynxViewIdentify"
-  // It's assigned when LoadTemplate, shouldn't be modified anywhere.
-  private final static String PROP_NAME_LYNX_SESSION_ID = "lynx_session_id";
-  // Some useful info stored in PageConfig, will be updated when onPageConfigDecoded:
-  // targetSdkVersion set by FE.
-  private final static String PROP_NAME_LYNX_TARGET_SDK_VERSION = "lynx_target_sdk_version";
-  // lynx_dsl could be ttml, react, react_nodiff or unkown.
-  private final static String PROP_NAME_LYNX_DSL = "lynx_dsl";
-  // lepus_type could be lepus or lepusNG.
-  private final static String PROP_NAME_LYNX_LEPUS_TYPE = "lynx_lepus_type";
-  // template's page version set by FE.
-  private final static String PROP_NAME_LYNX_PAGE_VERSION = "lynx_page_version";
-
   // GeneralInfo props value:
   private String mPropValueURL;
   private String mPropValueRelativePath;
-  private int mPropValueThreadMode = -1;
-  private String mPropValueLynxSdkVersion;
-  private String mPropValueTargetSdkVersion;
-  private String mPropValueSessionID;
-  private String mPropValueLynxDSL;
-  private String mPropValueLepusType;
-  private String mPropValuePageVersion;
 
   private static final Set<String> mReservedQueryKeys = new HashSet<String>();
 
@@ -75,66 +39,20 @@ public class LynxGenericInfo {
     mReservedQueryKeys.add("bundle");
   }
 
-  public LynxGenericInfo(LynxView lynxView) {
-    TraceEvent.beginSection(TraceEventDef.GENERIC_INFO_INIT);
-    updateLynxSdkVersion();
-    TraceEvent.endSection(TraceEventDef.GENERIC_INFO_INIT);
-  }
+  // TODO(kechenglong): Remove this class.
+  public LynxGenericInfo() {}
 
+  // Only used for testing by now.
   public JSONObject toJSONObject() {
     JSONObject ret = new JSONObject();
     try {
       ret.putOpt(PROP_NAME_URL, mPropValueURL);
       ret.putOpt(PROP_NAME_RELATIVE_PATH, mPropValueRelativePath);
-      ret.putOpt(PROP_NAME_THREAD_MODE, mPropValueThreadMode);
-      ret.putOpt(PROP_NAME_LYNX_SDK_VERSION, mPropValueLynxSdkVersion);
-      ret.putOpt(PROP_NAME_LYNX_TARGET_SDK_VERSION, mPropValueTargetSdkVersion);
-      ret.putOpt(PROP_NAME_LYNX_SESSION_ID, mPropValueSessionID);
-      ret.putOpt(PROP_NAME_LYNX_DSL, mPropValueLynxDSL);
-      ret.putOpt(PROP_NAME_LYNX_LEPUS_TYPE, mPropValueLepusType);
-      ret.putOpt(PROP_NAME_LYNX_PAGE_VERSION, mPropValuePageVersion);
     } catch (JSONException e) {
       LLog.w(TAG, "LynxGenericInfo toJSONObject failed");
       e.printStackTrace();
     }
     return ret;
-  }
-
-  // PageConfig Info
-  public void updatePageConfigInfo(PageConfig config) {
-    updatePageConfigLepusNG(config);
-    updatePageConfigTargetSdkVersion(config);
-    updatePageConfigPageVersion(config);
-    updatePageConfigPageType(config);
-  }
-
-  private final static String PAGE_TYPE_TT = "tt";
-  private final static String PAGE_TYPE_TTML = "ttml";
-  private void updatePageConfigPageType(PageConfig config) {
-    mPropValueLynxDSL = config.getPageType();
-    // rename tt to ttml
-    if (mPropValueLynxDSL != null && mPropValueLynxDSL.equals(PAGE_TYPE_TT)) {
-      mPropValueLynxDSL = PAGE_TYPE_TTML;
-    }
-  }
-
-  private void updatePageConfigPageVersion(PageConfig config) {
-    mPropValuePageVersion = config.getPageVersion();
-  }
-
-  private final static String LEPUS_TYPE_LEPUS = "lepus";
-  private final static String LEPUS_TYPE_LEPUSNG = "lepusNG";
-  private void updatePageConfigLepusNG(PageConfig config) {
-    boolean enableLepusNG = config.isEnableLepusNG();
-    if (enableLepusNG) {
-      mPropValueLepusType = LEPUS_TYPE_LEPUSNG;
-    } else {
-      mPropValueLepusType = LEPUS_TYPE_LEPUS;
-    }
-  }
-
-  private void updatePageConfigTargetSdkVersion(PageConfig config) {
-    mPropValueTargetSdkVersion = config.getTargetSdkVersion();
   }
 
   // URL Info
@@ -235,15 +153,5 @@ public class LynxGenericInfo {
     }
 
     mPropValueRelativePath = removeRedundantQueryParams(mPropValueRelativePath);
-  }
-
-  // SdkVersion Info
-  private void updateLynxSdkVersion() {
-    mPropValueLynxSdkVersion = LynxEnv.inst().getLynxVersion();
-  }
-
-  // ThreadStrategy Info
-  public void updateThreadStrategy(ThreadStrategyForRendering threadStrategyForRendering) {
-    mPropValueThreadMode = threadStrategyForRendering.id();
   }
 }
