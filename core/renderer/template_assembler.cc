@@ -3237,6 +3237,21 @@ void TemplateAssembler::RunPixelPipeline() {
   }
 
   // TODO(@yangguangzhao.solace): Advance Pipeline Lifecycle State;
+
+  // Trigger DataUpdated If Needed;
+  if (pipeline_option->need_trigger_data_updated_) {
+    // Currently, only client updateData, client resetData, and JS root
+    // component setData updates trigger the OnDataUpdated callback, and only
+    // when the page has actually changed. Other data updates, such as client
+    // reloadTemplate and JS child components setData, do not trigger
+    // OnDataUpdated. In order to align with this logic, the timing of
+    // OnDataUpdated is moved to the end of FiberFlushElementTree, and it is
+    // controlled by LepusRuntime through triggerDataUpdated.
+    delegate_.OnDataUpdated();
+  }
+
+  // current pipeline ends, reset current pipeline context to nullptr;
+  pipeline_context_manager_->ResetCurrentPipelineContext();
 }
 }  // namespace tasm
 }  // namespace lynx
