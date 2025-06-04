@@ -73,8 +73,6 @@ class ElementContainer {
                                        ElementContainer* parent);
 
   ElementManager* element_manager();
-  float last_left_{0};
-  float last_top_{0};
   std::pair<ElementContainer*, int> FindParentForChild(Element* child);
   void MoveContainers(ElementContainer* old_parent,
                       ElementContainer* new_parent);
@@ -82,27 +80,28 @@ class ElementContainer {
   void SetNeedUpdate(bool update) { need_update_ = update; }
   void MarkDirty();
   bool IsSticky();
-  Element* element_ = nullptr;
-  ElementContainer* parent_ = nullptr;
 
-  base::InlineVector<ElementContainer*, kChildrenInlineVectorSize> children_;
-  // the children size does not contain layout only nodes
-  int none_layout_only_children_size_{0};
-
-  bool was_stacking_context_ = false;
-  bool was_position_fixed_ = false;
-  int old_index_ = 0;
-  bool need_update_ = true;
-  bool dirty_ = false;
-  bool has_z_child_{false};
   // children with zIndex<0, negative zIndex child will be re-inserted to the
   // beginning after onPatchFinish
-  base::InlineVector<ElementContainer*, 2> negative_z_children_;
+  base::Vector<ElementContainer*> negative_z_children_;
+  base::Vector<ElementContainer*> children_;
+  std::unique_ptr<FixedContainer> fixed_node_;
+  Element* element_{nullptr};
+  ElementContainer* parent_{nullptr};
+  float last_left_{0};
+  float last_top_{0};
+  // the children size does not contain layout only nodes
+  int32_t none_layout_only_children_size_{0};
+  int32_t old_index_{0};
+  bool was_stacking_context_{false};
+  bool was_position_fixed_{false};
+  bool need_update_{true};
+  bool dirty_{false};
+  bool has_z_child_{false};
   // indicate the ElementContainer has finished first layout
   bool is_layouted_{false};
   // true if the Element's props has changed during this patch
   bool props_changed_{true};
-  std::unique_ptr<FixedContainer> fixed_node_;
 };
 
 }  // namespace tasm
