@@ -98,6 +98,7 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
     ENABLE_UNIFIED_PIXEL_PIPELINE,
     FIX_PARALLEL_Z_INDEX_CRASH,
     FIX_INSERT_BEFORE_FIXED_BUG,
+    OPT_AVOID_DESTROY_RUNTIME_WAIT,
     // Please add new enum values above
     END_MARK,  // Keep this as the last enum value, and do not use
   };
@@ -203,6 +204,8 @@ class BASE_EXPORT_FOR_DEVTOOL LynxEnv {
             {Key::ENABLE_JSVM_RUNTIME, kLyneEnableJSVMRuntime},
             {Key::ENABLE_UNIFIED_PIXEL_PIPELINE,
              "enable_unified_pixel_pipeline"},
+            {Key::OPT_AVOID_DESTROY_RUNTIME_WAIT,
+             "opt_avoid_destroy_runtime_wait"},
             {Key::FIX_PARALLEL_Z_INDEX_CRASH, "fix_parallel_z_index_crash"},
             {Key::FIX_INSERT_BEFORE_FIXED_BUG, "fix_insert_before_fixed_bug"},
         });

@@ -714,6 +714,13 @@ bool LynxRuntime::TryToDestroy() {
     js_executor_->GetJSRuntime()->DestroyInspector();
   }
 
+  // if opt_avoid_destroy_runtime_wait is true, destroy LynxRuntime directly.
+  if (tasm::LynxEnv::GetInstance().GetBoolEnv(
+          tasm::LynxEnv::Key::OPT_AVOID_DESTROY_RUNTIME_WAIT, true)) {
+    callbacks_.clear();
+    return true;
+  }
+
   if (callbacks_.empty()) {
     return true;
   } else {
