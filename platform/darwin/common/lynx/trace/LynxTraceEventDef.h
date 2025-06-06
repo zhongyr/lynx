@@ -113,6 +113,9 @@ static const char* const EVENT_REPORTER_REMOVE_GENERIC_INFO =
     "LynxEventReporter::removeGenericInfo";
 static const char* const EVENT_REPORTER_REMOVE_GENERIC_INFO_RUN =
     "LynxEventReporter::removeGenericInfo.run";
+static const char* const EVENT_REPORTER_GET_GENERIC_INFO = "LynxEventReporter::getGenericInfo";
+static const char* const EVENT_REPORTER_GET_GENERIC_INFO_RUN =
+    "LynxEventReporter::getGenericInfo.run";
 static const char* const EVENT_REPORTER_SET_EXTRA_PARAMS = "LynxEventReporter::setExtraParams";
 static const char* const EVENT_REPORTER_CLEAR_CACHE_BY_INSTANCE_ID =
     "LynxEventReporter::clearCacheByInstanceId";

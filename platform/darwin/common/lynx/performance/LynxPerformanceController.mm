@@ -4,6 +4,7 @@
 
 #import <Lynx/LynxPerformanceEntryConverter.h>
 #import <Lynx/LynxService.h>
+#import <Lynx/LynxServiceEventReporterProtocol.h>
 #import "LynxMemoryMonitorProtocol.h"
 #import "LynxPerformanceController+Native.h"
 #include "base/trace/native/trace_event.h"
@@ -30,7 +31,9 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
   return cppMap;
 }
 
-@implementation LynxPerformanceController
+@implementation LynxPerformanceController {
+  id<LynxServiceEventReporterProtocol> _reporter;
+}
 
 - (instancetype _Nonnull)initWithObserver:(id<LynxPerformanceObserverProtocol> _Nonnull)observer {
   if (self = [super init]) {
@@ -159,6 +162,33 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
 #pragma mark - LynxPerformanceObserverProtocol
 - (void)onPerformanceEvent:(nonnull LynxPerformanceEntry*)entry {
   [_observer onPerformanceEvent:entry];
+
+  if (_reporter == nil) {
+    id<LynxServiceEventReporterProtocol> reporter =
+        [LynxServices getInstanceWithProtocol:@protocol(LynxServiceEventReporterProtocol)
+                                        bizID:DEFAULT_LYNX_SERVICE];
+    if (reporter != nil && [reporter respondsToSelector:@selector(onPerformanceEvent:)]) {
+      _reporter = reporter;
+    }
+  }
+  if (_reporter != nil) {
+    NSMutableDictionary* entryWithGenericInfo =
+        [NSMutableDictionary dictionaryWithDictionary:[entry rawDictionary]];
+    NSNumber* instanceIdNumber = [entryWithGenericInfo valueForKey:@"instanceId"];
+    if (instanceIdNumber != nil) {
+      int32_t instanceId = [instanceIdNumber intValue];
+      [LynxEventReporter
+          getGenericInfo:instanceId
+              completion:^(NSDictionary* genericInfo) {
+                if (genericInfo) {
+                  [entryWithGenericInfo addEntriesFromDictionary:genericInfo];
+                  [self->_reporter
+                      onPerformanceEvent:[LynxPerformanceEntryConverter
+                                             makePerformanceEntry:entryWithGenericInfo]];
+                }
+              }];
+    }
+  }
 }
 
 @end

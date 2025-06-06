@@ -63,6 +63,13 @@ FOUNDATION_EXPORT NSString *const kLynxSDKErrorEvent;
 /// Can call on any thread.
 /// @param instanceId  id of template instance.
 + (void)removeGenericInfo:(int32_t)instanceId;
+
+/// get generic info of template instance by id.
+/// Can call on any thread.
+/// @param instanceId  id of template instance.
++ (void)getGenericInfo:(int32_t)instanceId
+            completion:(void (^)(NSDictionary *genericInfo))completion;
+
 /// Put extra parameters for reporting events, overriding old values if the parameters already
 /// exist.
 /// @param params common parameters for report events.

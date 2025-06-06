@@ -166,6 +166,34 @@ NSString *const kLynxSDKErrorEvent = @"lynxsdk_error_event";
   }];
 }
 
++ (void)getGenericInfo:(int32_t)instanceId
+            completion:(void (^)(NSDictionary *genericInfo))completion {
+  if (completion == nil) {
+    return;
+  }
+  if (instanceId < 0) {
+    completion(nil);
+    return;
+  }
+  TRACE_EVENT(LYNX_TRACE_CATEGORY, EVENT_REPORTER_GET_GENERIC_INFO,
+              [&](lynx::perfetto::EventContext ctx) {
+                auto *debug = ctx.event()->add_debug_annotations();
+                debug->set_name(INSTANCE_ID);
+                debug->set_string_value(std::to_string(instanceId));
+              });
+  [self runOnReportThread:^{
+    TRACE_EVENT(LYNX_TRACE_CATEGORY, EVENT_REPORTER_GET_GENERIC_INFO_RUN,
+                [&](lynx::perfetto::EventContext ctx) {
+                  auto *debug = ctx.event()->add_debug_annotations();
+                  debug->set_name(INSTANCE_ID);
+                  debug->set_string_value(std::to_string(instanceId));
+                });
+    NSDictionary *genericInfo =
+        [[[[self sharedInstance] allGenericInfo] objectForKey:@(instanceId)] copy];
+    completion(genericInfo);
+  }];
+}
+
 + (void)moveExtraParams:(int32_t)originInstanceId toInstanceId:(int32_t)targetInstanceId {
   if (originInstanceId < 0 || targetInstanceId < 0) {
     return;
