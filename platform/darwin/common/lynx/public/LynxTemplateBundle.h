@@ -10,11 +10,13 @@
 /**
  * block that represents a bytecode generate result callback.
  * @param errorMsg when success, errorMsg will be null, otherwise is error.
- * @param buffer when success, this will be bytecode result. Note: Please note that the current
- * NSData is constructed using dataWithBytesNoCopy. If you need to use it, please make a copy
- * yourself and do not store this object directly.
+ * @param buffers when success, this will be bytecode result. Each key is sourceUrl, value is
+ * bytecode result.Note: Please note that the current NSData is constructed using
+ * dataWithBytesNoCopy. If you need to use it, please make a copy yourself and do not store this
+ * object directly.
  */
-typedef void (^LynxBytecodeResponseBlock)(NSString* _Nullable errorMsg, NSData* _Nullable buffer);
+typedef void (^LynxBytecodeResponseBlock)(NSString* _Nullable errorMsg,
+                                          NSDictionary<NSString*, NSData*>* _Nullable buffers);
 
 @interface LynxTemplateBundle : NSObject
 

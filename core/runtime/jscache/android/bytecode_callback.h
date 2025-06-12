@@ -7,6 +7,7 @@
 
 #include <jni.h>
 
+#include "base/android/java_only_map.h"
 #include "core/base/android/android_jni.h"
 
 namespace lynx {
@@ -16,7 +17,7 @@ namespace cache {
 void OnBytecodeResponse(JNIEnv* env,
                         base::android::ScopedGlobalJavaRef<jobject> obj,
                         base::android::ScopedLocalJavaRef<jstring> error_msg,
-                        jobject& byte_buffer);
+                        base::android::JavaOnlyMap& java_map);
 
 }  // namespace cache
 }  // namespace piper

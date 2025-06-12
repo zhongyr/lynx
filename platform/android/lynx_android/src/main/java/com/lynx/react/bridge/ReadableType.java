@@ -25,5 +25,6 @@ public enum ReadableType {
   Long,
   ByteArray,
   PiperData,
-  LynxObject
+  LynxObject,
+  ByteBuffer,
 }

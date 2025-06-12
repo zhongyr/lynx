@@ -23,10 +23,10 @@ namespace cache {
 void OnBytecodeResponse(JNIEnv* env,
                         base::android::ScopedGlobalJavaRef<jobject> obj,
                         base::android::ScopedLocalJavaRef<jstring> error_msg,
-                        jobject& byte_buffer) {
+                        base::android::JavaOnlyMap& java_map) {
   Java_LynxBytecodeCallback_onResponse(
       env, obj.Get(), error_msg.IsNull() ? nullptr : error_msg.Get(),
-      byte_buffer);
+      java_map.jni_object());
 }
 
 }  // namespace cache

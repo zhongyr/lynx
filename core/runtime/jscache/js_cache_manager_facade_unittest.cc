@@ -22,9 +22,11 @@ std::string source_url_for_testing;
 }
 
 void PostCacheGenerationTaskForTesting(
-    const std::string& source_url, const std::string& template_url,
-    const std::shared_ptr<const StringBuffer>& buffer) {
-  source_url_for_testing += source_url;
+    const std::string& template_url,
+    std::unordered_map<std::string, JsContent> js_contents) {
+  for (const auto& iter : js_contents) {
+    source_url_for_testing += iter.first;
+  }
 }
 
 TEST(JsCacheManagerFacadeTest, PostCacheGenerationTaskQuickJs) {
@@ -61,9 +63,6 @@ TEST(JsCacheManagerFacadeTest, PostCacheGenerationTaskQuickJsFail) {
   source_url_for_testing = "";
 
   tasm::LynxTemplateBundle bundle;
-  bundle.js_bundle_.AddJsContent("/lynx_core.js",
-                                 {"test", JsContent::Type::SOURCE});
-
   JsCacheManagerFacade::PostCacheGenerationTask(bundle, "template_url",
                                                 JSRuntimeType::quickjs);
 

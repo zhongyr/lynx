@@ -13,6 +13,7 @@ package com.lynx.react.bridge;
 
 import android.util.Log;
 import com.lynx.tasm.base.CalledByNative;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -579,6 +580,21 @@ public class JavaOnlyMap extends HashMap<String, Object> implements ReadableMap,
 
   @Override
   public void putPiperData(String key, PiperData value) {
+    put(key, value);
+  }
+
+  @Override
+  public ByteBuffer getByteBuffer(String name) {
+    Object result = get(name);
+    if (result instanceof ByteBuffer) {
+      return (ByteBuffer) result;
+    }
+    return null;
+  }
+
+  @Override
+  @CalledByNative
+  public void putByteBuffer(String key, ByteBuffer value) {
     put(key, value);
   }
 

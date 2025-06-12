@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -114,8 +115,11 @@ void PostJsCacheGenerationTask(JNIEnv* env, jclass jcaller, jlong bundle,
     lynx::base::android::ScopedGlobalJavaRef<jobject> jni_object(env, callback);
     bytecode_callback = std::make_unique<
         lynx::piper::cache::BytecodeGenerateCallback>(
-        [jni_object = std::move(jni_object)](std::string error_msg,
-                                             lynx::piper::Buffer* buffer) {
+        [jni_object = std::move(jni_object)](
+            std::string error_msg,
+            std::unordered_map<std::string,
+                               std::shared_ptr<lynx::piper::Buffer>>
+                buffers) {
           JNIEnv* env = lynx::base::android::AttachCurrentThread();
           lynx::base::android::ScopedLocalJavaRef<jstring> jni_error_msg;
           if (!error_msg.empty()) {
@@ -123,15 +127,18 @@ void PostJsCacheGenerationTask(JNIEnv* env, jclass jcaller, jlong bundle,
                 lynx::base::android::JNIConvertHelper::ConvertToJNIStringUTF(
                     env, error_msg);
           }
-          jobject byte_buffer(nullptr);
-          if (nullptr != buffer) {
-            byte_buffer = env->NewDirectByteBuffer(
-                const_cast<void*>(static_cast<const void*>(buffer->data())),
-                buffer->size());
+          auto java_map = lynx::base::android::JavaOnlyMap();
+          for (const auto& iter : buffers) {
+            if (nullptr != iter.second) {
+              jobject byte_buffer = env->NewDirectByteBuffer(
+                  const_cast<void*>(
+                      static_cast<const void*>(iter.second->data())),
+                  iter.second->size());
+              java_map.PushByteBuffer(iter.first, byte_buffer);
+            }
           }
-          lynx::piper::cache::OnBytecodeResponse(env, std::move(jni_object),
-                                                 std::move(jni_error_msg),
-                                                 byte_buffer);
+          lynx::piper::cache::OnBytecodeResponse(
+              env, std::move(jni_object), std::move(jni_error_msg), java_map);
         });
   }
   // base::android::ScopedWeakGlobalJavaRef<jobject> jni_object_;
