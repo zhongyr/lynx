@@ -30,6 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
               key:(NSString *)key
        pipelineID:(nullable NSString *)pipelineID;
 
+- (void)MarkPaintEndTimingIfNeeded;
+
 /**
  * @brief Resets timing data before a reload operation.
  *

@@ -28,7 +28,6 @@ import java.lang.ref.WeakReference;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PerformanceController implements IMemoryMonitor, ITimingCollector {
   private volatile long mNativePerformanceActorPtr = 0;
-  private volatile boolean mIsNativeLibraryLoaded = false;
   private WeakReference<IPerformanceObserver> mObserver;
 
   public void setPerformanceObserver(IPerformanceObserver observer) {
@@ -37,7 +36,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   @Override
   public void allocateMemory(IMemoryRecordBuilder builder) {
-    if (mNativePerformanceActorPtr == 0 || builder == null) {
+    if (builder == null) {
       return;
     }
     runOnReportThread(() -> {
@@ -52,7 +51,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   @Override
   public void deallocateMemory(IMemoryRecordBuilder builder) {
-    if (mNativePerformanceActorPtr == 0 || builder == null) {
+    if (builder == null) {
       return;
     }
     runOnReportThread(() -> {
@@ -67,7 +66,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   @Override
   public void updateMemoryUsage(IMemoryRecordBuilder builder) {
-    if (mNativePerformanceActorPtr == 0 || builder == null) {
+    if (builder == null) {
       return;
     }
     runOnReportThread(() -> {
@@ -82,9 +81,6 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   @Override
   public void setMsTiming(String key, long msTimestamp, String pipelineID) {
-    if (mNativePerformanceActorPtr == 0) {
-      return;
-    }
     runOnReportThread(() -> {
       if (mNativePerformanceActorPtr == 0) {
         return;
@@ -95,9 +91,6 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   @Override
   public void markTiming(final String key, final String pipelineID) {
-    if (mNativePerformanceActorPtr == 0) {
-      return;
-    }
     long usTimestamp = TimingUtil.currentTimeUs();
     runOnReportThread(() -> {
       if (mNativePerformanceActorPtr == 0) {
@@ -109,22 +102,16 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   @Override
   public void markPaintEndTimingIfNeeded() {
-    if (mNativePerformanceActorPtr == 0) {
-      return;
-    }
     long usTimestamp = TimingUtil.currentTimeUs();
     runOnReportThread(() -> {
       if (mNativePerformanceActorPtr == 0) {
         return;
       }
-      nativeMarkPaintEndTimingIfNeeded(mNativePerformanceActorPtr, usTimestamp);
+      nativeSetPaintEndTimingIfNeeded(mNativePerformanceActorPtr, usTimestamp);
     });
   }
 
   public void setExtraTiming(TimingHandler.ExtraTimingInfo extraTiming) {
-    if (mNativePerformanceActorPtr == 0) {
-      return;
-    }
     runOnReportThread(() -> {
       if (mNativePerformanceActorPtr == 0) {
         return;
@@ -180,5 +167,5 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
       long nativePtr, String category, float sizeKb, String detailKey, String detailValue);
   private native void nativeSetTiming(
       long nativePtr, String key, long usTimestamp, String pipelineID);
-  private native void nativeMarkPaintEndTimingIfNeeded(long nativePtr, long usTimestamp);
+  private native void nativeSetPaintEndTimingIfNeeded(long nativePtr, long usTimestamp);
 }
