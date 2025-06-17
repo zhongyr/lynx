@@ -52,6 +52,7 @@ public class LynxViewBuilder {
   boolean enableAutoConcurrency = false;
   boolean enableVSyncAlignedMessageLoop = false;
   boolean forceDarkAllowed = false;
+  boolean enableUnifiedPipeline = false;
 
   /**
    * enable async hydration of ssr.
@@ -393,6 +394,17 @@ public class LynxViewBuilder {
    */
   public LynxViewBuilder setEnableMultiAsyncThread(boolean enableMultiAsyncThread) {
     this.enableMultiAsyncThread = enableMultiAsyncThread;
+    return this;
+  }
+
+  /**
+   * Set enableUnifiedPipeline explicitly;
+   *
+   * @param enableUnifiedPipeline whether to enableUnifiedPipeline or not;
+   * @return this
+   */
+  public LynxViewBuilder setEnableUnifiedPipeline(boolean enableUnifiedPipeline) {
+    this.enableUnifiedPipeline = enableUnifiedPipeline;
     return this;
   }
 

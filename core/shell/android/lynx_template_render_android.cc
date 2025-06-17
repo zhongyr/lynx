@@ -237,7 +237,8 @@ jlong Create(JNIEnv* env, jclass jcaller, jlong runtime_wrapper_ptr,
              jstring js_group_thread_name, jobject tasm_platform_invoker,
              jlong white_board_ptr, jlong ui_delegate_ptr,
              jboolean use_invoke_ui_method, jboolean long_task_monitor_disabled,
-             jboolean force_layout_on_background_thread, jint embedded_mode) {
+             jboolean force_layout_on_background_thread,
+             jboolean enable_unified_pipeline, jint embedded_mode) {
   auto* ui_delegate =
       reinterpret_cast<lynx::tasm::UIDelegate*>(ui_delegate_ptr);
 
@@ -291,6 +292,7 @@ jlong Create(JNIEnv* env, jclass jcaller, jlong runtime_wrapper_ptr,
           .SetEnableLayoutOnly(enable_layout_only)
           .SetWhiteBoard(white_board)
           .SetLazyBundleLoader(loader)
+          .SetEnableUnifiedPipeline(enable_unified_pipeline)
           .SetTasmLocale(JNIConvertHelper::ConvertToString(env, locale))
           .SetEnablePreUpdateData(enable_pre_update_data)
           .SetLayoutContextPlatformImpl(ui_delegate->CreateLayoutContext())

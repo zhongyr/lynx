@@ -6181,6 +6181,7 @@ public class com::lynx::tasm::LynxViewBuilder :  {
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnableAutoConcurrency(boolean enable);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnableVSyncAlignedMessageLoop(boolean enable);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnableMultiAsyncThread(boolean enableMultiAsyncThread);
+  public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnableUnifiedPipeline(boolean enableUnifiedPipeline);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnableSyncFlush(boolean enable);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnableAsyncHydration(boolean enable);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setEnablePendingJsTask(boolean enablePendingJsTask);

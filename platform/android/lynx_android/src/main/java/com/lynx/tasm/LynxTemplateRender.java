@@ -681,7 +681,8 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
         mGroup != null && mGroup.enableJSGroupThread(), getJSGroupThreadNameIfNeed(),
         new TasmPlatformInvoker(mNativeFacade), whiteBoardPtr, lynxUIRenderer.getUIDelegatePtr(),
         lynxUIRenderer.useInvokeUIMethod(), mLongTaskMonitorEnabled == LynxBooleanOption.FALSE,
-        mForceLayoutOnBackgroundThread, mLynxViewBuilder.embeddedMode.mode());
+        mForceLayoutOnBackgroundThread, mLynxViewBuilder.enableUnifiedPipeline,
+        mLynxViewBuilder.embeddedMode.mode());
     lynxUIRenderer.attachNativeFacade(mNativeFacade);
     mNativeLifecycle = nativeLifecycleCreate();
     mCleanupReference = new CleanupReference(this, new CleanupOnUiThread(mNativeLifecycle), true);
@@ -3436,7 +3437,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
       boolean enableVSyncAlignedMessageLoop, boolean enableAsyncHydration,
       boolean enableJSGroupThread, String jsGroupThreadName, Object tasmPlatformInvoker,
       long whiteboard, long uiDelegate, boolean useInvokeUIMethod, boolean longTaskMonitorDisabled,
-      boolean forceLayoutOnBackgroundThread, int embeddedMode);
+      boolean forceLayoutOnBackgroundThread, boolean enableUnifiedPipeline, int embeddedMode);
 
   private static native void nativeDestroy(long ptr);
 
