@@ -6,6 +6,8 @@
 #define CORE_PUBLIC_UI_DELEGATE_H_
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "base/include/fml/task_runner.h"
 #include "core/public/jsb/native_module_factory.h"
@@ -18,6 +20,28 @@
 namespace lynx {
 namespace tasm {
 
+enum BoxModelOffset {
+  PAD_LEFT,
+  PAD_TOP,
+  PAD_RIGHT,
+  PAD_BOTTOM,
+  BORDER_LEFT,
+  BORDER_TOP,
+  BORDER_RIGHT,
+  BORDER_BOTTOM,
+  MARGIN_LEFT,
+  MARGIN_TOP,
+  MARGIN_RIGHT,
+  MARGIN_BOTTOM,
+  LAYOUT_LEFT,
+  LAYOUT_TOP,
+  LAYOUT_RIGHT,
+  LAYOUT_BOTTOM
+};
+using TakeSnapshotCompletedCallback =
+    std::function<void(const std::string&, float timestamp, float device_width,
+                       float device_height, float page_scale_factor)>;
+class PageConfig;
 /*
  * UIDelegate is used for communication between LynxShell and UI rendering
  * module.
@@ -53,6 +77,17 @@ class UIDelegate {
 
   void SetInstanceId(int32_t id) { instance_id_ = id; }
   int32_t GetInstanceId() const { return instance_id_; }
+  virtual void OnPageConfigDecoded(const std::shared_ptr<PageConfig>& config) {}
+  virtual void TakeSnapshot(
+      size_t max_width, size_t max_height, int quality,
+      float screen_scale_factor,
+      const lynx::fml::RefPtr<lynx::fml::TaskRunner>& screenshot_runner,
+      TakeSnapshotCompletedCallback callback) {}
+  virtual int GetNodeForLocation(int x, int y) { return -1; }
+  virtual std::vector<float> GetTransformValue(
+      int id, const std::vector<float>& pad_border_margin_layout) {
+    return {};
+  }
 
  private:
   // Represents an unknown instance ID. Typically set proactively during event
