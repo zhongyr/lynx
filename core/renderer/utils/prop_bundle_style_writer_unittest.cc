@@ -186,10 +186,10 @@ TEST_F(PropBundleStyleWriterTest, TestStyleWriter) {
       lepus::Value(lepus::CArray::Create());
   TEST_SPECIFIC_STYLE_WRITER(Color);
 
-  style_.text_attributes_->text_gradient.SetProperty(0, lepus::Value(2));
+  style_.text_attributes_->text_gradient->SetProperty(0, lepus::Value(2));
   TEST_SPECIFIC_STYLE_WRITER(Color);
 
-  style_.text_attributes_->text_gradient.SetProperty(1, lepus::Value(3));
+  style_.text_attributes_->text_gradient->SetProperty(1, lepus::Value(3));
   TEST_SPECIFIC_STYLE_WRITER(Color);
 
   style_.text_attributes_->text_gradient = lepus::Value();

@@ -2138,7 +2138,7 @@ bool ComputedCSSStyle::SetColor(const tasm::CSSValue& value, const bool reset) {
   auto old_value_gradient = text_attributes_->text_gradient;
   if (reset) {
     text_attributes_->color = DefaultColor::DEFAULT_TEXT_COLOR;
-    text_attributes_->text_gradient = lepus::Value();
+    text_attributes_->text_gradient.reset();
   } else {
     CSS_HANDLER_FAIL_IF_NOT(
         value.IsNumber() || value.IsArray(),
@@ -2149,7 +2149,7 @@ bool ComputedCSSStyle::SetColor(const tasm::CSSValue& value, const bool reset) {
     if (value.IsNumber()) {
       text_attributes_->color =
           static_cast<uint32_t>(value.GetValue().Number());
-      text_attributes_->text_gradient = lepus::Value();
+      text_attributes_->text_gradient.reset();
     } else {
       text_attributes_->color = DefaultColor::DEFAULT_TEXT_COLOR;
       text_attributes_->text_gradient = value.GetValue();
@@ -2459,7 +2459,7 @@ bool ComputedCSSStyle::SetTextDecoration(const tasm::CSSValue& value,
       flags |= static_cast<int>(TextDecorationType::kLineThrough);
     }
     if (text_attributes_->text_decoration_style) {
-      flags |= static_cast<int>(text_attributes_->text_decoration_style);
+      flags |= static_cast<uint32_t>(text_attributes_->text_decoration_style);
     }
     return flags;
   };
@@ -2472,8 +2472,8 @@ bool ComputedCSSStyle::SetTextDecoration(const tasm::CSSValue& value,
     text_attributes_->line_through_decoration =
         DefaultComputedStyle::DEFAULT_BOOLEAN;
     text_attributes_->text_decoration_style =
-        static_cast<unsigned int>(TextDecorationType::kSolid);
-    text_attributes_->text_decoration_color = 0;
+        static_cast<uint8_t>(TextDecorationType::kSolid);
+    text_attributes_->text_decoration_color = DefaultColor::DEFAULT_COLOR;
   } else {
     text_attributes_->underline_decoration =
         DefaultComputedStyle::DEFAULT_BOOLEAN;
@@ -2481,23 +2481,24 @@ bool ComputedCSSStyle::SetTextDecoration(const tasm::CSSValue& value,
         DefaultComputedStyle::DEFAULT_BOOLEAN;
     text_attributes_->text_decoration_style =
         DefaultComputedStyle::DEFAULT_TEXT_DECORATION_STYLE;
-    text_attributes_->text_decoration_color = 0;
+    text_attributes_->text_decoration_color = DefaultColor::DEFAULT_COLOR;
     auto result = value.GetValue().Array();
     for (size_t i = 0; i < result->size(); i++) {
-      int decoration = static_cast<int>(result->get(i).Number());
-      if (decoration & static_cast<int>(TextDecorationType::kColor)) {
+      uint32_t decoration = static_cast<uint32_t>(result->get(i).Number());
+      if (decoration & static_cast<uint32_t>(TextDecorationType::kColor)) {
         text_attributes_->text_decoration_color =
             static_cast<uint32_t>(result->get(i + 1).Number());
         i++;
         continue;
       }
-      if (decoration & static_cast<int>(TextDecorationType::kUnderLine)) {
+      if (decoration & static_cast<uint32_t>(TextDecorationType::kUnderLine)) {
         text_attributes_->underline_decoration = true;
       } else if (decoration &
-                 static_cast<int>(TextDecorationType::kLineThrough)) {
+                 static_cast<uint32_t>(TextDecorationType::kLineThrough)) {
         text_attributes_->line_through_decoration = true;
       } else if (decoration) {
-        text_attributes_->text_decoration_style = decoration;
+        text_attributes_->text_decoration_style =
+            static_cast<uint8_t>(decoration);
       }
     }
   }
@@ -3086,8 +3087,9 @@ lepus_value ComputedCSSStyle::LineSpacingToLepus() {
 
 lepus_value ComputedCSSStyle::ColorToLepus() {
   if (text_attributes_) {
-    if (text_attributes_->text_gradient.IsArray()) {
-      return text_attributes_->text_gradient;
+    if (text_attributes_->text_gradient.has_value() &&
+        text_attributes_->text_gradient->IsArray()) {
+      return *text_attributes_->text_gradient;
     } else {
       return lepus_value(text_attributes_->color);
     }

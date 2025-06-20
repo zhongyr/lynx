@@ -55,8 +55,8 @@ struct DefaultComputedStyle {
   static constexpr HyphensType DEFAULT_HYPHENS = HyphensType::kManual;
   static constexpr XAnimationColorInterpolationType DEFAULT_INTERPOLATION_TYPE =
       XAnimationColorInterpolationType::kAuto;
-  static constexpr uint32_t DEFAULT_TEXT_DECORATION_STYLE =
-      static_cast<uint32_t>(TextDecorationType::kSolid);
+  static constexpr uint8_t DEFAULT_TEXT_DECORATION_STYLE =
+      static_cast<uint8_t>(TextDecorationType::kSolid);
   static base::Vector<float> DEFAULT_AUTO_FONT_SIZE_PRESET_SIZES() {
     static base::NoDestructor<base::InlineVector<float, 1>> l{
         base::InlineVector<float, 1>()};

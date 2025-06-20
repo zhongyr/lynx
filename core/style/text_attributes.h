@@ -53,9 +53,11 @@ class TextAttributes {
   TextAttributes(float default_font_size) : font_size{default_font_size} {}
 
   base::flex_optional<base::InlineVector<ShadowData, 1>> text_shadow;
-  base::flex_optional<base::InlineVector<float, 4>> auto_font_size_preset_sizes;
+  base::flex_optional<base::InlineVector<float, 6>> auto_font_size_preset_sizes;
   NLength text_indent{DefaultLayoutStyle::SL_DEFAULT_ZEROLENGTH()};
-  double vertical_align_length{DefaultComputedStyle::DEFAULT_FLOAT};
+  base::String font_family;
+  base::flex_optional<lepus::Value> text_gradient;
+  float vertical_align_length{DefaultComputedStyle::DEFAULT_FLOAT};
   float font_size;
   float computed_line_height{DefaultComputedStyle::DEFAULT_LINE_HEIGHT};
   float line_height_factor{DefaultComputedStyle::DEFAULT_LINE_HEIGHT_FACTOR};
@@ -70,9 +72,7 @@ class TextAttributes {
   uint32_t color{DefaultColor::DEFAULT_TEXT_COLOR};
   uint32_t decoration_color{DefaultColor::DEFAULT_TEXT_COLOR};
   uint32_t text_decoration_color{DefaultColor::DEFAULT_COLOR};
-  base::String font_family;
-  lepus::Value text_gradient;
-  uint32_t text_decoration_style{
+  uint8_t text_decoration_style{
       DefaultComputedStyle::DEFAULT_TEXT_DECORATION_STYLE};
   // TODO(linxs) this type has changed.
   starlight::WhiteSpaceType white_space{

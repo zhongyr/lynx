@@ -171,9 +171,10 @@ void PropBundleStyleWriter::WriteColor(PropBundle* bundle,
                                        starlight::ComputedCSSStyle* style) {
   auto& text_attr = style->GetTextAttributes();
   if (text_attr.has_value()) {
-    if (text_attr->text_gradient.IsArray()) {
+    if (text_attr->text_gradient.has_value() &&
+        text_attr->text_gradient->IsArray()) {
       bundle->SetPropsByID(CSSPropertyID::kPropertyIDColor,
-                           pub::ValueImplLepus(text_attr->text_gradient));
+                           pub::ValueImplLepus(*text_attr->text_gradient));
     } else {
       bundle->SetPropsByID(CSSPropertyID::kPropertyIDColor, text_attr->color);
     }
