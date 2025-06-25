@@ -546,6 +546,7 @@ void ListElement::AttachToElementManager(
           manager->GetConfig()->GetPipelineSchedulerConfig(),
           manager->GetEnableParallelElement());
   if (list_container_delegate()) {
+    list_container_delegate()->OnAttachToElementManager(manager);
     list_container_delegate()->UpdateBatchRenderStrategy(batch_render_strategy);
   }
 }
