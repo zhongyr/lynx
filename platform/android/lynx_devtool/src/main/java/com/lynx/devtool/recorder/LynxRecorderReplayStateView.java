@@ -20,6 +20,8 @@ public class LynxRecorderReplayStateView extends LinearLayout {
   public static final int HANDLE_ACTION_LIST = 2;
   public static final int INVALID_JSON_FILE = 3;
   public static final int RECORD_ERROR_MISS_TEMPLATEJS = 4;
+  public static final int ERROR_DOWNLOAD_FAILED = 5;
+  public static final int ERROR_MISS_LYNXRECORDER_HEADER = 6;
 
   private static final ArrayList<String> mState = new ArrayList<String>();
 
@@ -29,6 +31,9 @@ public class LynxRecorderReplayStateView extends LinearLayout {
     mState.add(HANDLE_ACTION_LIST, "Handle action list");
     mState.add(INVALID_JSON_FILE, "Invalid Json File");
     mState.add(RECORD_ERROR_MISS_TEMPLATEJS, "Record Error: Miss template.js");
+    mState.add(ERROR_DOWNLOAD_FAILED, "LynxRecorder artifact download failed");
+    mState.add(ERROR_MISS_LYNXRECORDER_HEADER,
+        "Miss LynxRecorder header : file://lynxrecorder?url={{{url}}}");
   }
 
   private TextView mText;

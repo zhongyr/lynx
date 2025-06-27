@@ -328,6 +328,7 @@ public class LynxRecorderActionManager {
     public void onFailed(String msg) {
       mainThreadChecker("onFailed");
       Log.e("LynxRecorderActionManager", "Read recorded file failed!");
+      mStateView.setReplayState(LynxRecorderReplayStateView.ERROR_DOWNLOAD_FAILED);
     }
 
     private void mainThreadChecker(String methodName) {
@@ -485,6 +486,8 @@ public class LynxRecorderActionManager {
 
   public void startWithUrl(@NonNull String url) {
     if (!url.startsWith(LynxRecorderEnv.getInstance().lynxRecorderUrlPrefix)) {
+      mStateView.setReplayState(LynxRecorderReplayStateView.ERROR_MISS_LYNXRECORDER_HEADER);
+      mViewGroup.addView(mStateView);
       return;
     }
     QueryMapUtils queryMap = new QueryMapUtils();

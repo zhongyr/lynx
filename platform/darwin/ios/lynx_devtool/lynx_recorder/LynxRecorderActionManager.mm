@@ -170,6 +170,10 @@ static const int kVirtual = 1 << 2;
              completionHandler:^(NSData* _Nullable data, NSURLResponse* _Nullable response,
                                  NSError* _Nullable error) {
                __strong typeof(_self) strongSelf = _self;
+               if (error != nil || [(NSHTTPURLResponse*)response statusCode] != 200) {
+                 [strongSelf.stateView setReplayState:ERROR_DOWNLOAD_FAILED];
+                 return;
+               }
                [strongSelf.stateView setReplayState:PARSING_JSON_FILE];
                [strongSelf handleRecordFileData:data];
              }];
@@ -234,6 +238,12 @@ static const int kVirtual = 1 << 2;
           withOrigin:(CGPoint)point
         replayConfig:(LynxRecorderReplayConfig*)replayConfig
               NavBar:(CGSize)navBarSize {
+  if (![url hasPrefix:[LynxRecorderEnv sharedInstance].lynxRecorderUrlPrefix]) {
+    _stateView = [[LynxRecorderReplayStateView alloc] init];
+    [parentView addSubview:_stateView];
+    [_stateView setReplayState:ERROR_MISS_LYNXRECORDER_HEADER];
+    return;
+  }
   [self setReplayConfig:replayConfig];
   _dataProvider = [[LynxRecorderReplayDataProviderInternal alloc] init];
   _parentUI = parentView;

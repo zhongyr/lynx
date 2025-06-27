@@ -2,6 +2,7 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
+#import <LynxDevtool/LynxRecorderEnv.h>
 #import <LynxDevtool/LynxRecorderReplayStateView.h>
 
 #define SCREEN_SIZE [[UIScreen mainScreen] bounds].size
@@ -38,7 +39,7 @@
   self.stateDesc.textColor = [UIColor blackColor];
   self.stateDesc.textAlignment = NSTextAlignmentCenter;
   self.stateDesc.frame = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height * 0.4);
-  [self.stateDesc setFont:[UIFont systemFontOfSize:30]];
+  [self.stateDesc setFont:[UIFont systemFontOfSize:15]];
 
   self.stateProgress.frame = CGRectMake(0, self.frame.size.height * 0.6, self.frame.size.width,
                                         self.frame.size.height * 0.4);
@@ -60,6 +61,12 @@
   [_stateArray insertObject:@"Handle Action List" atIndex:HANDLE_ACTION_LIST];
   [_stateArray insertObject:@"Invalid JSON File" atIndex:INVALID_JSON_FILE];
   [_stateArray insertObject:@"Record Error:Miss template.js" atIndex:RECORD_ERROR_MISS_TEMPLATEJS];
+  [_stateArray insertObject:@"LynxRecorder artifact download failed" atIndex:ERROR_DOWNLOAD_FAILED];
+  [_stateArray
+      insertObject:[NSString
+                       stringWithFormat:@"Miss LynxRecorder header : %@url={{{url}}}",
+                                        [[LynxRecorderEnv sharedInstance] lynxRecorderUrlPrefix]]
+           atIndex:ERROR_MISS_LYNXRECORDER_HEADER];
 }
 
 - (void)setReplayState:(NSInteger)stateCode {

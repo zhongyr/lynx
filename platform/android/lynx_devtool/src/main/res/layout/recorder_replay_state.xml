@@ -22,7 +22,7 @@
         android:lineHeight="30dp"
         android:text="TextView"
         android:textAlignment="center"
-        android:textSize="30dp" />
+        android:textSize="15dp" />
 
     <ProgressBar
         android:id="@+id/progressBar2"
