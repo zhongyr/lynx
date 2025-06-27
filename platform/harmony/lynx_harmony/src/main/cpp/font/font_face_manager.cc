@@ -140,40 +140,52 @@ void FontFaceManager::LoadFontWithUrl(int sign, const std::string& font_family,
               pub::LynxResourceResponse& response) {
             auto shared_self = weak_self.lock();
 
-            // TODO(linxs&chenyouhui): post below logic to Layout Thread, when
-            // RunOnLayoutThread supported! context->RunOnLayoutThread(xxx)
             if (!shared_self) {
               return;
             }
-            if (response.Success() && !response.data.empty()) {
-              if (shared_self->CheckNodeInvalid(sign)) {
-                font_callback(font_family, response.err_code,
-                              response.data.data(), response.data.size());
-              }
-              shared_self->GetFontCollection()->SetLoadingFontState(
-                  font_family,
-                  FontCollectionHarmony::FontLoadingState::kLoaded);
-              auto& font_face_cache = shared_self->GetFontFaceCache();
-              font_face_cache.CacheFont(font_family, std::move(response.data));
-              // mark other shadowNodes dirty
-              const auto& it =
-                  shared_self->font_family_pending_shadow_node_.find(
-                      font_family);
-              if (it != shared_self->font_family_pending_shadow_node_.end()) {
-                for (const auto& pending_node_sign : it->second) {
-                  const auto* node =
-                      shared_self->node_owner_->Context()->FindShadowNodeBySign(
-                          pending_node_sign);
-                  if (node) {
-                    node->MarkDirty();
+
+            auto task = [shared_self, sign, font_family, font_callback,
+                         response]() mutable {
+              if (response.Success() && !response.data.empty()) {
+                if (shared_self->CheckNodeInvalid(sign)) {
+                  font_callback(font_family, response.err_code,
+                                response.data.data(), response.data.size());
+                }
+                shared_self->GetFontCollection()->SetLoadingFontState(
+                    font_family,
+                    FontCollectionHarmony::FontLoadingState::kLoaded);
+                auto& font_face_cache = shared_self->GetFontFaceCache();
+                font_face_cache.CacheFont(font_family,
+                                          std::move(response.data));
+                // mark other shadowNodes dirty
+                const auto& it =
+                    shared_self->font_family_pending_shadow_node_.find(
+                        font_family);
+                if (it != shared_self->font_family_pending_shadow_node_.end()) {
+                  for (const auto& pending_node_sign : it->second) {
+                    const auto* node =
+                        shared_self->node_owner_->Context()
+                            ->FindShadowNodeBySign(pending_node_sign);
+                    if (node) {
+                      node->MarkDirty();
+                    }
                   }
                 }
+                shared_self->font_family_pending_shadow_node_.erase(
+                    font_family);
+              } else {
+                shared_self->GetFontCollection()->SetLoadingFontState(
+                    font_family,
+                    FontCollectionHarmony::FontLoadingState::kLoadError);
               }
-              shared_self->font_family_pending_shadow_node_.erase(font_family);
+            };
+
+            if (shared_self->node_owner_->Context()->GetLayoutTaskRunner()) {
+              shared_self->node_owner_->Context()->RunOnLayoutThread(
+                  std::move(task));
             } else {
-              shared_self->GetFontCollection()->SetLoadingFontState(
-                  font_family,
-                  FontCollectionHarmony::FontLoadingState::kLoadError);
+              shared_self->node_owner_->Context()->RunOnUIThread(
+                  std::move(task));
             }
           });
     }
