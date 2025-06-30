@@ -954,9 +954,24 @@ lepus_value CSSStyleUtils::TransformToLepus(
   auto items = lepus::CArray::Create();
   for (const auto& tr : transform_raw) {
     auto item = lepus::CArray::Create();
+    // estimate the capacity and reserve in advance
+    const bool is_matrix = (tr.type == TransformType::kMatrix ||
+                            tr.type == TransformType::kMatrix3d);
+    // Estimate the required capacity for item to avoid multiple reallocations:
+    // - 1: for tr.type
+    // - 16: for 16 matrix values if the type is matrix or matrix3d
+    // - 3: for 3 parameters (p0, p1, p2) for other types
+    // - 4: each AddLengthToArray call can add up to 4 elements (see
+    // AddLengthToArray implementation)
+    if (is_matrix) {
+      // type (1) + 16 matrix values
+      item->reserve(1 + 16);
+    } else {
+      // type (1) + up to 4 elements for each of p0, p1, p2
+      item->reserve(1 + 3 * 4);
+    }
     item->emplace_back(static_cast<int>(tr.type));
-    if (tr.type == TransformType::kMatrix ||
-        tr.type == TransformType::kMatrix3d) {
+    if (is_matrix) {
       for (int i = 0; i < 16; ++i) {
         item->emplace_back(tr.matrix[i]);
       }
