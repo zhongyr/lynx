@@ -2486,7 +2486,15 @@ void FiberElement::SetNativeProps(
         }
       });
   if (IsAttached()) {
-    element_manager()->OnPatchFinish(pipeline_options, this);
+    // TODO(nihao.royal): use `enable_unified_pixel_pipeline` to switch multi
+    // behaviours. After `RunPixelPipeline` is unified, we may remove the
+    // redundant logic here.
+    if (pipeline_options->enable_unified_pixel_pipeline) {
+      pipeline_options->resolve_requested = true;
+      pipeline_options->target_node = this;
+    } else {
+      element_manager()->OnPatchFinish(pipeline_options, this);
+    }
   } else {
     LOGE("FiberElement::SetNativeProps to an detached element!");
   }

@@ -2849,11 +2849,18 @@ void TemplateAssembler::SetNativeProps(
                 });
                 debug->set_string_value(ss);
               });
+
   auto elements = page_proxy_.SelectElements(root, options);
   for (auto ele : elements) {
+    // Each element for setNativeProps should starts a new pixelPipeline,
+    // so we need to make sure that a new pipeline option is used.
+    auto pipeline_option = std::make_shared<PipelineOptions>(*pipeline_options);
+    pipeline_context_manager_->CreateAndUpdateCurrentPipelineContext(
+        pipeline_option);
     if (ele != nullptr) {
-      ele->SetNativeProps(native_props, pipeline_options);
+      ele->SetNativeProps(native_props, pipeline_option);
     }
+    this->RunPixelPipeline();
   }
 }
 

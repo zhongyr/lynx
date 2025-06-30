@@ -636,6 +636,8 @@ void ElementManager::SetInspectorElementObserver(
 
 void ElementManager::OnFinishUpdateProps(
     Element *node, std::shared_ptr<PipelineOptions> &options) {
+  // target_node is nullptr for radon by default;
+  Element *target_node = nullptr;
   if (node->is_radon_element()) {
     SetNeedsLayout();
     static_cast<RadonElement *>(node)
@@ -645,7 +647,17 @@ void ElementManager::OnFinishUpdateProps(
     node->FlushProps();
   } else if (node->is_fiber_element()) {
     static_cast<FiberElement *>(node)->MarkPropsDirty();
-    OnPatchFinish(options, static_cast<FiberElement *>(node));
+    target_node = node;
+  }
+
+  // TODO(nihao.royal): use `enable_unified_pixel_pipeline` to switch multi
+  // behaviours. After `RunPixelPipeline` is unified, we may remove the
+  // redundant logic here.
+  if (options->enable_unified_pixel_pipeline) {
+    options->resolve_requested = true;
+    options->target_node = target_node;
+  } else {
+    OnPatchFinish(options, target_node);
   }
 }
 

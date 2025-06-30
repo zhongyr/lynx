@@ -228,7 +228,6 @@ void RadonElement::SetNativeProps(
   }
   ConsumeStyle(styles);
   element_manager_->OnFinishUpdateProps(this, pipeline_options);
-  element_manager_->OnPatchFinish(pipeline_options);
 }
 
 void RadonElement::ReserveForAttribute(size_t count) {
