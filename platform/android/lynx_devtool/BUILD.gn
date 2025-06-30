@@ -148,8 +148,6 @@ devtool_source_set("lynx_base_for_devtool") {
     "../../../core/base/android/android_jni.cc",
     "../../../core/base/android/android_jni.h",
     "../../../core/base/android/callstack_util_android.h",
-    "../../../core/base/utils/file_utils.cc",
-    "../../../core/base/utils/file_utils.h",
   ]
   if (is_android) {
     public_configs = [ "../../../base/src:base_public" ]

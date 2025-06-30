@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/include/file_utils.h"
 #include "base/include/fml/synchronization/waitable_event.h"
 #include "base/include/log/logging.h"
 #include "base/include/md5.h"
@@ -20,7 +21,6 @@
 #include "base/include/timer/time_utils.h"
 #include "base/trace/native/trace_event.h"
 #include "core/base/threading/task_runner_manufactor.h"
-#include "core/base/utils/file_utils.h"
 #include "core/renderer/tasm/config.h"
 #include "core/renderer/utils/lynx_env.h"
 #include "core/runtime/jscache/js_cache_tracker.h"

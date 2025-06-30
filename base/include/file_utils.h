@@ -2,8 +2,8 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
-#ifndef CORE_BASE_UTILS_FILE_UTILS_H_
-#define CORE_BASE_UTILS_FILE_UTILS_H_
+#ifndef BASE_INCLUDE_FILE_UTILS_H_
+#define BASE_INCLUDE_FILE_UTILS_H_
 
 #include <string>
 
@@ -23,4 +23,4 @@ class FileUtils {
 }  // namespace base
 }  // namespace lynx
 
-#endif  // CORE_BASE_UTILS_FILE_UTILS_H_
+#endif  // BASE_INCLUDE_FILE_UTILS_H_

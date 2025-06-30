@@ -20,8 +20,6 @@ base_shared_sources = [
                         "threading/vsync_monitor.cc",
                         "threading/vsync_monitor.h",
                         "utils/any.h",
-                        "utils/file_utils.cc",
-                        "utils/file_utils.h",
                       ] + trace_extend_sources
 
 if (is_android) {
@@ -207,7 +205,6 @@ unittest_set("base_testset") {
     "threading/task_runner_vsync_unittest.cc",
     "threading/thread_merger_unittest.cc",
     "threading/vsync_monitor_unittest.cc",
-    "utils/file_utils_unittest.cc",
   ]
   public_deps = [ "../base" ]
 }

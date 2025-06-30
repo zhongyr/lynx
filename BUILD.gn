@@ -18,8 +18,9 @@ group("default") {
   deps = [ "core:lynx_native" ]
   if (is_android) {
     deps += [ "platform/android:Android" ]
-  }
-  if (is_ios) {
+  } else if (is_harmony) {
+    deps += [ "platform/harmony" ]
+  } else if (is_ios) {
     deps += [ "platform/darwin/ios/lynx_service:LynxService" ]
     deps += [ "platform/darwin/ios/lynx_devtool:devtool_podspec" ]
     deps += [ "platform/darwin/ios/lynx_xelement:XElement" ]
