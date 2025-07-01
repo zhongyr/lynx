@@ -1258,10 +1258,18 @@ void TemplateAssembler::DidLoadComponent(
   }
 
   if (component_loader_->DispatchOnComponentLoaded(this, component_url)) {
+    PipelineContext* pipeline_context =
+        pipeline_context_manager_->CreateAndUpdateCurrentPipelineContext(
+            pipeline_options);
     // TODO(kechenglong): SetNeedsLayout if and only if needed.
     page_proxy()->element_manager()->SetNeedsLayout();
-    page_proxy()->element_manager()->OnPatchFinish(pipeline_options);
-    page_proxy()->element_manager()->painting_context()->Flush();
+    if (pipeline_context) {
+      pipeline_context->RequestResolve();
+    } else {
+      page_proxy()->element_manager()->OnPatchFinish(pipeline_options);
+      page_proxy()->element_manager()->painting_context()->Flush();
+    }
+    RunPixelPipeline();
   }
 }
 
@@ -3304,7 +3312,7 @@ void TemplateAssembler::RunPixelPipeline() {
                     "pipeline_id", pipeline_option->pipeline_id);
               });
   if (current_pipeline_context->IsResolveRequested()) {
-    TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_PIPELINE_TRIGGER_LAYOUT);
+    TRACE_EVENT(LYNX_TRACE_CATEGORY, LYNX_PIPELINE_TRIGGER_RESOLVE);
     // trigger resolve;
     // TODO(nihao.royal): remove page_proxy, and make LynxEngine owns
     // element_manager;
