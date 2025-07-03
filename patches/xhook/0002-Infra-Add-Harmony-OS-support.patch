@@ -1,7 +1,7 @@
-From 0f8c2c49cc47bd5ce986e3c91ba201c1744aee1a Mon Sep 17 00:00:00 2001
+From 22907db99ecfd0bf39fe89fb0c5cfd7e2d0e6e60 Mon Sep 17 00:00:00 2001
 From: zsy-jason <186247581+zsy-jason@users.noreply.github.com>
-Date: Wed, 18 Jun 2025 10:08:55 +0800
-Subject: [PATCH] [Infra] Add Harmony OS support
+Date: Thu, 3 Jul 2025 21:31:43 +0800
+Subject: [PATCH] [Infra] Add Harmony OS support.
 
 ---
  BUILD.gn               | 19 ++++++++++++++++++-
@@ -10,8 +10,8 @@ Subject: [PATCH] [Infra] Add Harmony OS support
  libxhook/jni/xh_jni.c  |  4 ++++
  libxhook/jni/xh_log.c  | 13 +++++++++++--
  libxhook/jni/xh_log.h  | 33 ++++++++++++++++++++++++++++++---
- libxhook/jni/xh_util.c |  8 ++++++++
- 7 files changed, 77 insertions(+), 8 deletions(-)
+ libxhook/jni/xh_util.c |  8 ++++++--
+ 7 files changed, 75 insertions(+), 10 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
 index 0688438..0c82cb2 100644
@@ -198,7 +198,7 @@ index e108c4b..0e79312 100644
 +#endif
  #endif
 diff --git a/libxhook/jni/xh_util.c b/libxhook/jni/xh_util.c
-index 0e2dca2..5863ec3 100644
+index 0e2dca2..406f69f 100644
 --- a/libxhook/jni/xh_util.c
 +++ b/libxhook/jni/xh_util.c
 @@ -25,6 +25,7 @@
@@ -209,20 +209,20 @@ index 0e2dca2..5863ec3 100644
  #include <link.h>
  #include <string.h>
  #include <stdio.h>
-@@ -37,6 +38,13 @@
+@@ -37,8 +38,11 @@
  #include "xh_errno.h"
  #include "xh_log.h"
  
-+#ifndef PAGE_SIZE
-+#define PAGE_SIZE (1UL << 12)
-+#endif
-+#ifndef PAGE_MASK
-+#define PAGE_MASK (~(PAGE_SIZE-1))
-+#endif
+-#define PAGE_START(addr) ((addr) & PAGE_MASK)
+-#define PAGE_END(addr)   (PAGE_START(addr + sizeof(uintptr_t) - 1) + PAGE_SIZE)
++#define PAGE_SIZE_T (getpagesize())
++#define PAGE_MASK_T (~(PAGE_SIZE_T-1))
 +
- #define PAGE_START(addr) ((addr) & PAGE_MASK)
- #define PAGE_END(addr)   (PAGE_START(addr + sizeof(uintptr_t) - 1) + PAGE_SIZE)
++#define PAGE_START(addr) ((addr) & PAGE_MASK_T)
++#define PAGE_END(addr)   (PAGE_START(addr + sizeof(uintptr_t) - 1) + PAGE_SIZE_T)
  #define PAGE_COVER(addr) (PAGE_END(addr) - PAGE_START(addr))
+ 
+ int xh_util_get_mem_protect(uintptr_t addr, size_t len, const char *pathname, unsigned int *prot)
 -- 
-2.45.2
+2.49.0
 
