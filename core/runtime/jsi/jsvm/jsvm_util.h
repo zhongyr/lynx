@@ -8,8 +8,8 @@
 
 #include <cstdlib>
 
+#include "base/include/log/logging.h"
 #include "core/runtime/jsi/jsvm/jsvm_helper.h"
-#include "lynx/base/include/log/logging.h"
 
 namespace lynx {
 namespace piper {
