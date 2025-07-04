@@ -88,7 +88,7 @@ class BackgroundDrawable {
   void SetBackgroundClip(const lepus::Value& value);
   void SetBackgroundOrigin(const lepus::Value& value);
   void SetBackgroundImage(const lepus::Value& value);
-  void SetBackgroundColor(const lepus::Value& value);
+  void SetBackgroundColor(uint32_t background_color);
   void SetBackgroundSize(const lepus::Value& value);
   void SetBackgroundPosition(const lepus::Value& value);
   void SetBackgroundRepeat(const lepus::Value& value);

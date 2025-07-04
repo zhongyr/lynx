@@ -377,6 +377,8 @@ class BASE_EXPORT
   std::string react_ref_id_;
   bool is_component_{false};
   ArkUI_NodeHandle draw_node_{nullptr};
+  uint32_t background_color_{};
+  bool has_background_color_{false};
 
   bool user_interaction_enabled_{true};
   float hit_slop_left_{0};

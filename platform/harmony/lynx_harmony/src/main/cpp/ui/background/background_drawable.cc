@@ -1238,8 +1238,8 @@ void BackgroundDrawable::SetBackgroundImage(const lepus::Value& value) {
   layer_manager_->SetLayerImage(value);
 }
 
-void BackgroundDrawable::SetBackgroundColor(const lepus::Value& value) {
-  background_color_ = static_cast<uint32_t>(value.Number());
+void BackgroundDrawable::SetBackgroundColor(uint32_t background_color) {
+  background_color_ = background_color;
 }
 
 void BackgroundDrawable::SetBackgroundSize(const lepus::Value& value) {

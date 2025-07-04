@@ -53,6 +53,7 @@ constexpr uint32_t kFlagAccessibilityLabel = 1 << 9;
 constexpr uint32_t kFlagAccessibilityTraits = 1 << 10;
 constexpr uint32_t kFlagAccessibilityMode = 1 << 11;
 constexpr uint32_t kFlagAccessibilityExclusive = 1 << 12;
+constexpr uint32_t kFlagBackgroundColor = 1 << 13;
 
 // std::sqrt(5.0) is not constexpr in C++17, so we use an approximation
 // to allow this value to be used in compile-time constants.
@@ -500,6 +501,20 @@ void UIBase::OnNodeReady() {
     ArkUI_AttributeItem item{.string = id.c_str()};
     NodeManager::Instance().SetAttribute(DrawNode(), NODE_ID, &item);
   }
+  if ((dirty_flags_ & kFlagBackgroundColor) != 0) {
+    if (background_drawable_) {
+      if (has_background_color_) {
+        NodeManager::Instance().ResetAttribute(DrawNode(),
+                                               NODE_BACKGROUND_COLOR);
+        has_background_color_ = false;
+      }
+      background_drawable_->SetBackgroundColor(background_color_);
+    } else {
+      has_background_color_ = true;
+      NodeManager::Instance().SetAttributeWithNumberValue(
+          DrawNode(), NODE_BACKGROUND_COLOR, background_color_);
+    }
+  }
 
   // Attribute for accessibility
   OnNodeReadyForAccessibility();
@@ -534,8 +549,8 @@ void UIBase::SetReactRef(const lepus::Value& value) {
 }
 
 void UIBase::SetBackgroundColor(const lepus::Value& value) {
-  CreateOrUpdateBackground();
-  background_drawable_->SetBackgroundColor(value);
+  background_color_ = static_cast<uint32_t>(value.Number());
+  dirty_flags_ |= kFlagBackgroundColor;
 }
 
 void UIBase::SetOpacity(const lepus::Value& value) {
@@ -1469,11 +1484,9 @@ bool UIBase::NeedDrawNode() {
 
     return background_drawable_->HasBorder() ||
            background_drawable_->HasImage();
-  } else {
-    return background_drawable_->HasBorder() ||
-           background_drawable_->HasImage() ||
-           background_drawable_->HasShadow();
   }
+  return background_drawable_->HasBorder() ||
+         background_drawable_->HasImage() || background_drawable_->HasShadow();
 }
 
 void UIBase::AttachToNodeContent(NativeNodeContent* content) {
