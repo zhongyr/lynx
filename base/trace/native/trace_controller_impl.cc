@@ -49,22 +49,27 @@ namespace trace {
 // Implementations of the definition of the
 // "base/trace/native/trace_event_utils_perfetto.h"
 constexpr ::perfetto::CounterTrack ConvertToPerfCounterTrack(
-    const lynx::perfetto::CounterTrack& counter_tarck) {
-  if (counter_tarck.is_global_) {
-    if (counter_tarck.unit_name_ != nullptr) {
-      return ::perfetto::CounterTrack::Global(counter_tarck.name_,
-                                              counter_tarck.unit_name_);
+    const lynx::perfetto::CounterTrack& counter_track) {
+  if (counter_track.is_global_) {
+    if (counter_track.unit_name_ != nullptr) {
+      return ::perfetto::CounterTrack::Global(
+          ::perfetto::DynamicString(counter_track.name_),
+          counter_track.unit_name_);
     } else {
       return ::perfetto::CounterTrack::Global(
-          counter_tarck.name_,
-          static_cast<::perfetto::CounterTrack::Unit>(counter_tarck.unit_));
+          ::perfetto::DynamicString(counter_track.name_),
+          static_cast<::perfetto::CounterTrack::Unit>(counter_track.unit_));
     }
   }
-  return ::perfetto::CounterTrack(
-      counter_tarck.name_, counter_tarck.category_,
-      static_cast<::perfetto::CounterTrack::Unit>(counter_tarck.unit_),
-      counter_tarck.unit_name_, counter_tarck.unit_multiplier_,
-      counter_tarck.is_incremental_);
+  auto track =
+      ::perfetto::CounterTrack(::perfetto::DynamicString(counter_track.name_))
+          .set_category(counter_track.category_)
+          .set_unit_name(counter_track.unit_name_)
+          .set_unit_multiplier(counter_track.unit_multiplier_)
+          .set_is_incremental(counter_track.is_incremental_)
+          .set_unit(
+              static_cast<::perfetto::CounterTrack::Unit>(counter_track.unit_));
+  return track;
 }
 
 uint64_t GetFlowId() {
@@ -104,32 +109,31 @@ void TraceEventImplementation(const char* category_name, const char* name,
     // TODO(yongjie): enable DCHECK later.
     // DCHECK(trace_timestamp.clock_id == TrackEventInternal::GetClockId());
 
+    ::perfetto::internal::TrackEventTlsState& tls_state =
+        *ctx.GetCustomTlsState();
     // Make sure incremental state is valid.
-    ::perfetto::TraceWriterBase* trace_writer =
-        ctx.tls_inst()->trace_writer.get();
+    ::perfetto::TraceWriterBase* trace_writer = ctx.getTraceWriter();
     ::perfetto::internal::TrackEventIncrementalState* incr_state =
         ctx.GetIncrementalState();
-    if (incr_state->was_cleared) {
-      incr_state->was_cleared = false;
-      TrackEventInternal::ResetIncrementalState(trace_writer,
-                                                trace_timestamp.nanoseconds);
-    }
 
+    TrackEventInternal::ResetIncrementalStateIfRequired(
+        trace_writer, incr_state, tls_state, trace_timestamp);
     // Write the track descriptor before any event on the track.
     TrackEventInternal::WriteTrackDescriptorIfNeeded(
         track_id == nullptr ? TrackEventInternal::kDefaultTrack
                             : ::perfetto::Track(track_id->id()),
-        trace_writer, incr_state);
-
-    // Write process track descriptor
-    TrackEventInternal::WriteTrackDescriptorIfNeeded(
-        ::perfetto::ProcessTrack::Current(), trace_writer, incr_state);
+        trace_writer, incr_state, tls_state, trace_timestamp);
 
     // Write the event itself.
     {
       auto event_ctx = TrackEventInternal::WriteEvent(
-          trace_writer, incr_state, nullptr, name,
-          static_cast<TrackEvent_Type>(phase), trace_timestamp.nanoseconds);
+          trace_writer, incr_state, tls_state, nullptr,
+          static_cast<TrackEvent_Type>(phase), trace_timestamp,
+          track_id == nullptr);
+      if (name != nullptr) {
+        TrackEventInternal::WriteEventName(::perfetto::DynamicString(name),
+                                           event_ctx, tls_state);
+      }
       event_ctx.event()->add_categories(category_name, strlen(category_name));
       if (track_id != nullptr) {
         event_ctx.event()->set_track_uuid(
@@ -162,29 +166,25 @@ void TraceEventImplementation(const char* category_name,
     // DCHECK(trace_timestamp.clock_id == TrackEventInternal::GetClockId());
 
     // Make sure incremental state is valid.
-    ::perfetto::TraceWriterBase* trace_writer =
-        ctx.tls_inst()->trace_writer.get();
+    ::perfetto::internal::TrackEventTlsState& tls_state =
+        *ctx.GetCustomTlsState();
+    ::perfetto::TraceWriterBase* trace_writer = ctx.getTraceWriter();
+    ;
     ::perfetto::internal::TrackEventIncrementalState* incr_state =
         ctx.GetIncrementalState();
-    if (incr_state->was_cleared) {
-      incr_state->was_cleared = false;
-      TrackEventInternal::ResetIncrementalState(trace_writer,
-                                                trace_timestamp.nanoseconds);
-    }
+
+    TrackEventInternal::ResetIncrementalStateIfRequired(
+        trace_writer, incr_state, tls_state, trace_timestamp);
 
     // Write the track descriptor before any event on the track.
-    TrackEventInternal::WriteTrackDescriptorIfNeeded(track, trace_writer,
-                                                     incr_state);
-
-    // Write process track descriptor
     TrackEventInternal::WriteTrackDescriptorIfNeeded(
-        ::perfetto::ProcessTrack::Current(), trace_writer, incr_state);
+        track, trace_writer, incr_state, tls_state, trace_timestamp);
 
     // Write the event itself.
     {
       auto event_ctx = TrackEventInternal::WriteEvent(
-          trace_writer, incr_state, nullptr, nullptr,
-          static_cast<TrackEvent_Type>(phase), trace_timestamp.nanoseconds);
+          trace_writer, incr_state, tls_state, nullptr,
+          static_cast<TrackEvent_Type>(phase), trace_timestamp, false);
 
       event_ctx.event()->set_track_uuid(track.uuid);
       event_ctx.event()->set_double_counter_value(counter);

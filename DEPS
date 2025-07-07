@@ -224,6 +224,16 @@ deps = {
         "decompress":True,
         "condition": system in ['linux', 'darwin'],
     },
+    'third_party/perfetto': {
+        'type': 'git',
+        'url': 'https://github.com/lynx-family/lynx-trace.git',
+        'commit': '6842e266c2625fa8301220bb0267143e09c155af',
+        "patches": [
+              os.path.join(root_dir, 'patches', 'perfetto', '*.patch')
+         ],
+         "ignore_in_git": True,
+         "paths": [ "sdk" ],
+      },
     "third_party/benchmark": {
         'type': 'git',
         'url': 'https://github.com/google/benchmark.git',

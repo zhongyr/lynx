@@ -14,7 +14,7 @@
 #include "base/include/fml/thread.h"
 #include "base/trace/native/hook_systrace/hook_system_trace.h"
 #include "base/trace/native/trace_controller.h"
-#include "third_party/perfetto/perfetto.h"
+#include "third_party/perfetto/sdk/perfetto.h"
 
 namespace lynx {
 namespace trace {

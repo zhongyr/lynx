@@ -4,7 +4,7 @@
 
 #include "base/trace/native/track_event_wrapper.h"
 
-#include "third_party/perfetto/perfetto.h"
+#include "third_party/perfetto/sdk/perfetto.h"
 
 namespace lynx {
 namespace perfetto {
@@ -77,11 +77,15 @@ LynxDebugAnnotation* TrackEvent::add_debug_annotations() {
 }
 void TrackEvent::add_debug_annotations(const std::string& name,
                                        const std::string& value) {
-  ctx_->event()->add_debug_annotations(name, value);
+  auto* debug = ctx_->event()->add_debug_annotations();
+  debug->set_name(name);
+  debug->set_string_value(value);
 }
 void TrackEvent::add_debug_annotations(std::string&& name,
                                        std::string&& value) {
-  ctx_->event()->add_debug_annotations(name, value);
+  auto* debug = ctx_->event()->add_debug_annotations();
+  debug->set_name(name);
+  debug->set_string_value(value);
 }
 void TrackEvent::set_timestamp_absolute_us(int64_t value) {
   ctx_->event()->set_timestamp_absolute_us(value);
