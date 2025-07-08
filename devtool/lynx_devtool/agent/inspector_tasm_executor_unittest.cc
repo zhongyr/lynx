@@ -1,0 +1,257 @@
+// Copyright 2025 The Lynx Authors. All rights reserved.
+// Licensed under the Apache License Version 2.0 that can be found in the
+// LICENSE file in the root directory of this source tree.
+
+#define private public
+#define protected public
+
+#include "devtool/lynx_devtool/agent/inspector_tasm_executor.h"
+
+#include <sys/wait.h>
+
+#include <cstddef>
+#include <memory>
+
+#include "core/renderer/dom/element.h"
+#include "core/renderer/dom/element_manager.h"
+#include "core/renderer/tasm/react/testing/mock_painting_context.h"
+#include "core/shell/testing/mock_tasm_delegate.h"
+#include "devtool/base_devtool/native/test/message_sender_mock.h"
+#include "devtool/base_devtool/native/test/mock_receiver.h"
+#include "devtool/lynx_devtool/agent/lynx_devtool_mediator.h"
+#include "devtool/lynx_devtool/element/element_inspector.h"
+#include "devtool/testing/mock/devtool_platform_facade_mock.h"
+#include "devtool/testing/mock/lynx_devtool_ng_mock.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "third_party/jsoncpp/include/json/value.h"
+
+namespace lynx {
+namespace testing {
+
+static constexpr int32_t kWidth = 1080;
+static constexpr int32_t kHeight = 1920;
+static constexpr float kDefaultLayoutsUnitPerPx = 1.f;
+static constexpr double kDefaultPhysicalPixelsPerLayoutUnit = 1.f;
+
+class InspectorTasmExecutorTest : public ::testing::Test {
+ public:
+  InspectorTasmExecutorTest() = default;
+  ~InspectorTasmExecutorTest() override {}
+
+  void SetUp() override {
+    lynx::tasm::LynxEnvConfig lynx_env_config(
+        kWidth, kHeight, kDefaultLayoutsUnitPerPx,
+        kDefaultPhysicalPixelsPerLayoutUnit);
+    tasm_mediator_ = std::make_shared<
+        ::testing::NiceMock<lynx::tasm::test::MockTasmDelegate>>();
+    manager_ = std::make_unique<lynx::tasm::ElementManager>(
+        std::make_unique<lynx::tasm::MockPaintingContext>(),
+        tasm_mediator_.get(), lynx_env_config);
+    devtool::MockReceiver::GetInstance().ResetAll();
+    devtool_mediator_ = std::make_shared<lynx::devtool::LynxDevToolMediator>();
+    devtools_ng_ = std::make_shared<lynx::testing::LynxDevToolNGMock>();
+    message_sender_ = std::make_shared<devtool::MessageSenderMock>();
+    devtools_ng_->message_sender_ = message_sender_;
+    devtool_mediator_->devtool_wp_ = devtools_ng_;
+    element_executor_ = std::make_shared<devtool::InspectorTasmExecutor>(
+        devtool_mediator_, nullptr, 1);
+    ui_thread_ = std::make_unique<fml::Thread>("ui");
+    devtool_mediator_->ui_task_runner_ = ui_thread_->GetTaskRunner();
+  }
+
+ private:
+  std::shared_ptr<devtool::InspectorTasmExecutor> element_executor_;
+  std::shared_ptr<devtool::LynxDevToolMediator> devtool_mediator_;
+  std::shared_ptr<devtool::MessageSender> message_sender_;
+  std::shared_ptr<testing::LynxDevToolNGMock> devtools_ng_;
+  std::shared_ptr<lynx::tasm::ElementManager> manager_;
+  std::unique_ptr<fml::Thread> ui_thread_;
+  std::shared_ptr<::testing::NiceMock<lynx::tasm::test::MockTasmDelegate>>
+      tasm_mediator_;
+};
+
+TEST_F(InspectorTasmExecutorTest, SetDevtoolPlatformAbilityCase) {
+  LOGI("InspectorTasmExecutorTest SetDevtoolPlatformAbilityCase start");
+
+  std::shared_ptr<testing::DevToolPlatformFacadeMock> facade =
+      std::make_shared<testing::DevToolPlatformFacadeMock>();
+  element_executor_->SetDevToolPlatformFacade(facade);
+  EXPECT_EQ(element_executor_->devtool_platform_facade_.get(), facade.get());
+}
+
+TEST_F(InspectorTasmExecutorTest, LayerTreeEnableCase) {
+  LOGI("InspectorTasmExecutorTest LayerTreeEnableCase start");
+  Json::Value message;
+  message["id"] = 2;
+  element_executor_->LayerTreeEnable(message_sender_, message);
+
+  Json::Value res;
+  Json::Reader reader;
+  bool is_valid_json = reader.parse(
+      devtool::MockReceiver::GetInstance().received_message_.second, res);
+
+  EXPECT_TRUE(is_valid_json);
+  EXPECT_TRUE(element_executor_->layer_tree_enabled_);
+}
+
+TEST_F(InspectorTasmExecutorTest, LayerTreeDisableCase) {
+  LOGI("InspectorTasmExecutorTest LayerTreeDisableCase start");
+  Json::Value message;
+  message["id"] = 6;
+  element_executor_->LayerTreeDisable(message_sender_, message);
+
+  Json::Value res;
+  Json::Reader reader;
+  bool is_valid_json = reader.parse(
+      devtool::MockReceiver::GetInstance().received_message_.second, res);
+
+  EXPECT_TRUE(is_valid_json);
+  EXPECT_EQ(res["id"], 6);
+  EXPECT_FALSE(element_executor_->layer_tree_enabled_);
+}
+
+TEST_F(InspectorTasmExecutorTest, SendLayerTreeDidChangeEventCase) {
+  element_executor_->layer_tree_enabled_ = true;
+
+  auto element = manager_->CreateNode("view", nullptr);
+  lynx::devtool::ElementInspector::InitForInspector(
+      std::make_tuple(element.get()));
+  element->CreateElementContainer(false);
+  auto element_container = element->element_container();
+
+  auto child = manager_->CreateNode("view", nullptr);
+  lynx::devtool::ElementInspector::InitForInspector(
+      std::make_tuple(child.get()));
+  element->AddChildAt(child.get(), 0);
+  EXPECT_EQ(child->parent(), element.get());
+
+  child->CreateElementContainer(false);
+  auto child_container = child->element_container();
+  child_container->InsertSelf();
+  EXPECT_EQ(child_container->parent(), element_container);
+  EXPECT_EQ(element_container->children().size(), static_cast<size_t>(1));
+  element_executor_->element_root_ = element.get();
+
+  element_executor_->SendLayerTreeDidChangeEvent();
+
+  std::string expected_str = R"({
+  "method": "LayerTree.layerTreeDidChange",
+  "params": {
+    "layers": [
+      {
+        "backendNodeId": 10,
+        "drawsContent": true,
+        "height": null,
+        "invisible": true,
+        "layerId": "10",
+        "name": "view",
+        "offsetX": null,
+        "offsetY": null,
+        "paintCount": 1,
+        "width": null
+      },
+      {
+        "backendNodeId": 11,
+        "drawsContent": true,
+        "height": null,
+        "invisible": true,
+        "layerId": "11",
+        "name": "view",
+        "offsetX": null,
+        "offsetY": null,
+        "paintCount": 1,
+        "parentLayerId": "10",
+        "width": null
+      }
+    ]
+  }
+})";
+
+  Json::Reader reader;
+  Json::Value expected_json;
+  bool success = reader.parse(expected_str, expected_json);
+  EXPECT_TRUE(success);
+  Json::Value res;
+  reader.parse(devtool::MockReceiver::GetInstance().received_message_.second,
+               res);
+  EXPECT_EQ(expected_json, res);
+}
+
+TEST_F(InspectorTasmExecutorTest, BuildLayerTreeFromElement) {
+  auto element = manager_->CreateNode("view", nullptr);
+  lynx::devtool::ElementInspector::InitForInspector(
+      std::make_tuple(element.get()));
+  element->CreateElementContainer(false);
+  auto element_container = element->element_container();
+
+  auto child = manager_->CreateNode("view", nullptr);
+  lynx::devtool::ElementInspector::InitForInspector(
+      std::make_tuple(child.get()));
+  element->AddChildAt(child.get(), 0);
+  EXPECT_EQ(child->parent(), element.get());
+
+  child->CreateElementContainer(false);
+  auto child_container = child->element_container();
+  child_container->InsertSelf();
+  EXPECT_EQ(child_container->parent(), element_container);
+  EXPECT_EQ(element_container->children().size(), static_cast<size_t>(1));
+
+  auto res = element_executor_->BuildLayerTreeFromElement(element.get());
+  std::string layer_str = R"([
+  {
+    "backendNodeId": 10,
+    "drawsContent": true,
+    "height": null,
+    "invisible": true,
+    "layerId": "10",
+    "name": "view",
+    "offsetX": null,
+    "offsetY": null,
+    "paintCount": 1,
+    "width": null
+  },
+  {
+    "backendNodeId": 11,
+    "drawsContent": true,
+    "height": null,
+    "invisible": true,
+    "layerId": "11",
+    "name": "view",
+    "offsetX": null,
+    "offsetY": null,
+    "paintCount": 1,
+    "parentLayerId": "10",
+    "width": null
+  }
+])";
+  Json::Reader reader;
+  Json::Value layer;
+  reader.parse(layer_str, layer);
+  EXPECT_EQ(res, layer);
+}
+
+TEST_F(InspectorTasmExecutorTest, GetLayerContentFromElementCase) {
+  LOGI("InspectorTasmExecutorTest GetLayerContentFromElementCase start");
+  auto element = manager_->CreateNode("view", nullptr);
+  lynx::devtool::ElementInspector::InitForInspector(std::make_tuple(element));
+  auto res = element_executor_->GetLayerContentFromElement(element.get());
+  Json::Value layer(Json::ValueType::objectValue);
+
+  layer["layerId"] =
+      std::to_string(devtool::ElementInspector::NodeId(element.get()));
+  layer["backendNodeId"] = devtool::ElementInspector::NodeId(element.get());
+  layer["paintCount"] = 1;
+  layer["drawsContent"] = true;
+  layer["invisible"] = true;
+  layer["name"] = "view";
+  Json::Value layout(Json::ValueType::objectValue);
+  layer["offsetX"] = layout["offsetX"];
+  layer["offsetY"] = layout["offsetY"];
+  layer["width"] = layout["width"];
+  layer["height"] = layout["height"];
+
+  EXPECT_EQ(layer, res);
+}
+
+}  // namespace testing
+}  // namespace lynx

@@ -606,4 +606,10 @@ class DevToolPlatformDarwin : public DevToolPlatformFacade {
   }
 }
 
+- (void)sendCDPEvent:(NSString*)message {
+  if (devtool_platform_facade_) {
+    devtool_platform_facade_->SendCDPEvent([message UTF8String]);
+  }
+}
+
 @end

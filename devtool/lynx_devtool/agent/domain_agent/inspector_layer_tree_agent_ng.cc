@@ -14,8 +14,6 @@ InspectorLayerTreeAgentNG::InspectorLayerTreeAgentNG(
     const std::shared_ptr<LynxDevToolMediator>& devtool_mediator)
     : devtool_mediator_(devtool_mediator) {
   functions_map_["LayerTree.enable"] = &InspectorLayerTreeAgentNG::Enable;
-  functions_map_["LayerTree.layerPainted"] =
-      &InspectorLayerTreeAgentNG::LayerPainted;
   functions_map_["LayerTree.disable"] = &InspectorLayerTreeAgentNG::Disable;
   functions_map_["LayerTree.compositingReasons"] =
       &InspectorLayerTreeAgentNG::CompositingReasons;
@@ -29,11 +27,6 @@ void InspectorLayerTreeAgentNG::Enable(
 void InspectorLayerTreeAgentNG::Disable(
     const std::shared_ptr<MessageSender>& sender, const Json::Value& message) {
   devtool_mediator_->LayerTreeDisable(sender, message);
-}
-
-void InspectorLayerTreeAgentNG::LayerPainted(
-    const std::shared_ptr<MessageSender>& sender, const Json::Value& message) {
-  devtool_mediator_->LayerPainted(sender, message);
 }
 
 void InspectorLayerTreeAgentNG::CompositingReasons(

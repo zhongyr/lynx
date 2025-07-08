@@ -114,6 +114,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)sendLayerTreeDidChangeEvent;
 
+- (void)sendCDPEvent:(NSString *)message;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -1545,10 +1545,8 @@ void InspectorTasmExecutor::LayerTreeEnable(
   sender->SendOKResponse(message["id"].asInt64());
   layer_tree_enabled_ = true;
 
-  auto devtool_mediator = devtool_mediator_wp_.lock();
-  CHECK_NULL_AND_LOG_RETURN(devtool_mediator, "devtool_mediator is null");
-  LayerPainted(sender, message);
-  LayerTreeDidChange(sender);
+  SendLayerPaintedEvent();
+  SendLayerTreeDidChangeEvent();
 }
 
 void InspectorTasmExecutor::LayerTreeDisable(
@@ -1558,8 +1556,7 @@ void InspectorTasmExecutor::LayerTreeDisable(
   layer_tree_enabled_ = false;
 }
 
-void InspectorTasmExecutor::LayerTreeDidChange(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender) {
+void InspectorTasmExecutor::SendLayerTreeDidChangeEvent() {
   if (layer_tree_enabled_) {
     Json::Value response(Json::ValueType::objectValue);
     response["method"] = "LayerTree.layerTreeDidChange";
@@ -1567,16 +1564,16 @@ void InspectorTasmExecutor::LayerTreeDidChange(
     lynx::tasm::Element* element = GetElementRoot();
 
     if (element != nullptr) {
-      layers = BuildLayerTreeFromElement(sender, element);
+      layers = BuildLayerTreeFromElement(element);
     }
     response["params"]["layers"] = layers;
-    sender->SendMessage("CDP", response);
+    auto devtool_mediator = devtool_mediator_wp_.lock();
+    CHECK_NULL_AND_LOG_RETURN(devtool_mediator, "devtool_mediator is null");
+    devtool_mediator->SendCDPEvent(response);
   }
 }
 
-void InspectorTasmExecutor::LayerPainted(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender,
-    const Json::Value& message) {
+void InspectorTasmExecutor::SendLayerPaintedEvent() {
   Json::Value response(Json::ValueType::objectValue);
   Json::Value layerId(Json::ValueType::stringValue);
   Json::Value clip(Json::ValueType::objectValue);
@@ -1585,7 +1582,7 @@ void InspectorTasmExecutor::LayerPainted(
 
   lynx::tasm::Element* element = GetElementRoot();
   if (element != nullptr) {
-    Json::Value rootLayer = GetLayerContentFromElement(sender, element);
+    Json::Value rootLayer = GetLayerContentFromElement(element);
 
     clip["x"] = rootLayer["offsetX"];
     clip["y"] = rootLayer["offsetY"];
@@ -1593,7 +1590,7 @@ void InspectorTasmExecutor::LayerPainted(
     clip["height"] = rootLayer["height"];
     layerId = rootLayer["layerId"].asString();
   }
-  response["method"] = "LayerTree.layerPrinted";
+  response["method"] = "LayerTree.layerPainted";
   response["params"]["layerId"] = layerId;
   response["params"]["clip"] = clip;
   devtool_mediator->SendCDPEvent(response);
@@ -1624,7 +1621,6 @@ void InspectorTasmExecutor::CompositingReasons(
 }
 
 Json::Value InspectorTasmExecutor::GetLayerContentFromElement(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender,
     lynx::tasm::Element* element) {
   Json::Value layer(Json::ValueType::objectValue);
   if (element) {
@@ -1638,7 +1634,7 @@ Json::Value InspectorTasmExecutor::GetLayerContentFromElement(
     layer["drawsContent"] = true;
     layer["invisible"] = true;
     layer["name"] = ElementInspector::LocalName(element);
-    Json::Value layout = GetLayoutInfoFromElement(sender, element);
+    Json::Value layout = GetLayoutInfoFromElement(element);
     layer["offsetX"] = layout["offsetX"];
     layer["offsetY"] = layout["offsetY"];
     layer["width"] = layout["width"];
@@ -1648,7 +1644,6 @@ Json::Value InspectorTasmExecutor::GetLayerContentFromElement(
 }
 
 Json::Value InspectorTasmExecutor::GetLayoutInfoFromElement(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender,
     lynx::tasm::Element* element) {
   Json::Value layout(Json::ValueType::objectValue);
   CHECK_NULL_AND_LOG_RETURN_VALUE(element, "element is null", layout);
@@ -1677,7 +1672,6 @@ Json::Value InspectorTasmExecutor::GetLayoutInfoFromElement(
 }
 
 Json::Value InspectorTasmExecutor::BuildLayerTreeFromElement(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender,
     lynx::tasm::Element* root_element) {
   Json::Value layers(Json::ValueType::arrayValue);
   CHECK_NULL_AND_LOG_RETURN_VALUE(root_element, "root_element is null", layers);
@@ -1686,7 +1680,7 @@ Json::Value InspectorTasmExecutor::BuildLayerTreeFromElement(
   while (!element_queue.empty()) {
     lynx::tasm::Element* element = element_queue.front();
     element_queue.pop();
-    Json::Value layer = GetLayerContentFromElement(sender, element);
+    Json::Value layer = GetLayerContentFromElement(element);
     layers.append(layer);
     for (auto& child : element->GetChildren()) {
       element_queue.push(child);

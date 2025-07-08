@@ -413,22 +413,16 @@
   id data = [event objectForKey:@"data"];
   NSDictionary* params =
       @{@"event" : eventName, @"vmType" : origin ? origin : @"", @"data" : data ? data : @""};
-  [self handleCDPEvent:@"Lynx.onVMEvent" withParams:params];
-}
 
-- (void)handleCDPEvent:(NSString*)event withParams:(NSDictionary*)params {
-  if (_devtoolNG == nil || ![_devtoolNG isAttachToDebugRouter] || !event) {
-    return;
-  }
   NSMutableDictionary* msg = [[NSMutableDictionary alloc] init];
-  msg[@"method"] = event;
-  if (params) {
-    msg[@"params"] = params;
-  }
+  msg[@"method"] = @"Lynx.onVMEvent";
+  msg[@"params"] = params;
   if ([NSJSONSerialization isValidJSONObject:msg]) {
     NSData* jsonData = [NSJSONSerialization dataWithJSONObject:msg options:0 error:nil];
     NSString* jsonStr = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    [_devtoolNG sendMessageToDebugPlatform:jsonStr withType:@"CDP"];
+    if (_platform != nil && jsonStr != nil) {
+      [_platform sendCDPEvent:jsonStr];
+    }
   }
 }
 

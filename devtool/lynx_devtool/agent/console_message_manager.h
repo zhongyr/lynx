@@ -13,6 +13,7 @@ namespace lynx {
 namespace devtool {
 
 class MessageSender;
+class LynxDevToolMediator;
 
 /**
  * When to use this class to send and cache console logs:
@@ -29,23 +30,23 @@ class MessageSender;
 class ConsoleMessageManager
     : public std::enable_shared_from_this<ConsoleMessageManager> {
  public:
-  ConsoleMessageManager() = default;
+  ConsoleMessageManager(
+      const std::shared_ptr<LynxDevToolMediator>& devtool_mediator);
   virtual ~ConsoleMessageManager() = default;
 
   void EnableConsoleLog(const std::shared_ptr<MessageSender>& sender);
   void DisableConsoleLog();
-  void LogEntryAdded(const std::shared_ptr<MessageSender>& sender,
-                     const lynx::piper::ConsoleMessage& message);
+  void LogEntryAdded(const lynx::piper::ConsoleMessage& message);
   void ClearConsoleMessages();
 
  private:
   void CacheLog(const piper::ConsoleMessage& message);
-  void PostLog(const std::shared_ptr<MessageSender>& sender,
-               const piper::ConsoleMessage& message);
-  void FireCacheLogs(const std::shared_ptr<MessageSender>& sender);
+  void PostLog(const piper::ConsoleMessage& message);
+  void FireCacheLogs();
 
   bool enable_{false};
   std::list<piper::ConsoleMessage> log_messages_;
+  std::weak_ptr<LynxDevToolMediator> devtool_mediator_wp_;
 };
 
 }  // namespace devtool

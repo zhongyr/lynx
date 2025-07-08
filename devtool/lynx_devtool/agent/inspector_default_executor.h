@@ -34,9 +34,7 @@ class InspectorDefaultExecutor
   void SetDevToolPlatformFacade(
       const std::shared_ptr<DevToolPlatformFacade>& devtool_platform_facade);
   // events for Log domain
-  void LogEntryAdded(
-      const std::shared_ptr<lynx::devtool::MessageSender>& sender,
-      const lynx::piper::ConsoleMessage& message);
+  void SendLogEntryAddedEvent(const lynx::piper::ConsoleMessage& message);
 
   // Log domain
   DECLARE_DEVTOOL_METHOD(LogEnable)

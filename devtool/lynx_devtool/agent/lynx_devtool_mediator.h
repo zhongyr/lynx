@@ -166,7 +166,6 @@ class LynxDevToolMediator
   // Layer Tree domain -> ui executor
   DECLARE_DEVTOOL_METHOD(LayerTreeEnable)
   DECLARE_DEVTOOL_METHOD(LayerTreeDisable)
-  DECLARE_DEVTOOL_METHOD(LayerPainted)
   DECLARE_DEVTOOL_METHOD(CompositingReasons)
 
   // Page domain - > ui executor
@@ -213,7 +212,6 @@ class LynxDevToolMediator
   const std::shared_ptr<InspectorLepusDebuggerImpl>& GetLepusDebugger() {
     return lepus_debugger_;
   }
-  const std::shared_ptr<lynx::devtool::MessageSender> GetMessageSender();
 
  public:
   void RunOnJSThread(lynx::base::closure&& closure, bool run_now = true);
@@ -225,10 +223,11 @@ class LynxDevToolMediator
   lynx::tasm::LayoutNode* GetLayoutNodeForElement(lynx::tasm::Element* element);
   void SendLayoutTree();
   void SendCDPEvent(const Json::Value& msg);
+  void SendCDPEvent(const std::string& msg);
   void DispatchJSMessage(const Json::Value& message);
   void UpdateTarget();
 
-  void LayerTreeDidChange();
+  void SendLayerTreeDidChangeEvent();
 
   // implemented by ui executor
   void ScrollIntoView(int node_id);
@@ -250,7 +249,6 @@ class LynxDevToolMediator
   std::shared_ptr<InspectorDefaultExecutor> devtool_executor_;
   std::shared_ptr<InspectorJavaScriptDebuggerImpl> js_debugger_;
   std::shared_ptr<InspectorLepusDebuggerImpl> lepus_debugger_;
-
   std::weak_ptr<LynxDevToolNG> devtool_wp_;
   int view_id_{-1};
   bool fully_initialized_{false};

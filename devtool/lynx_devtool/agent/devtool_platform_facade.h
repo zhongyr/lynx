@@ -67,6 +67,7 @@ class DevToolPlatformFacade
   void SendPageFrameNavigatedEvent(const std::string& url);
   void SendConsoleEvent(const lynx::piper::ConsoleMessage& message);
   void SendLayerTreeDidChangeEvent();
+  void SendCDPEvent(const std::string& message);
 
   virtual std::vector<double> GetBoxModel(tasm::Element* element) {
     return std::vector<double>();

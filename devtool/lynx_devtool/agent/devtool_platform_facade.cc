@@ -55,7 +55,13 @@ void DevToolPlatformFacade::SendConsoleEvent(
 void DevToolPlatformFacade::SendLayerTreeDidChangeEvent() {
   auto devtool_mediator_ = devtool_mediator_wp_.lock();
   CHECK_NULL_AND_LOG_RETURN(devtool_mediator_, "devtool_mediator_ is null");
-  devtool_mediator_->LayerTreeDidChange();
+  devtool_mediator_->SendLayerTreeDidChangeEvent();
+}
+
+void DevToolPlatformFacade::SendCDPEvent(const std::string& message) {
+  auto devtool_mediator_ = devtool_mediator_wp_.lock();
+  CHECK_NULL_AND_LOG_RETURN(devtool_mediator_, "devtool_mediator_ is null");
+  devtool_mediator_->SendCDPEvent(message);
 }
 
 std::vector<double> DevToolPlatformFacade::GetBoxModelInGeneralPlatform(

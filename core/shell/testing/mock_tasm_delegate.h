@@ -214,7 +214,7 @@ class MockTasmDelegate : public TemplateAssembler::Delegate,
               (override));
 
 #if ENABLE_TESTBENCH_RECORDER
-  void SetRecordId(int64_t record_id) override {}
+  void SetRecordId(int64_t record_id) {}
 #endif
   void SetTiming(tasm::Timing timing) override {}
   virtual void BindPipelineIDWithTimingFlag(

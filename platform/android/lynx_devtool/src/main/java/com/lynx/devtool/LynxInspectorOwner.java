@@ -572,7 +572,13 @@ public class LynxInspectorOwner implements LynxBaseInspectorOwnerNG {
       object.putOpt("event", eventName);
       object.putOpt("vmType", event.getString("origin", ""));
       object.putOpt("data", event.getString("data", ""));
-      handleCDPEvent("Lynx.onVMEvent", object);
+      JSONObject msg = new JSONObject();
+      msg.put("method", "Lynx.onVMEvent");
+      msg.put("params", object);
+
+      if (mPlatform != null) {
+        mPlatform.sendCDPEvent(msg.toString());
+      }
     } catch (JSONException e) {
       LLog.e(TAG, e.toString());
     }
@@ -591,21 +597,6 @@ public class LynxInspectorOwner implements LynxBaseInspectorOwnerNG {
     if (mDevToolDelegate != null) {
       mDevToolDelegate.onDispatchMessageEvent(event);
     }
-  }
-
-  private void handleCDPEvent(String event, JSONObject params) throws JSONException {
-    if (mLynxDevToolNG == null || (!mLynxDevToolNG.isAttachToDebugRouter())) {
-      return;
-    }
-    if (TextUtils.isEmpty(event)) {
-      return;
-    }
-    JSONObject msg = new JSONObject();
-    msg.put("method", event);
-    if (params != null && params.length() > 0) {
-      msg.put("params", params);
-    }
-    mLynxDevToolNG.sendMessageToDebugPlatform("CDP", msg.toString());
   }
 
   void getViewLocationOnScreen(int[] outLocation) {

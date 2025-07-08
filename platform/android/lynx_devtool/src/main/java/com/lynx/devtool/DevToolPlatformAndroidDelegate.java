@@ -299,6 +299,12 @@ public class DevToolPlatformAndroidDelegate {
     }
   }
 
+  public void sendCDPEvent(String message) {
+    if (mFacadePtr != 0) {
+      nativeSendCDPEvent(mFacadePtr, message);
+    }
+  }
+
   public String getTemplateUrl() {
     if (mReloadHelper != null) {
       return mReloadHelper.getURL();
@@ -424,4 +430,5 @@ public class DevToolPlatformAndroidDelegate {
       long facadePtr, String text, int level, long timestamp);
   private native void nativeSendLayerTreeDidChangeEvent(long facadePtr);
   private native String nativeGetLepusDebugInfoUrl(long facadePtr, String fileName);
+  private native void nativeSendCDPEvent(long facadePtr, String message);
 }

@@ -131,6 +131,14 @@ jstring GetLepusDebugInfoUrl(JNIEnv* env, jobject jcaller, jlong facadePtr,
   return env->NewStringUTF(url.c_str());  // NOLINT
 }
 
+void SendCDPEvent(JNIEnv* env, jobject jcaller, jlong facadePtr,
+                  jstring message) {
+  auto platform_facade = *reinterpret_cast<
+      std::shared_ptr<lynx::devtool::DevToolPlatformAndroid>*>(facadePtr);
+  platform_facade->SendCDPEvent(
+      lynx::base::android::JNIConvertHelper::ConvertToString(env, message));
+}
+
 namespace lynx {
 namespace devtool {
 DevToolPlatformAndroid::DevToolPlatformAndroid(JNIEnv* env, jobject owner)

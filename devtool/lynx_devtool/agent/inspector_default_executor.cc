@@ -13,7 +13,8 @@ namespace devtool {
 InspectorDefaultExecutor::InspectorDefaultExecutor(
     const std::shared_ptr<LynxDevToolMediator>& devtool_mediator)
     : devtool_mediator_wp_(devtool_mediator),
-      console_msg_manager_(std::make_unique<ConsoleMessageManager>()) {}
+      console_msg_manager_(
+          std::make_unique<ConsoleMessageManager>(devtool_mediator)) {}
 
 void InspectorDefaultExecutor::Reset() {
   console_msg_manager_->ClearConsoleMessages();
@@ -109,10 +110,9 @@ void InspectorDefaultExecutor::LogClear(
   sender->SendOKResponse(message["id"].asInt64());
 }
 
-void InspectorDefaultExecutor::LogEntryAdded(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender,
+void InspectorDefaultExecutor::SendLogEntryAddedEvent(
     const lynx::piper::ConsoleMessage& message) {
-  console_msg_manager_->LogEntryAdded(sender, message);
+  console_msg_manager_->LogEntryAdded(message);
 }
 
 // end log protocol

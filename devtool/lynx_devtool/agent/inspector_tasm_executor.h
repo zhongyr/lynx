@@ -140,7 +140,6 @@ class InspectorTasmExecutor
   // layer tree
   DECLARE_DEVTOOL_METHOD(LayerTreeEnable)
   DECLARE_DEVTOOL_METHOD(LayerTreeDisable)
-  DECLARE_DEVTOOL_METHOD(LayerPainted)
   DECLARE_DEVTOOL_METHOD(CompositingReasons)
 
   // page domain
@@ -164,21 +163,15 @@ class InspectorTasmExecutor
   DECLARE_DEVTOOL_METHOD(WhiteBoardClear)
 
  public:
-  void LayerTreeDidChange(
-      const std::shared_ptr<lynx::devtool::MessageSender>& sender);
+  // layout domain event
+  void SendLayerTreeDidChangeEvent();
+  void SendLayerPaintedEvent();
+
+  Json::Value GetLayerContentFromElement(lynx::tasm::Element* element);
+  Json::Value GetLayoutInfoFromElement(lynx::tasm::Element* element);
+  Json::Value BuildLayerTreeFromElement(lynx::tasm::Element* root_element);
+
   std::vector<double> GetBoxModel(tasm::Element* element);
-
-  Json::Value GetLayerContentFromElement(
-      const std::shared_ptr<lynx::devtool::MessageSender>& sender,
-      lynx::tasm::Element* element);
-
-  Json::Value GetLayoutInfoFromElement(
-      const std::shared_ptr<lynx::devtool::MessageSender>& sender,
-      lynx::tasm::Element* element);
-
-  Json::Value BuildLayerTreeFromElement(
-      const std::shared_ptr<lynx::devtool::MessageSender>& sender,
-      lynx::tasm::Element* root_element);
 
  public:
   lynx::tasm::Element* GetElementById(int node_id);

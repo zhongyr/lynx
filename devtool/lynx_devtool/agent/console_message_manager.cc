@@ -5,7 +5,7 @@
 #include "devtool/lynx_devtool/agent/console_message_manager.h"
 
 #include "core/runtime/common/lynx_console_helper.h"
-#include "devtool/lynx_devtool/agent/lynx_global_devtool_mediator.h"
+#include "devtool/lynx_devtool/agent/lynx_devtool_mediator.h"
 
 namespace {
 static constexpr std::string_view kLogVerbose = "verbose";
@@ -35,19 +35,22 @@ std::string_view MessageLogLevel(int level) {
 namespace lynx {
 namespace devtool {
 
+ConsoleMessageManager::ConsoleMessageManager(
+    const std::shared_ptr<LynxDevToolMediator>& devtool_mediator)
+    : devtool_mediator_wp_(devtool_mediator) {}
+
 void ConsoleMessageManager::EnableConsoleLog(
     const std::shared_ptr<MessageSender>& sender) {
   enable_ = true;
-  FireCacheLogs(sender);
+  FireCacheLogs();
 }
 
 void ConsoleMessageManager::DisableConsoleLog() { enable_ = false; }
 
 void ConsoleMessageManager::LogEntryAdded(
-    const std::shared_ptr<MessageSender>& sender,
     const lynx::piper::ConsoleMessage& message) {
   if (enable_) {
-    PostLog(sender, message);
+    PostLog(message);
   }
   CacheLog(message);
 }
@@ -60,21 +63,18 @@ void ConsoleMessageManager::CacheLog(const piper::ConsoleMessage& message) {
   log_messages_.push_back(std::move(message));
 }
 
-void ConsoleMessageManager::FireCacheLogs(
-    const std::shared_ptr<MessageSender>& sender) {
+void ConsoleMessageManager::FireCacheLogs() {
   for (const auto& log : log_messages_) {
-    PostLog(sender, log);
+    PostLog(log);
   }
 }
 
 void ConsoleMessageManager::ClearConsoleMessages() { log_messages_.clear(); }
 
-void ConsoleMessageManager::PostLog(
-    const std::shared_ptr<MessageSender>& sender,
-    const piper::ConsoleMessage& message) {
-  if (!sender) {
-    return;
-  }
+void ConsoleMessageManager::PostLog(const piper::ConsoleMessage& message) {
+  auto devtool_mediator = devtool_mediator_wp_.lock();
+  CHECK_NULL_AND_LOG_RETURN(devtool_mediator, "devtool_mediator is null");
+
   Json::Value content;
   Json::Value params;
   Json::Value msg;
@@ -85,7 +85,7 @@ void ConsoleMessageManager::PostLog(
   params["entry"] = msg;
   content["method"] = "Log.entryAdded";
   content["params"] = params;
-  sender->SendMessage("CDP", content);
+  devtool_mediator->SendCDPEvent(content);
 }
 
 }  // namespace devtool

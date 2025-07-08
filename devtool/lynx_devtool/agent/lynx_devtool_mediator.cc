@@ -961,11 +961,10 @@ void LynxDevToolMediator::SendCDPEvent(const Json::Value& msg) {
   devtool->GetMessageSender()->SendMessage("CDP", msg);
 }
 
-const std::shared_ptr<lynx::devtool::MessageSender>
-LynxDevToolMediator::GetMessageSender() {
+void LynxDevToolMediator::SendCDPEvent(const std::string& msg) {
   auto devtool = devtool_wp_.lock();
-  CHECK_NULL_AND_LOG_RETURN_VALUE(devtool, "devtool is null", nullptr);
-  return devtool->GetMessageSender();
+  CHECK_NULL_AND_LOG_RETURN(devtool, "devtool is null");
+  devtool->GetMessageSender()->SendMessage("CDP", msg);
 }
 
 void LynxDevToolMediator::EmulateTouchFromMouseEvent(
@@ -1042,9 +1041,8 @@ void LynxDevToolMediator::LogClear(
 
 void LynxDevToolMediator::SendLogEntryAddedEvent(
     const lynx::piper::ConsoleMessage& message) {
-  std::shared_ptr<lynx::devtool::MessageSender> sender = GetMessageSender();
-  RunOnDevToolThread([sender, message, executor = devtool_executor_] {
-    executor->LogEntryAdded(sender, message);
+  RunOnDevToolThread([message, executor = devtool_executor_] {
+    executor->SendLogEntryAddedEvent(message);
   });
 }
 
@@ -1064,18 +1062,9 @@ void LynxDevToolMediator::LayerTreeDisable(
   });
 }
 
-void LynxDevToolMediator::LayerTreeDidChange() {
-  std::shared_ptr<lynx::devtool::MessageSender> sender = GetMessageSender();
-  RunOnUIThread([sender, executor = element_executor_] {
-    executor->LayerTreeDidChange(sender);
-  });
-}
-
-void LynxDevToolMediator::LayerPainted(
-    const std::shared_ptr<lynx::devtool::MessageSender>& sender,
-    const Json::Value& message) {
-  RunOnUIThread([sender, message, executor = element_executor_] {
-    executor->LayerPainted(sender, message);
+void LynxDevToolMediator::SendLayerTreeDidChangeEvent() {
+  RunOnUIThread([executor = element_executor_] {
+    executor->SendLayerTreeDidChangeEvent();
   });
 }
 
