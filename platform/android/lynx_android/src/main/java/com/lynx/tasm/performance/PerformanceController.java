@@ -8,6 +8,8 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.RestrictTo;
 import com.lynx.react.bridge.JavaOnlyMap;
 import com.lynx.react.bridge.ReadableMap;
+import com.lynx.tasm.LynxBooleanOption;
+import com.lynx.tasm.LynxEnv;
 import com.lynx.tasm.TimingHandler;
 import com.lynx.tasm.base.CalledByNative;
 import com.lynx.tasm.eventreport.LynxEventReporter;
@@ -30,10 +32,31 @@ import java.util.HashMap;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PerformanceController implements IMemoryMonitor, ITimingCollector {
+  private static volatile boolean sIsNativeLibraryLoaded = false;
+  private static volatile LynxBooleanOption sIsMemoryMonitorEnabled = LynxBooleanOption.UNSET;
   private volatile long mNativePerformanceActorPtr = 0;
   private WeakReference<IPerformanceObserver> mObserver;
   private WeakReference<ILynxEventReporterService> mEventReporterService;
   private boolean mEnableController = true;
+
+  /**
+   * Checks if memory monitoring is enabled.
+   * Modules can call this before collecting data to avoid unnecessary collection.
+   */
+  public static boolean isMemoryMonitorEnabled() {
+    if (isNativeLibraryLoaded()) {
+      LynxBooleanOption op = sIsMemoryMonitorEnabled;
+      if (op == LynxBooleanOption.FALSE) {
+        return false;
+      } else if (op == LynxBooleanOption.UNSET) {
+        boolean ret = nativeIsMemoryMonitorEnabled();
+        sIsMemoryMonitorEnabled = ret ? LynxBooleanOption.TRUE : LynxBooleanOption.FALSE;
+        return ret;
+      }
+      return true;
+    }
+    return false;
+  }
 
   public void setPerformanceObserver(IPerformanceObserver observer) {
     mObserver = new WeakReference<>(observer);
@@ -223,6 +246,13 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
     LynxEventReporter.runOnReportThread(runnable);
   }
 
+  private static boolean isNativeLibraryLoaded() {
+    if (!sIsNativeLibraryLoaded) {
+      sIsNativeLibraryLoaded = LynxEnv.inst().isNativeLibraryLoaded();
+    }
+    return sIsNativeLibraryLoaded;
+  }
+
   // Native API
   private native void nativeAllocateMemory(
       long nativePtr, String category, float sizeKb, String detailKey, String detailValue);
@@ -233,4 +263,5 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
   private native void nativeSetTiming(
       long nativePtr, String key, long usTimestamp, String pipelineID);
   private native void nativeSetPaintEndTimingIfNeeded(long nativePtr, long usTimestamp);
+  private static native boolean nativeIsMemoryMonitorEnabled();
 }

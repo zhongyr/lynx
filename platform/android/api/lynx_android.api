@@ -7064,6 +7064,7 @@ public interface com::lynx::tasm::behavior::PatchFinishListener {
 }
 
 public class com::lynx::tasm::performance::PerformanceController : com.lynx.tasm.performance.memory.IMemoryMonitor, com.lynx.tasm.performance.timing.ITimingCollector {
+  public static boolean com.lynx.tasm.performance.PerformanceController.isMemoryMonitorEnabled();
   public void com.lynx.tasm.performance.PerformanceController.setPerformanceObserver(IPerformanceObserver observer);
   public boolean com.lynx.tasm.performance.PerformanceController.isEnableController();
   public void com.lynx.tasm.performance.PerformanceController.setEnableController(boolean enableController);

@@ -38,6 +38,7 @@
 #include "core/renderer/utils/lynx_env.h"
 #include "core/runtime/jscache/js_cache_manager_facade.h"
 #include "core/services/fluency/fluency_tracer.h"
+#include "core/services/performance/memory_monitor/memory_monitor.h"
 #include "core/services/ssr/ssr_type_info.h"
 #include "core/services/timing_handler/timing.h"
 
@@ -425,6 +426,10 @@
 
 - (void)setCronetServerConfig:(void *)config {
   _cronetServerConfig = config;
+}
+
+- (void)enableMemoryMonitor:(BOOL)value {
+  lynx::tasm::performance::MemoryMonitor::SetForceEnable(value);
 }
 
 - (void)enableFluencyTracer:(BOOL)value {

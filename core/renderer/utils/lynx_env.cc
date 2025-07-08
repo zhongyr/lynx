@@ -275,7 +275,7 @@ bool LynxEnv::EnableMemoryMonitor() {
 }
 
 uint32_t LynxEnv::GetMemoryChangeThresholdMb() {
-  return static_cast<uint32_t>(GetLongEnv(Key::MEMORY_CHANGE_THRESHOLD_MB, 5));
+  return static_cast<uint32_t>(GetLongEnv(Key::MEMORY_CHANGE_THRESHOLD_MB, 0));
 }
 
 bool LynxEnv::IsDevToolConnected() {

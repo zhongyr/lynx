@@ -104,6 +104,10 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
   actorPtr->ActAsync([callback](auto& performance) { callback(performance); });
 }
 
++ (BOOL)isMemoryMonitorEnabled {
+  return lynx::tasm::performance::MemoryMonitor::Enable();
+}
+
 #pragma mark - LynxTimingCollectorProtocol
 - (void)markTiming:(NSString*)key pipelineID:(nullable NSString*)pipelineID {
   [self setTiming:lynx::base::CurrentSystemTimeMicroseconds() key:key pipelineID:pipelineID];

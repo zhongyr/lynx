@@ -1225,6 +1225,7 @@ public class LynxEnv : NSObject {
   public BOOL LynxEnv::getEnableNewTransformOrigin();
   public void LynxEnv::setCronetEngine:(void *engine);
   public void LynxEnv::setCronetServerConfig:(void *config);
+  public void LynxEnv::enableMemoryMonitor:(BOOL value);
   public void LynxEnv::enableFluencyTracer:(BOOL value);
   public BOOL LynxEnv::enableComponentStatisticReport();
   public BOOL LynxEnv::enableImageEventReport();
@@ -2461,6 +2462,7 @@ public protocol LynxMemoryMonitorProtocol-p : <NSObject> {
   public void LynxMemoryMonitorProtocol-p::allocateMemory:(LynxMemoryRecordBuilder _Nonnull recordBuilder);
   public void LynxMemoryMonitorProtocol-p::deallocateMemory:(LynxMemoryRecordBuilder _Nonnull recordBuilder);
   public void LynxMemoryMonitorProtocol-p::updateMemoryUsage:(LynxMemoryRecordBuilder _Nonnull recordBuilder);
+  public BOOL LynxMemoryMonitorProtocol-p::isMemoryMonitorEnabled();
 }
 
 public class LynxMemoryRecord : NSObject {

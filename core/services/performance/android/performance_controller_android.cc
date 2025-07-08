@@ -169,6 +169,10 @@ static void SetPaintEndTimingIfNeeded(JNIEnv* env, jobject jcaller,
   });
 }
 
+static jboolean IsMemoryMonitorEnabled(JNIEnv* env, jclass jcaller) {
+  return lynx::tasm::performance::MemoryMonitor::Enable();
+}
+
 namespace lynx {
 namespace jni {
 bool RegisterJNIForPerformanceController(JNIEnv* env) {

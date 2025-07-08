@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 // with the new size and detail information.
 - (void)updateMemoryUsage:(LynxMemoryRecordBuilder _Nonnull)recordBuilder;
 
+// Checks if memory monitoring is enabled.
+// Modules can call this before collecting data to avoid unnecessary
+// collection.
++ (BOOL)isMemoryMonitorEnabled;
+
 @end
 
 NS_ASSUME_NONNULL_END
