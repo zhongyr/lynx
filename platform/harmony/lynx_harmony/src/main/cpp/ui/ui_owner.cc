@@ -794,8 +794,11 @@ napi_value UIOwner::RequestLayout(napi_env env, napi_callback_info info) {
 }
 
 void UIOwner::RequestLayout() {
-  NodeManager::Instance().RequestLayout(
-      reinterpret_cast<UIRoot*>(root_.get())->GetProxyNode());
+  auto* root = reinterpret_cast<UIRoot*>(root_.get());
+  if (!root) {
+    return;
+  }
+  NodeManager::Instance().RequestLayout(root->GetProxyNode());
 }
 
 void UIOwner::UpdateComponentIdMap(UIBase* ui,
