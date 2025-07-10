@@ -159,6 +159,7 @@ LYNX_REGISTER_SHADOW_NODE("image")
 @property(nonatomic, strong) NSString* request_priority;
 @property(nonatomic, strong) NSString* cache_choice;
 @property(nonatomic, strong) NSDictionary* placeholder_hash_config;
+@property(nonatomic) LynxBooleanOption frameCacheAutomatically;
 @end
 
 @implementation LynxUIImage {
@@ -187,6 +188,7 @@ LYNX_REGISTER_UI("image")
   _lastFrameSize = CGSizeZero;
   _isDirty = YES;
   _enableImageEventReport = [LynxEnv.sharedInstance enableImageEventReport];
+  _frameCacheAutomatically = LynxBooleanOptionUnset;
 }
 
 - (void)freeMemoryCache {
@@ -635,6 +637,11 @@ UIEdgeInsets LynxRoundInsetsToPixel(UIEdgeInsets edgeInsets) {
       BOOL isAnimatedImage = [LynxUIImage isAnimatedImage:strongSelf.image];
       if (isAnimatedImage) {
         [[LynxImageLoader imageService] setAutoPlay:strongSelf.view value:strongSelf.autoPlay];
+        if (self.frameCacheAutomatically != LynxBooleanOptionUnset) {
+          BOOL frameCache = self.frameCacheAutomatically == LynxBooleanOptionTrue ? YES : NO;
+          [[LynxImageLoader imageService] setFrameCacheAutomatically:strongSelf.view
+                                                               value:frameCache];
+        }
         [strongSelf onImageReady:image withRequest:requestUrl];
         if ([NSThread isMainThread]) {
           [strongSelf superUpdateLayerMaskOnFrameChanged];
@@ -1072,6 +1079,19 @@ LYNX_PROP_SETTER("cover-start", setCoverStart, BOOL) {
   if (_coverStart != value) {
     _coverStart = value;
   }
+}
+
+/**
+ * @name: ios-frame-cache-automatically
+ * @description: Image animation property. If set to NO, images will not be cached. Each image will
+ * be discarded by default after use, which is suitable for scenarios where the animation needs to
+ *play only once.
+ **/
+LYNX_PROP_SETTER("ios-frame-cache-automatically", setFrameCacheAutomatically, BOOL) {
+  if (requestReset) {
+    value = YES;
+  }
+  _frameCacheAutomatically = value == YES ? LynxBooleanOptionTrue : LynxBooleanOptionFalse;
 }
 
 LYNX_PROP_SETTER("blur-radius", setBlurRadius, NSString*) {

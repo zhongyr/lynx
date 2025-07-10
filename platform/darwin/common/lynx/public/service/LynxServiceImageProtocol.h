@@ -169,6 +169,16 @@ typedef void (^LynxImageLoadCompletionBlock)(UIImage *_Nullable image, NSError *
                        view:(UIImageView *)imageView
                   loopCount:(NSInteger)loopCount;
 
+/**
+ * Sets whether the animated image should clear the image animation cache
+ *
+ * @param view The view containing the animated image.
+ * @param frameCacheAutomatically A boolean value indicating whether to enable
+ * frameCacheAutomatically to clear the image animation cache
+ */
+@optional
+- (void)setFrameCacheAutomatically:(id)view value:(BOOL)frameCacheAutomatically;
+
 @end
 
 NS_ASSUME_NONNULL_END

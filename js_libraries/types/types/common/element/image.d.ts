@@ -118,6 +118,15 @@ export interface ImageProps extends StandardProps {
   'autoplay'?: boolean;
 
   /**
+   * Image animation property. If set to false, images will not be cached. Each image will be discarded by default after use,
+   * which is suitable for scenarios where the animation needs to play only once.
+   * @defaultValue true
+   * @iOS
+   * @since 3.4
+   */
+  'ios-frame-cache-automatically'?: boolean;
+
+  /**
    * Changes the color of all non-transparent pixels to the tint-color specified. The value is a <color>.
    * @defaultValue ""
    * @since 2.12
