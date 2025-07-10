@@ -448,6 +448,27 @@ void TemplateBinaryWriter::EncodeSimpleStyleObjects() {
     end = stream()->size();
     stream_->Move(descriptor_offset, start, end - start);
   }
+  auto& style_objects_keyframes = style_object_parser_->StyleObjectsKeyframes();
+  descriptor_offset = stream()->size();
+  start = 0;
+  end = 0;
+  StyleObjectRoute keyframes_route;
+  if (!style_objects_keyframes.empty()) {
+    base::sorted_for_each(
+        style_objects_keyframes.begin(), style_objects_keyframes.end(),
+        [descriptor_offset, &keyframes_route, &start, &end,
+         this](const auto& it) {
+          EncodeUtf8Str(it.first.c_str(), it.first.length());
+          EncodeCSSKeyframesToken(it.second.get());
+          end = stream()->size() - descriptor_offset;
+          keyframes_route.style_object_ranges.emplace_back(start, end);
+          start = end;
+        });
+    start = stream()->size();
+    EncodeSimpleStyleObjectsRoute(keyframes_route);
+    end = stream()->size();
+    stream_->Move(descriptor_offset, start, end - start);
+  }
 }
 
 void TemplateBinaryWriter::EncodeSimpleStyleObjectsRoute(

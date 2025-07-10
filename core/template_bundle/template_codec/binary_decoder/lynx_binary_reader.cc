@@ -12,6 +12,7 @@
 #include "core/runtime/vm/lepus/context.h"
 #include "core/template_bundle/template_codec/binary_decoder/binary_decoder_trace_event_def.h"
 #include "core/template_bundle/template_codec/template_binary.h"
+#include "lynx_binary_base_css_reader.h"
 
 namespace lynx {
 namespace tasm {
@@ -113,6 +114,19 @@ bool LynxBinaryReader::DecodeStyleObjects() {
     ERROR_UNLESS(DecodeCSSAttributes(attr, size));
     (style_object_list.get())[index++] = new style::StyleObject(attr);
     stream_->Seek(style_objects_section_range_.start + range.end);
+  }
+  StyleObjectRoute keyframes_route;
+  ERROR_UNLESS(DecodeStyleObjectRoute(keyframes_route));
+  auto parser_config =
+      CSSParserConfigs::GetCSSParserConfigsByComplierOptions(compile_options_);
+  auto keyframes = template_bundle().InitKeyframesMap(
+      keyframes_route.style_object_ranges.size());
+  for (const auto& range : keyframes_route.style_object_ranges) {
+    stream_->Seek(style_objects_section_range_.start + range.start);
+    DECODE_STDSTR(name);
+    CSSKeyframesToken* token = new CSSKeyframesToken(parser_config);
+    ERROR_UNLESS(DecodeCSSKeyframesToken(token));
+    keyframes.emplace(std::move(name), token);
   }
   return true;
 }
