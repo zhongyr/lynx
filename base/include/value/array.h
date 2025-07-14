@@ -201,7 +201,7 @@ class BASE_EXPORT_FOR_DEVTOOL CArray : public RefCountedBase {
   }
 
  private:
-  base::InlineVector<Value, 6> vec_;
+  base::InlineVector<Value, 2> vec_;
 
   friend class LEPUSValueHelper;
 

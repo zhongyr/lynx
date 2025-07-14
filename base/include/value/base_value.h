@@ -658,6 +658,10 @@ class BASE_EXPORT_FOR_DEVTOOL Value {
   // A flag telling `base::flex_optional<>` to save memory.
   using AlwaysUseFlexOptionalMemSave = bool;
 
+  // A flag telling `base::Vector<lepus::Value>` to optimize for
+  // reallocate, insert and erase.
+  using TriviallyRelocatableInBaseVector = bool;
+
  private:
   void Copy(const Value& value);
 

@@ -308,6 +308,10 @@ class String {
     }
   };
 
+  // A flag telling `base::Vector<base::String>` to optimize for
+  // reallocate, insert and erase.
+  using TriviallyRelocatableInBaseVector = bool;
+
  protected:
   friend class Unsafe;
 

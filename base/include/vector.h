@@ -63,6 +63,10 @@ struct is_instance<U<Ts...>, U> : public std::true_type {};
  * causes Vector<std::pair<int, int>> to be treated with non-trivial
  * element type. We check first and second elements of std::pair<> and treat the
  * whole type as trivial if both elements are trivial.
+ *
+ * From C++23, the standard was updated to mandate that if `T1` and `T2` are
+ * both trivially copyable, then `std::pair<T1, T2>` must also be trivially
+ * copyable.
  */
 template <typename T, bool is_pair>
 struct IsTrivial {};
@@ -81,6 +85,78 @@ struct IsTrivial<T, true> {
                 is_instance<typename T::first_type, std::pair>{}>::value &&
       IsTrivial<typename T::second_type,
                 is_instance<typename T::second_type, std::pair>{}>::value;
+};
+
+// Check if T has declared flag `TriviallyDestructibleAfterMoveInBaseVector`.
+// When this optimization hint is turned on, if one T instance is moved away,
+// its destructor will not be called.
+template <typename T, typename = void>
+struct has_trivially_destructible_after_move_flag : std::false_type {};
+
+template <typename T>
+struct has_trivially_destructible_after_move_flag<
+    T, std::void_t<typename T::TriviallyDestructibleAfterMoveInBaseVector>>
+    : std::true_type {};
+
+template <typename T, bool is_pair>
+struct IsTriviallyDestructibleAfterMove {};
+
+template <typename T>
+struct IsTriviallyDestructibleAfterMove<T, false> {
+  static constexpr auto value =
+      std::is_trivially_destructible_v<T> ||
+      has_trivially_destructible_after_move_flag<T>::value;
+};
+
+template <typename T>
+struct IsTriviallyDestructibleAfterMove<T, true> {
+  static constexpr auto value =
+      (std::is_trivially_destructible_v<typename T::first_type> ||
+       IsTriviallyDestructibleAfterMove<
+           typename T::first_type,
+           is_instance<typename T::first_type, std::pair>{}>::value) &&
+      (std::is_trivially_destructible_v<typename T::second_type> ||
+       IsTriviallyDestructibleAfterMove<
+           typename T::second_type,
+           is_instance<typename T::second_type, std::pair>{}>::value);
+};
+
+// Check if T has declared flag `TriviallyRelocatableInBaseVector`.
+// When this optimization hint is turned on, the instances of type T can be
+// moved as a whole(if multiple instances on linear memory) to another piece of
+// memory using the memcpy or memmove method, and the T type instance in the
+// original memory does not need destruction.
+template <typename T, typename = void>
+struct has_trivially_relocatable_flag : std::false_type {};
+
+template <typename T>
+struct has_trivially_relocatable_flag<
+    T, std::void_t<typename T::TriviallyRelocatableInBaseVector>>
+    : std::true_type {};
+
+template <typename T, bool is_pair>
+struct IsTriviallyRelocatable {};
+
+template <typename T>
+struct IsTriviallyRelocatable<T, false> {
+  static constexpr auto value =
+      IsTrivial<T, is_instance<T, std::pair>{}>::value ||
+      has_trivially_relocatable_flag<T>::value;
+};
+
+template <typename T>
+struct IsTriviallyRelocatable<T, true> {
+  static constexpr auto value =
+      (IsTrivial<typename T::first_type,
+                 is_instance<typename T::first_type, std::pair>{}>::value ||
+       IsTriviallyRelocatable<
+           typename T::first_type,
+           is_instance<typename T::first_type, std::pair>{}>::value) &&
+      (IsTrivial<typename T::second_type,
+                 is_instance<typename T::second_type, std::pair>{}>::value ||
+       IsTriviallyRelocatable<
+           typename T::second_type,
+           is_instance<typename T::second_type, std::pair>{}>::value);
 };
 
 template <class T>
@@ -158,6 +234,11 @@ struct VectorPrototype {
       IsTrivial<T, is_instance<T, std::pair>{}>::value;
   static constexpr auto is_trivially_destructible =
       std::is_trivially_destructible_v<T>;
+  static constexpr auto is_trivially_relocatable =
+      IsTriviallyRelocatable<T, is_instance<T, std::pair>{}>::value;
+  static constexpr auto is_trivially_destructible_after_move =
+      is_trivially_relocatable ||
+      IsTriviallyDestructibleAfterMove<T, is_instance<T, std::pair>{}>::value;
 
   using iterator = T*;
   using const_iterator = const T*;
@@ -224,11 +305,20 @@ struct VectorPrototype {
     auto buffer =
         VectorPrototype<uint8_t>::_reallocate_buffer(this, sizeof(T), count);
     if (buffer && prev_begin) {
-      /* Move objects of T from old buffer to new buffer. */
-      _nontrivial_construct_move((iterator)buffer, prev_begin, size());
+      if constexpr (is_trivially_relocatable) {
+        /* Fastest, allowing memcpy to copy all and skip destructors. */
+        std::memcpy(buffer, prev_begin, sizeof(T) * size());
+      } else {
+        /* Move T objects one by one from old buffer to new buffer. */
+        _nontrivial_construct_move((iterator)buffer, prev_begin, size());
 
-      /* Destruct objects on previous buffer and free memory. */
-      _nontrivial_destruct_reverse(prev_begin, size());
+        if constexpr (is_trivially_destructible_after_move) {
+          /* Faster, skip destructors. */
+        } else {
+          /* Slow path, destruct objects on old buffer one by one. */
+          _nontrivial_destruct_reverse(prev_begin, size());
+        }
+      }
       if (need_free) {
         HeapFree(prev_begin);
       }
@@ -336,9 +426,7 @@ struct VectorPrototype {
 
 /**
  APIs to manipulate Vector without template argument T.
- This is why we use Vector to replace Vector for JS
- interoperability. Note that templateless manipulators should only be used for
- trivial T types.
+ Note that templateless manipulators should only be used for trivial T types.
 */
 struct VectorTemplateless {
   BASE_VECTOR_NEVER_INLINE static void ReallocateTrivial(void* array,
@@ -506,6 +594,8 @@ struct Vector : protected VectorTemplateless, public VectorPrototype<T> {
   using typename VectorPrototype<T>::const_iterator;
   using VectorPrototype<T>::is_trivial;
   using VectorPrototype<T>::is_trivially_destructible;
+  using VectorPrototype<T>::is_trivially_destructible_after_move;
+  using VectorPrototype<T>::is_trivially_relocatable;
   using VectorPrototype<T>::size;
   using VectorPrototype<T>::capacity;
   using VectorPrototype<T>::is_static_buffer;
@@ -731,12 +821,15 @@ struct Vector : protected VectorTemplateless, public VectorPrototype<T> {
   iterator erase(iterator first, iterator last) {
     BASE_VECTOR_DCHECK(first <= last);
     if (first != last) {
-      if constexpr (is_trivial) {
+      if constexpr (is_trivial || is_trivially_relocatable) {
         std::memmove(first, last, (_end_iter() - last) * sizeof(T));
       } else {
-        _nontrivial_destruct_reverse(
-            _nontrivial_move_forward(first, last, _end_iter() - last),
-            last - first);
+        // Slow path, move elements one by one and skip destructors if possible.
+        [[maybe_unused]] auto it =
+            _nontrivial_move_forward(first, last, _end_iter() - last);
+        if constexpr (!is_trivially_destructible_after_move) {
+          _nontrivial_destruct_reverse(it, last - first);
+        }
       }
       _dec_count(last - first);
     }
@@ -754,9 +847,14 @@ struct Vector : protected VectorTemplateless, public VectorPrototype<T> {
     } else {
       auto pair = _nontrivial_prepare_insert(pos);
       if constexpr (!is_trivially_destructible) {
-        if (!pair.second) {
-          // Element at dest_pos was moved but needs destruction.
-          pair.first->~T();
+        if constexpr (!is_trivially_relocatable) {
+          // If T is_trivially_relocatable, we can skip destructor because in
+          // _nontrivial_prepare_insert the element at `pair.first` is moved
+          // away by `memmove`.
+          if (!pair.second) {
+            // Element at dest_pos was moved but needs destruction.
+            pair.first->~T();
+          }
         }
       }
       // Construct at dest_pos.
@@ -769,44 +867,12 @@ struct Vector : protected VectorTemplateless, public VectorPrototype<T> {
   iterator insert(std::nullptr_t,
                   U&& value) = delete;  // Avoid misuse of insert(0)
 
-  iterator insert(const iterator pos, const T& value) {
-    if constexpr (is_trivial) {
-      // For trivial types, always call templateless implementation for binary
-      // size benefits.
-      auto it = (iterator)PrepareInsert(this, sizeof(T), pos);
-      *it = value;
-      return it;
-    } else {
-      auto pair = _nontrivial_prepare_insert(pos);
-      if (!pair.second) {
-        // Assign value to dest_pos.
-        *pair.first = value;
-      } else {
-        // Construct at dest_pos.
-        ::new (static_cast<void*>(pair.first)) T(value);
-      }
-      return pair.first;
-    }
+  BASE_VECTOR_INLINE iterator insert(const iterator pos, const T& value) {
+    return emplace(pos, value);
   }
 
-  iterator insert(const iterator pos, T&& value) {
-    if constexpr (is_trivial) {
-      // For trivial types, always call templateless implementation for binary
-      // size benefits.
-      auto it = (iterator)PrepareInsert(this, sizeof(T), pos);
-      *it = std::move(value);
-      return it;
-    } else {
-      auto pair = _nontrivial_prepare_insert(pos);
-      if (!pair.second) {
-        // Assign value to dest_pos.
-        *pair.first = std::move(value);
-      } else {
-        // Construct at dest_pos.
-        ::new (static_cast<void*>(pair.first)) T(std::move(value));
-      }
-      return pair.first;
-    }
+  BASE_VECTOR_INLINE iterator insert(const iterator pos, T&& value) {
+    return emplace(pos, std::move(value));
   }
 
   /**
@@ -1169,9 +1235,8 @@ struct Vector : protected VectorTemplateless, public VectorPrototype<T> {
     }
   }
 
-  // Extract common codes and optimize for binary size.
   // Returns pair<pos, true_if_construct_at_end>
-  BASE_VECTOR_NEVER_INLINE std::pair<iterator, bool> _nontrivial_prepare_insert(
+  BASE_VECTOR_INLINE std::pair<iterator, bool> _nontrivial_prepare_insert(
       const iterator pos) {
     auto diff = pos - _begin_iter();
     _grow_if_need();
@@ -1182,11 +1247,17 @@ struct Vector : protected VectorTemplateless, public VectorPrototype<T> {
       BASE_VECTOR_DCHECK(false);
     } else {
       if (dest_pos < new_last) {
-        // Construct new T at end, and move previous back item to it.
-        _nontrivial_construct_move(new_last, new_last - 1, 1);
-        // Move left objects.
-        _nontrivial_move_backward(new_last - 1, new_last - 2,
-                                  new_last - dest_pos - 1);
+        if constexpr (is_trivially_relocatable) {
+          // Fast path, use memmove to shift all elements to next slot.
+          std::memmove(dest_pos + 1, dest_pos,
+                       sizeof(T) * (new_last - dest_pos));
+        } else {
+          // Slow path, construct new T at end, move previous back item to it.
+          _nontrivial_construct_move(new_last, new_last - 1, 1);
+          // Move left objects.
+          _nontrivial_move_backward(new_last - 1, new_last - 2,
+                                    new_last - dest_pos - 1);
+        }
       } else {
         construct_at_end = true;
       }
@@ -2661,7 +2732,7 @@ using InlineLinearFlatSet = LinearSearchSet<K, N, false>;
 /**
  Helper to declare inlined version of existing map type.
     using MapType = OrderedFlatMap<int, int>;
-    Inlined<MapType, 5> inlined_map;
+    Inlined<MapType, 5>::type inlined_map;
  */
 template <class From, size_t N>
 struct Inlined {

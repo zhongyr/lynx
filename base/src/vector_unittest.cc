@@ -1094,6 +1094,16 @@ TEST(Vector, Trivial) {
     return result;
   };
 
+  static_assert(Vector<int>::is_trivial);
+  static_assert(Vector<int>::is_trivially_destructible);
+  static_assert(Vector<int>::is_trivially_destructible_after_move);
+  static_assert(Vector<int>::is_trivially_relocatable);
+  static_assert(Vector<std::pair<int, int>>::is_trivial);
+  static_assert(Vector<std::pair<int, int>>::is_trivially_destructible);
+  static_assert(
+      Vector<std::pair<int, int>>::is_trivially_destructible_after_move);
+  static_assert(Vector<std::pair<int, int>>::is_trivially_relocatable);
+
   {
     Vector<int> array;
     EXPECT_EQ(array.size(), 0);
@@ -1706,6 +1716,1093 @@ TEST(Vector, Nontrivial) {
    private:
     std::shared_ptr<std::string> value_;
   };
+
+  auto to_nt_int_array = [](size_t count,
+                            int buffer[]) -> Vector<NontrivialInt> {
+    Vector<NontrivialInt> result;
+    for (size_t i = 0; i < count; i++) {
+      result.emplace_back(buffer[i]);
+    }
+    return result;
+  };
+
+  static_assert(!Vector<NontrivialInt>::is_trivial);
+  static_assert(!Vector<NontrivialInt>::is_trivially_destructible);
+  static_assert(!Vector<NontrivialInt>::is_trivially_destructible_after_move);
+  static_assert(!Vector<NontrivialInt>::is_trivially_relocatable);
+  static_assert(!Vector<std::pair<int, NontrivialInt>>::is_trivial);
+  static_assert(
+      !Vector<std::pair<int, NontrivialInt>>::is_trivially_destructible);
+  static_assert(
+      !Vector<
+          std::pair<int, NontrivialInt>>::is_trivially_destructible_after_move);
+  static_assert(
+      !Vector<std::pair<int, NontrivialInt>>::is_trivially_relocatable);
+
+  auto to_s = [](const Vector<NontrivialInt>& array) -> std::string {
+    std::string result;
+    for (auto& i : array) {
+      result += std::to_string((int)i);
+    }
+    return result;
+  };
+
+  NontrivialInt ni10000(10000);
+  NontrivialInt ni10001(10001);
+  NontrivialInt ni10002(10002);
+  NontrivialInt ni10003(10003);
+
+  {
+    Vector<NontrivialInt> array;
+    EXPECT_EQ(array.size(), 0);
+    EXPECT_TRUE(array.empty());
+    CheckVector(array);
+  }
+
+  {
+    Vector<NontrivialInt> array(5);
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_FALSE(array.empty());
+    for (size_t i = 0; i < array.size(); i++) {
+      EXPECT_EQ(array[i], -1);
+      EXPECT_EQ(array.at(i), -1);
+    }
+    EXPECT_EQ(array.front(), -1);
+    EXPECT_EQ(array.back(), -1);
+    CheckVector(array);
+  }
+
+  {
+    Vector<Matrix3> array({});
+    EXPECT_TRUE(array.empty());
+  }
+
+  {
+    // Construct from initializer list or iterators
+    Vector<NontrivialInt> array({ni10000, ni10001, ni10002, ni10003});
+    EXPECT_EQ(array.size(), 4);
+    EXPECT_EQ(array[0], ni10000);
+    EXPECT_EQ(array[1], ni10001);
+    EXPECT_EQ(array[2], ni10002);
+    EXPECT_EQ(array[3], ni10003);
+    CheckVector(array);
+
+    Vector<NontrivialInt> array2(5);
+    EXPECT_EQ(array2.size(), 5);
+    CheckVector(array2);
+    for (size_t i = 0; i < array2.size(); i++) {
+      EXPECT_EQ(array2[i], -1);
+    }
+    array2 = {ni10000, ni10001, ni10002, ni10003};
+    CheckVector(array2);
+    EXPECT_EQ(array2.size(), 4);
+    EXPECT_EQ(array2[0], ni10000);
+    EXPECT_EQ(array2[1], ni10001);
+    EXPECT_EQ(array2[2], ni10002);
+    EXPECT_EQ(array2[3], ni10003);
+
+    Vector<NontrivialInt> array3(array2);
+    CheckVector(array3);
+    EXPECT_EQ(array3.size(), 4);
+    EXPECT_EQ(array3[0], ni10000);
+    EXPECT_EQ(array3[1], ni10001);
+    EXPECT_EQ(array3[2], ni10002);
+    EXPECT_EQ(array3[3], ni10003);
+
+    {
+      int buffer[5] = {10, 11, 12, 13, 14};
+      Vector<NontrivialInt> array =
+          to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+      Vector<NontrivialInt> array2(array.begin(), array.end());
+      CheckVector(array2);
+      EXPECT_EQ(to_s(array2), "1011121314");
+      Vector<NontrivialInt> array3(array.begin() + 1, array.end());
+      CheckVector(array3);
+      EXPECT_EQ(to_s(array3), "11121314");
+      Vector<NontrivialInt> array4(array.begin() + 1, array.end() - 1);
+      CheckVector(array4);
+      EXPECT_EQ(to_s(array4), "111213");
+
+      Vector<NontrivialInt> array5(array.begin() + 2, array.end() - 2);
+      CheckVector(array5);
+      EXPECT_EQ(to_s(array5), "12");
+      Vector<NontrivialInt> array6(array.begin() + 3, array.end() - 2);
+      CheckVector(array6);
+      EXPECT_TRUE(array6.empty());
+    }
+  }
+
+  {
+    // Move
+    int buffer[5] = {10, 11, 12, 13, 14};
+    int buffer2[10] = {100, 101, 102, 103, 104, 105, 106, 107, 108, 109};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 5);
+
+    Vector<NontrivialInt> array2(std::move(array));
+    CheckVector(array2);
+    EXPECT_TRUE(array.empty());
+    EXPECT_EQ(array2.size(), 5);
+    for (size_t i = 0; i < array2.size(); i++) {
+      EXPECT_EQ(array2[i], buffer[i]);
+    }
+
+    Vector<NontrivialInt> array3 =
+        to_nt_int_array(sizeof(buffer2) / sizeof(buffer2[0]), buffer2);
+    CheckVector(array3);
+    EXPECT_EQ(array3.size(), 10);
+    array = std::move(array3);
+    CheckVector(array);
+    EXPECT_TRUE(array3.empty());
+    EXPECT_EQ(array.size(), 10);
+    for (size_t i = 0; i < array.size(); i++) {
+      EXPECT_EQ(array[i], buffer2[i]);
+    }
+  }
+
+  {
+    // Basic push and pop
+    Vector<NontrivialInt> array;
+    for (int i = 1; i <= 100; i++) {
+      EXPECT_EQ(array.push_back(i), i);
+      CheckVector(array);
+    }
+    int sum = 0;
+    for (size_t i = 0; i < array.size(); i++) {
+      sum += array[i];
+    }
+    EXPECT_EQ(sum, 5050);
+
+    int buffer[5] = {10, 11, 12, 13, 14};
+    for (int i = 0; i < 5; i++) {
+      array.push_back(buffer[i]);
+    }
+    EXPECT_EQ(array.size(), 105);
+    sum = 0;
+    for (size_t i = 0; i < array.size(); i++) {
+      sum += array[i];
+    }
+    EXPECT_EQ(sum, 5050 + 10 + 11 + 12 + 13 + 14);
+
+    for (int i = 0; i < 5; i++) {
+      array.pop_back();
+      CheckVector(array);
+    }
+    EXPECT_EQ(array.size(), 100);
+    sum = 0;
+    for (int i : array) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+
+    EXPECT_EQ(array.emplace_back(999), 999);
+
+    array.grow() = 9999;
+    EXPECT_EQ(array.size(), 102);
+    EXPECT_EQ(array.back(), 9999);
+
+    array.grow(200);
+    EXPECT_EQ(array.size(), 200);
+    EXPECT_EQ(array.back(), -1);
+  }
+
+  {
+    // Iterators
+    std::string output;
+    int buffer[5] = {10, 11, 12, 13, 14};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    for (auto it = array.begin(); it != array.end(); it++) {
+      output += std::to_string(*it);
+    }
+    for (auto it = array.cbegin(); it != array.cend(); it++) {
+      output += std::to_string(*it);
+    }
+    for (int i : array) {
+      output += std::to_string(i);
+    }
+    EXPECT_EQ(output, "101112131410111213141011121314");
+
+    output = "";
+    for (auto it = array.rbegin(); it != array.rend(); it++) {
+      output += std::to_string(*it);
+    }
+    for (auto it = array.crbegin(); it != array.crend(); it++) {
+      output += std::to_string(*it);
+    }
+    EXPECT_EQ(output, "14131211101413121110");
+
+    // Writable iterator
+    output = "";
+    for (auto& i : array) {
+      i += 1;
+    }
+    for (auto it = array.begin(); it != array.end(); it++) {
+      *it += 1;
+    }
+    for (int i : array) {
+      output += std::to_string(i);
+    }
+    EXPECT_EQ(output, "1213141516");
+  }
+
+  {
+    // Erase and insert
+    int buffer[5] = {10, 11, 12, 13, 14};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    for (int i = 0; i < 5; i++) {
+      auto it = array.erase(array.begin());
+      CheckVector(array);
+      EXPECT_EQ(it, array.begin());
+      if (i == 2) {
+        EXPECT_EQ(to_s(array), "1314");
+      }
+    }
+
+    EXPECT_TRUE(array.empty());
+    for (int i = 4; i >= 0; i--) {
+      array.insert(array.begin(), i);
+      CheckVector(array);
+    }
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "01234");
+
+    auto it = array.erase(array.begin() + 1, array.begin() + 3);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "034");
+    EXPECT_EQ(*it, 3);
+
+    it = array.erase(array.end() - 1);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "03");
+    EXPECT_EQ(it, array.end());
+
+    it = array.erase(array.begin(), array.end());
+    CheckVector(array);
+    EXPECT_TRUE(array.empty());
+    EXPECT_EQ(it, array.end());
+
+    array.insert(array.begin(), 50);
+    CheckVector(array);
+    array.insert(array.end(), 51);
+    CheckVector(array);
+    array.insert(array.end(), 52);
+    CheckVector(array);
+    array.insert(array.begin() + 1, 49);
+    CheckVector(array);
+    array.insert(array.begin(), 48);
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "4850495152");
+
+    Vector<NontrivialInt> array2;
+    for (int i = 1; i <= 100; i++) {
+      array2.insert(array2.begin() + i - 1, i);
+    }
+    CheckVector(array2);
+    int sum = 0;
+    for (int i : array2) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+
+    Vector<NontrivialInt> array3;
+    for (int i = 1; i <= 100; i++) {
+      array3.insert(array3.begin(), i);
+    }
+    CheckVector(array3);
+    sum = 0;
+    for (int i : array3) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+  }
+
+  {
+    // Erase and emplace
+    int buffer[5] = {10, 11, 12, 13, 14};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    for (int i = 0; i < 5; i++) {
+      auto it = array.erase(array.begin());
+      CheckVector(array);
+      EXPECT_EQ(it, array.begin());
+      if (i == 2) {
+        EXPECT_EQ(to_s(array), "1314");
+      }
+    }
+
+    EXPECT_TRUE(array.empty());
+    for (int i = 4; i >= 0; i--) {
+      array.emplace(array.begin(), i);
+      CheckVector(array);
+    }
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "01234");
+
+    auto it = array.erase(array.begin() + 1, array.begin() + 3);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "034");
+    EXPECT_EQ(*it, 3);
+
+    it = array.erase(array.end() - 1);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "03");
+    EXPECT_EQ(it, array.end());
+
+    it = array.erase(array.begin(), array.end());
+    CheckVector(array);
+    EXPECT_TRUE(array.empty());
+    EXPECT_EQ(it, array.end());
+
+    array.emplace(array.begin(), 50);
+    CheckVector(array);
+    array.emplace(array.end(), 51);
+    CheckVector(array);
+    array.emplace(array.end(), 52);
+    CheckVector(array);
+    array.emplace(array.begin() + 1, 49);
+    CheckVector(array);
+    array.emplace(array.begin(), 48);
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "4850495152");
+
+    Vector<NontrivialInt> array2;
+    for (int i = 1; i <= 100; i++) {
+      array2.emplace(array2.begin() + i - 1, i);
+    }
+    CheckVector(array2);
+    int sum = 0;
+    for (int i : array2) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+
+    Vector<NontrivialInt> array3;
+    for (int i = 1; i <= 100; i++) {
+      array3.emplace(array3.begin(), i);
+    }
+    CheckVector(array3);
+    sum = 0;
+    for (int i : array3) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+  }
+
+  {
+    // Reserve
+    Vector<NontrivialInt> array;
+    EXPECT_TRUE(array.reserve(100));
+    CheckVector(array);
+    auto data_p = array.data();
+    for (int i = 1; i <= 100; i++) {
+      array.emplace_back(i);
+      CheckVector(array);
+    }
+    EXPECT_EQ(data_p, array.data());
+  }
+
+  {
+    // Resize
+    Vector<NontrivialInt> array;
+    EXPECT_TRUE(array.resize(50, 5));
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 50);
+    for (int i : array) {
+      EXPECT_EQ(i, 5);
+    }
+
+    EXPECT_TRUE(array.resize(100, 6));
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 100);
+    for (size_t i = 0; i < 50; i++) {
+      EXPECT_EQ(array[i], 5);
+    }
+    for (size_t i = 50; i < 100; i++) {
+      EXPECT_EQ(array[i], 6);
+    }
+    EXPECT_FALSE(array.resize(10));
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "5555555555");
+    EXPECT_FALSE(array.resize(0));
+    CheckVector(array);
+    EXPECT_TRUE(array.empty());
+
+    array.push_back(1);
+    EXPECT_EQ(to_s(array), "1");
+    array.clear_and_shrink();
+    EXPECT_TRUE(array.empty());
+    array.resize(5, 5);
+    EXPECT_EQ(to_s(array), "55555");
+  }
+
+  {
+    // Algorithm
+    int buffer[5] = {12, 11, 15, 14, 10};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    std::sort(
+        array.begin(), array.end(),
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "1011121415");
+
+    Vector<NontrivialInt> array2 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    InsertionSort(
+        array2.begin(), array2.end(),
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array2);
+    EXPECT_EQ(to_s(array2), "1011121415");
+
+    Vector<NontrivialInt> array3 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    InsertionSort(
+        array3.begin() + 1, array3.end(),
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array3);
+    EXPECT_EQ(to_s(array3), "1210111415");
+
+    Vector<NontrivialInt> array4 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    InsertionSort(
+        array4.begin() + 1, array4.end() - 1,
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array4);
+    EXPECT_EQ(to_s(array4), "1211141510");
+  }
+
+  {
+    // swap
+    int buffer[5] = {12, 11, 15, 14, 10};
+    int buffer2[5] = {22, 21, 25, 24, 20};
+    Vector<NontrivialInt> array1 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    Vector<NontrivialInt> array2 =
+        to_nt_int_array(sizeof(buffer2) / sizeof(buffer2[0]), buffer2);
+    array1.swap(array2);
+    EXPECT_EQ(to_s(array1), "2221252420");
+    CheckVector(array1);
+    EXPECT_EQ(to_s(array2), "1211151410");
+    CheckVector(array2);
+  }
+}
+
+TEST(Vector, NontrivialHintOfTriviallyDestructibleAfterMove) {
+  class NontrivialInt {
+   public:
+    using TriviallyDestructibleAfterMoveInBaseVector = bool;
+
+    NontrivialInt(int i = -1) { value_ = new std::string(std::to_string(i)); }
+
+    ~NontrivialInt() {
+      if (value_) {
+        delete value_;
+      }
+    }
+
+    NontrivialInt(const NontrivialInt& other) {
+      value_ = new std::string(std::to_string((int)other));
+    }
+
+    NontrivialInt(NontrivialInt&& other) : value_(other.value_) {
+      other.value_ = nullptr;
+    }
+
+    NontrivialInt& operator=(const NontrivialInt& other) {
+      if (this == &other) {
+        return *this;
+      }
+      if (value_) {
+        delete value_;
+      }
+      value_ = new std::string(std::to_string((int)other));
+      return *this;
+    }
+
+    NontrivialInt& operator=(NontrivialInt&& other) {
+      if (this == &other) {
+        return *this;
+      }
+      if (value_) {
+        delete value_;
+      }
+      value_ = other.value_;
+      other.value_ = nullptr;
+      return *this;
+    }
+
+    operator int() const { return value_ ? std::stoi(*value_) : -1; }
+    bool operator==(const NontrivialInt& other) {
+      return (int)(*this) == (int)other;
+    }
+    NontrivialInt& operator+=(int value) {
+      int old_value_ = (int)(*this);
+      if (value_) {
+        delete value_;
+      }
+      value_ = new std::string(std::to_string(old_value_ + value));
+      return *this;
+    }
+
+   private:
+    std::string* value_;
+  };
+
+  static_assert(!Vector<NontrivialInt>::is_trivial);
+  static_assert(!Vector<NontrivialInt>::is_trivially_destructible);
+  static_assert(Vector<NontrivialInt>::is_trivially_destructible_after_move);
+  static_assert(
+      Vector<
+          std::pair<int, NontrivialInt>>::is_trivially_destructible_after_move);
+  static_assert(
+      Vector<
+          std::pair<NontrivialInt, int>>::is_trivially_destructible_after_move);
+  static_assert(!Vector<NontrivialInt>::is_trivially_relocatable);
+
+  auto to_nt_int_array = [](size_t count,
+                            int buffer[]) -> Vector<NontrivialInt> {
+    Vector<NontrivialInt> result;
+    for (size_t i = 0; i < count; i++) {
+      result.emplace_back(buffer[i]);
+    }
+    return result;
+  };
+
+  auto to_s = [](const Vector<NontrivialInt>& array) -> std::string {
+    std::string result;
+    for (auto& i : array) {
+      result += std::to_string((int)i);
+    }
+    return result;
+  };
+
+  NontrivialInt ni10000(10000);
+  NontrivialInt ni10001(10001);
+  NontrivialInt ni10002(10002);
+  NontrivialInt ni10003(10003);
+
+  {
+    Vector<NontrivialInt> array;
+    EXPECT_EQ(array.size(), 0);
+    EXPECT_TRUE(array.empty());
+    CheckVector(array);
+  }
+
+  {
+    Vector<NontrivialInt> array(5);
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_FALSE(array.empty());
+    for (size_t i = 0; i < array.size(); i++) {
+      EXPECT_EQ(array[i], -1);
+      EXPECT_EQ(array.at(i), -1);
+    }
+    EXPECT_EQ(array.front(), -1);
+    EXPECT_EQ(array.back(), -1);
+    CheckVector(array);
+  }
+
+  {
+    Vector<Matrix3> array({});
+    EXPECT_TRUE(array.empty());
+  }
+
+  {
+    // Construct from initializer list or iterators
+    Vector<NontrivialInt> array({ni10000, ni10001, ni10002, ni10003});
+    EXPECT_EQ(array.size(), 4);
+    EXPECT_EQ(array[0], ni10000);
+    EXPECT_EQ(array[1], ni10001);
+    EXPECT_EQ(array[2], ni10002);
+    EXPECT_EQ(array[3], ni10003);
+    CheckVector(array);
+
+    Vector<NontrivialInt> array2(5);
+    EXPECT_EQ(array2.size(), 5);
+    CheckVector(array2);
+    for (size_t i = 0; i < array2.size(); i++) {
+      EXPECT_EQ(array2[i], -1);
+    }
+    array2 = {ni10000, ni10001, ni10002, ni10003};
+    CheckVector(array2);
+    EXPECT_EQ(array2.size(), 4);
+    EXPECT_EQ(array2[0], ni10000);
+    EXPECT_EQ(array2[1], ni10001);
+    EXPECT_EQ(array2[2], ni10002);
+    EXPECT_EQ(array2[3], ni10003);
+
+    Vector<NontrivialInt> array3(array2);
+    CheckVector(array3);
+    EXPECT_EQ(array3.size(), 4);
+    EXPECT_EQ(array3[0], ni10000);
+    EXPECT_EQ(array3[1], ni10001);
+    EXPECT_EQ(array3[2], ni10002);
+    EXPECT_EQ(array3[3], ni10003);
+
+    {
+      int buffer[5] = {10, 11, 12, 13, 14};
+      Vector<NontrivialInt> array =
+          to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+      Vector<NontrivialInt> array2(array.begin(), array.end());
+      CheckVector(array2);
+      EXPECT_EQ(to_s(array2), "1011121314");
+      Vector<NontrivialInt> array3(array.begin() + 1, array.end());
+      CheckVector(array3);
+      EXPECT_EQ(to_s(array3), "11121314");
+      Vector<NontrivialInt> array4(array.begin() + 1, array.end() - 1);
+      CheckVector(array4);
+      EXPECT_EQ(to_s(array4), "111213");
+
+      Vector<NontrivialInt> array5(array.begin() + 2, array.end() - 2);
+      CheckVector(array5);
+      EXPECT_EQ(to_s(array5), "12");
+      Vector<NontrivialInt> array6(array.begin() + 3, array.end() - 2);
+      CheckVector(array6);
+      EXPECT_TRUE(array6.empty());
+    }
+  }
+
+  {
+    // Move
+    int buffer[5] = {10, 11, 12, 13, 14};
+    int buffer2[10] = {100, 101, 102, 103, 104, 105, 106, 107, 108, 109};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 5);
+
+    Vector<NontrivialInt> array2(std::move(array));
+    CheckVector(array2);
+    EXPECT_TRUE(array.empty());
+    EXPECT_EQ(array2.size(), 5);
+    for (size_t i = 0; i < array2.size(); i++) {
+      EXPECT_EQ(array2[i], buffer[i]);
+    }
+
+    Vector<NontrivialInt> array3 =
+        to_nt_int_array(sizeof(buffer2) / sizeof(buffer2[0]), buffer2);
+    CheckVector(array3);
+    EXPECT_EQ(array3.size(), 10);
+    array = std::move(array3);
+    CheckVector(array);
+    EXPECT_TRUE(array3.empty());
+    EXPECT_EQ(array.size(), 10);
+    for (size_t i = 0; i < array.size(); i++) {
+      EXPECT_EQ(array[i], buffer2[i]);
+    }
+  }
+
+  {
+    // Basic push and pop
+    Vector<NontrivialInt> array;
+    for (int i = 1; i <= 100; i++) {
+      EXPECT_EQ(array.push_back(i), i);
+      CheckVector(array);
+    }
+    int sum = 0;
+    for (size_t i = 0; i < array.size(); i++) {
+      sum += array[i];
+    }
+    EXPECT_EQ(sum, 5050);
+
+    int buffer[5] = {10, 11, 12, 13, 14};
+    for (int i = 0; i < 5; i++) {
+      array.push_back(buffer[i]);
+    }
+    EXPECT_EQ(array.size(), 105);
+    sum = 0;
+    for (size_t i = 0; i < array.size(); i++) {
+      sum += array[i];
+    }
+    EXPECT_EQ(sum, 5050 + 10 + 11 + 12 + 13 + 14);
+
+    for (int i = 0; i < 5; i++) {
+      array.pop_back();
+      CheckVector(array);
+    }
+    EXPECT_EQ(array.size(), 100);
+    sum = 0;
+    for (int i : array) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+
+    EXPECT_EQ(array.emplace_back(999), 999);
+
+    array.grow() = 9999;
+    EXPECT_EQ(array.size(), 102);
+    EXPECT_EQ(array.back(), 9999);
+
+    array.grow(200);
+    EXPECT_EQ(array.size(), 200);
+    EXPECT_EQ(array.back(), -1);
+  }
+
+  {
+    // Iterators
+    std::string output;
+    int buffer[5] = {10, 11, 12, 13, 14};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    for (auto it = array.begin(); it != array.end(); it++) {
+      output += std::to_string(*it);
+    }
+    for (auto it = array.cbegin(); it != array.cend(); it++) {
+      output += std::to_string(*it);
+    }
+    for (int i : array) {
+      output += std::to_string(i);
+    }
+    EXPECT_EQ(output, "101112131410111213141011121314");
+
+    output = "";
+    for (auto it = array.rbegin(); it != array.rend(); it++) {
+      output += std::to_string(*it);
+    }
+    for (auto it = array.crbegin(); it != array.crend(); it++) {
+      output += std::to_string(*it);
+    }
+    EXPECT_EQ(output, "14131211101413121110");
+
+    // Writable iterator
+    output = "";
+    for (auto& i : array) {
+      i += 1;
+    }
+    for (auto it = array.begin(); it != array.end(); it++) {
+      *it += 1;
+    }
+    for (int i : array) {
+      output += std::to_string(i);
+    }
+    EXPECT_EQ(output, "1213141516");
+  }
+
+  {
+    // Erase and insert
+    int buffer[5] = {10, 11, 12, 13, 14};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    for (int i = 0; i < 5; i++) {
+      auto it = array.erase(array.begin());
+      CheckVector(array);
+      EXPECT_EQ(it, array.begin());
+      if (i == 2) {
+        EXPECT_EQ(to_s(array), "1314");
+      }
+    }
+
+    EXPECT_TRUE(array.empty());
+    for (int i = 4; i >= 0; i--) {
+      array.insert(array.begin(), i);
+      CheckVector(array);
+    }
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "01234");
+
+    auto it = array.erase(array.begin() + 1, array.begin() + 3);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "034");
+    EXPECT_EQ(*it, 3);
+
+    it = array.erase(array.end() - 1);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "03");
+    EXPECT_EQ(it, array.end());
+
+    it = array.erase(array.begin(), array.end());
+    CheckVector(array);
+    EXPECT_TRUE(array.empty());
+    EXPECT_EQ(it, array.end());
+
+    array.insert(array.begin(), 50);
+    CheckVector(array);
+    array.insert(array.end(), 51);
+    CheckVector(array);
+    array.insert(array.end(), 52);
+    CheckVector(array);
+    array.insert(array.begin() + 1, 49);
+    CheckVector(array);
+    array.insert(array.begin(), 48);
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "4850495152");
+
+    Vector<NontrivialInt> array2;
+    for (int i = 1; i <= 100; i++) {
+      array2.insert(array2.begin() + i - 1, i);
+    }
+    CheckVector(array2);
+    int sum = 0;
+    for (int i : array2) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+
+    Vector<NontrivialInt> array3;
+    for (int i = 1; i <= 100; i++) {
+      array3.insert(array3.begin(), i);
+    }
+    CheckVector(array3);
+    sum = 0;
+    for (int i : array3) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+  }
+
+  {
+    // Erase and emplace
+    int buffer[5] = {10, 11, 12, 13, 14};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    for (int i = 0; i < 5; i++) {
+      auto it = array.erase(array.begin());
+      CheckVector(array);
+      EXPECT_EQ(it, array.begin());
+      if (i == 2) {
+        EXPECT_EQ(to_s(array), "1314");
+      }
+    }
+
+    EXPECT_TRUE(array.empty());
+    for (int i = 4; i >= 0; i--) {
+      array.emplace(array.begin(), i);
+      CheckVector(array);
+    }
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "01234");
+
+    auto it = array.erase(array.begin() + 1, array.begin() + 3);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "034");
+    EXPECT_EQ(*it, 3);
+
+    it = array.erase(array.end() - 1);
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "03");
+    EXPECT_EQ(it, array.end());
+
+    it = array.erase(array.begin(), array.end());
+    CheckVector(array);
+    EXPECT_TRUE(array.empty());
+    EXPECT_EQ(it, array.end());
+
+    array.emplace(array.begin(), 50);
+    CheckVector(array);
+    array.emplace(array.end(), 51);
+    CheckVector(array);
+    array.emplace(array.end(), 52);
+    CheckVector(array);
+    array.emplace(array.begin() + 1, 49);
+    CheckVector(array);
+    array.emplace(array.begin(), 48);
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 5);
+    EXPECT_EQ(to_s(array), "4850495152");
+
+    Vector<NontrivialInt> array2;
+    for (int i = 1; i <= 100; i++) {
+      array2.emplace(array2.begin() + i - 1, i);
+    }
+    CheckVector(array2);
+    int sum = 0;
+    for (int i : array2) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+
+    Vector<NontrivialInt> array3;
+    for (int i = 1; i <= 100; i++) {
+      array3.emplace(array3.begin(), i);
+    }
+    CheckVector(array3);
+    sum = 0;
+    for (int i : array3) {
+      sum += i;
+    }
+    EXPECT_EQ(sum, 5050);
+  }
+
+  {
+    // Reserve
+    Vector<NontrivialInt> array;
+    EXPECT_TRUE(array.reserve(100));
+    CheckVector(array);
+    auto data_p = array.data();
+    for (int i = 1; i <= 100; i++) {
+      array.emplace_back(i);
+      CheckVector(array);
+    }
+    EXPECT_EQ(data_p, array.data());
+  }
+
+  {
+    // Resize
+    Vector<NontrivialInt> array;
+    EXPECT_TRUE(array.resize(50, 5));
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 50);
+    for (int i : array) {
+      EXPECT_EQ(i, 5);
+    }
+
+    EXPECT_TRUE(array.resize(100, 6));
+    CheckVector(array);
+    EXPECT_EQ(array.size(), 100);
+    for (size_t i = 0; i < 50; i++) {
+      EXPECT_EQ(array[i], 5);
+    }
+    for (size_t i = 50; i < 100; i++) {
+      EXPECT_EQ(array[i], 6);
+    }
+    EXPECT_FALSE(array.resize(10));
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "5555555555");
+    EXPECT_FALSE(array.resize(0));
+    CheckVector(array);
+    EXPECT_TRUE(array.empty());
+
+    array.push_back(1);
+    EXPECT_EQ(to_s(array), "1");
+    array.clear_and_shrink();
+    EXPECT_TRUE(array.empty());
+    array.resize(5, 5);
+    EXPECT_EQ(to_s(array), "55555");
+  }
+
+  {
+    // Algorithm
+    int buffer[5] = {12, 11, 15, 14, 10};
+    Vector<NontrivialInt> array =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    std::sort(
+        array.begin(), array.end(),
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array);
+    EXPECT_EQ(to_s(array), "1011121415");
+
+    Vector<NontrivialInt> array2 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    InsertionSort(
+        array2.begin(), array2.end(),
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array2);
+    EXPECT_EQ(to_s(array2), "1011121415");
+
+    Vector<NontrivialInt> array3 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    InsertionSort(
+        array3.begin() + 1, array3.end(),
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array3);
+    EXPECT_EQ(to_s(array3), "1210111415");
+
+    Vector<NontrivialInt> array4 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    InsertionSort(
+        array4.begin() + 1, array4.end() - 1,
+        [](NontrivialInt& a, NontrivialInt& b) { return (int)a < (int)b; });
+    CheckVector(array4);
+    EXPECT_EQ(to_s(array4), "1211141510");
+  }
+
+  {
+    // swap
+    int buffer[5] = {12, 11, 15, 14, 10};
+    int buffer2[5] = {22, 21, 25, 24, 20};
+    Vector<NontrivialInt> array1 =
+        to_nt_int_array(sizeof(buffer) / sizeof(buffer[0]), buffer);
+    Vector<NontrivialInt> array2 =
+        to_nt_int_array(sizeof(buffer2) / sizeof(buffer2[0]), buffer2);
+    array1.swap(array2);
+    EXPECT_EQ(to_s(array1), "2221252420");
+    CheckVector(array1);
+    EXPECT_EQ(to_s(array2), "1211151410");
+    CheckVector(array2);
+  }
+}
+
+TEST(Vector, NontrivialHintOfTriviallyRelocatable) {
+  class NontrivialInt {
+   public:
+    using TriviallyRelocatableInBaseVector = bool;
+
+    NontrivialInt(int i = -1) { value_ = new std::string(std::to_string(i)); }
+
+    ~NontrivialInt() {
+      if (value_) {
+        delete value_;
+      }
+    }
+
+    NontrivialInt(const NontrivialInt& other) {
+      value_ = new std::string(std::to_string((int)other));
+    }
+
+    NontrivialInt(NontrivialInt&& other) : value_(other.value_) {
+      other.value_ = nullptr;
+    }
+
+    NontrivialInt& operator=(const NontrivialInt& other) {
+      if (this == &other) {
+        return *this;
+      }
+      if (value_) {
+        delete value_;
+      }
+      value_ = new std::string(std::to_string((int)other));
+      return *this;
+    }
+
+    NontrivialInt& operator=(NontrivialInt&& other) {
+      if (this == &other) {
+        return *this;
+      }
+      if (value_) {
+        delete value_;
+      }
+      value_ = other.value_;
+      other.value_ = nullptr;
+      return *this;
+    }
+
+    operator int() const { return value_ ? std::stoi(*value_) : -1; }
+    bool operator==(const NontrivialInt& other) {
+      return (int)(*this) == (int)other;
+    }
+    NontrivialInt& operator+=(int value) {
+      int old_value_ = (int)(*this);
+      if (value_) {
+        delete value_;
+      }
+      value_ = new std::string(std::to_string(old_value_ + value));
+      return *this;
+    }
+
+   private:
+    std::string* value_;
+  };
+
+  static_assert(!Vector<NontrivialInt>::is_trivial);
+  static_assert(!Vector<NontrivialInt>::is_trivially_destructible);
+  static_assert(Vector<NontrivialInt>::is_trivially_destructible_after_move);
+  static_assert(
+      Vector<
+          std::pair<int, NontrivialInt>>::is_trivially_destructible_after_move);
+  static_assert(
+      Vector<
+          std::pair<NontrivialInt, int>>::is_trivially_destructible_after_move);
+  static_assert(Vector<NontrivialInt>::is_trivially_relocatable);
+  static_assert(
+      Vector<std::pair<int, NontrivialInt>>::is_trivially_relocatable);
+  static_assert(
+      Vector<std::pair<NontrivialInt, int>>::is_trivially_relocatable);
 
   auto to_nt_int_array = [](size_t count,
                             int buffer[]) -> Vector<NontrivialInt> {
