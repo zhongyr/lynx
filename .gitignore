@@ -15,7 +15,6 @@
 /third_party/RTF/
 /third_party/NativeScript/include
 /third_party/NativeScript/lib
-/third_party/perfetto
 *.profraw
 __pycache__
 /venv
