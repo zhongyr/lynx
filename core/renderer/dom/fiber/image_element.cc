@@ -40,5 +40,12 @@ void ImageElement::SetAttributeInternal(const base::String& key,
   FiberElement::SetAttributeInternal(key, value);
 }
 
+void ImageElement::ResetAttribute(const base::String& key) {
+  if (EnableLayoutInElementMode()) {
+    attr_map_[key] = lepus::Value();
+  }
+  FiberElement::ResetAttribute(key);
+}
+
 }  // namespace tasm
 }  // namespace lynx

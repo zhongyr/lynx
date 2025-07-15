@@ -31,6 +31,8 @@ class ImageElement : public FiberElement {
     return it == attr_map_.end() ? "" : it->second.CString();
   }
 
+  void ResetAttribute(const base::String& key) override;
+
  protected:
   ImageElement(const ImageElement& element, bool clone_resolved_props)
       : FiberElement(element, clone_resolved_props) {}

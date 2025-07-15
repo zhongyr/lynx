@@ -41,6 +41,8 @@ class TextElement : public FiberElement {
 
   bool ResetCSSValue(CSSPropertyID id) override;
 
+  void ResetAttribute(const base::String& key) override;
+
   LayoutResult Measure(float width, int32_t width_mode, float height,
                        int32_t height_mode, bool final_measure);
 
@@ -79,6 +81,11 @@ class TextElement : public FiberElement {
 
  private:
   void ResolveAndFlushFontFaces(const base::String& font_family);
+  bool ProcessAttributeForLayoutInElement(const base::String& key,
+                                          const lepus::Value& value,
+                                          bool is_reset = false);
+  bool ProcessAttributeForNormalLayoutMode(const base::String& key,
+                                           const lepus::Value& value);
 
   void EnsureTextProps() {
     if (!text_props_) {

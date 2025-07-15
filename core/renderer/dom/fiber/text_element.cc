@@ -87,45 +87,58 @@ base::String TextElement::ConvertContent(const lepus::Value value) {
 
 void TextElement::SetAttributeInternal(const base::String& key,
                                        const lepus::Value& value) {
-  // sometimes, text-overflow is used as attribute, so we need to parse the
-  // value as CSS style here. it's better to mark such kind of attribute as
-  // internal attributes, which may be processed as const IDs
+  bool processed = EnableLayoutInElementMode()
+                       ? ProcessAttributeForLayoutInElement(key, value)
+                       : ProcessAttributeForNormalLayoutMode(key, value);
+  if (!processed) {
+    FiberElement::SetAttributeInternal(key, value);
+  }
+}
 
-  BASE_STATIC_STRING_DECL(kTextAttr, "text");
-  BASE_STATIC_STRING_DECL(kTextMaxlineAttr, "text-maxline");
-  BASE_STATIC_STRING_DECL(kTextOverflowAttr, "text-overflow");
+void TextElement::ResetAttribute(const base::String& key) {
+  if (!EnableLayoutInElementMode() ||
+      !ProcessAttributeForLayoutInElement(key, lepus::Value(), true)) {
+    FiberElement::ResetAttribute(key);
+  }
+}
 
-  if (EnableLayoutInElementMode()) {
-    if (key.IsEqual(kTextAttr)) {
-      content_ = ConvertContent(value);
-      if (EnableLayoutInElementMode()) {
-        content_utf16_length_ =
-            GetUtf16SizeFromUtf8(content_.c_str(), content_.length());
-      }
-    } else if (key.IsEqual(kTextMaxlineAttr)) {
-      EnsureTextProps();
-      text_props_->text_max_line =
-          value.IsNumber() ? value.Number() : std::stoi(value.StdString());
-    } else {
-      FiberElement::SetAttributeInternal(key, value);
-    }
-    return;
+bool TextElement::ProcessAttributeForLayoutInElement(const base::String& key,
+                                                     const lepus::Value& value,
+                                                     bool is_reset) {
+  if (key.IsEqual(kTextAttr)) {
+    content_ = !is_reset ? ConvertContent(value) : base::String();
+    return true;
   }
 
+  if (key.IsEqual(kTextMaxlineAttr)) {
+    EnsureTextProps();
+    text_props_->text_max_line =
+        !is_reset
+            ? (value.IsNumber() ? value.Number() : std::stoi(value.StdString()))
+            : 1;
+    return true;
+  }
+  return false;
+}
+
+bool TextElement::ProcessAttributeForNormalLayoutMode(
+    const base::String& key, const lepus::Value& value) {
   if (key.IsEqual(kTextOverflowAttr)) {
     CacheStyleFromAttributes(kPropertyIDTextOverflow, value);
     has_layout_only_props_ = false;
-  } else if (key.IsEqual(kTextAttr) && !children().empty()) {
+    return true;
+  }
+
+  if (key.IsEqual(kTextAttr) && !children().empty()) {
     // if setNativeProps with key "text" on TextElement, we need to update it's
     // children.
-    if (children().begin()->get()->is_raw_text()) {
-      RawTextElement* raw_text =
-          static_cast<RawTextElement*>(children().begin()->get());
+    if (children().front()->is_raw_text()) {
+      auto* raw_text = static_cast<RawTextElement*>(children().front().get());
       raw_text->SetText(value);
     }
-  } else {
-    FiberElement::SetAttributeInternal(key, value);
+    return true;
   }
+  return false;
 }
 
 void TextElement::ConvertToInlineElement() {
