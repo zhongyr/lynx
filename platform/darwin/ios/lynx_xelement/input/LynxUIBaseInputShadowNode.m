@@ -257,5 +257,6 @@ LYNX_PROP_SETTER("placeholder", setPlaceholder, NSString *) {
   }
 }
 
-
+- (void)onFontFaceLoad {
+}
 @end
