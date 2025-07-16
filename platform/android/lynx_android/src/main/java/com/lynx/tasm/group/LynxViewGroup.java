@@ -4,6 +4,7 @@
 package com.lynx.tasm.group;
 
 import com.lynx.tasm.EmbeddedMode;
+import com.lynx.tasm.ILynxEngine;
 import com.lynx.tasm.IUIRendererCreator;
 import com.lynx.tasm.LynxBackgroundRuntimeOptions;
 import com.lynx.tasm.LynxBooleanOption;
@@ -19,7 +20,7 @@ import java.util.Map;
 /**
  * LynxViewGroup is used to build LynxView that shares the same Runtime Environment.
  */
-public class LynxViewGroup implements ILynxViewConfigProvider {
+class LynxViewGroup implements ILynxViewGroup, ILynxViewRuntimeCacheManager {
   // App Bundle url shared by multiple lynxViews config by the same LynxViewGroup;
   private String url;
   // initial globalProps shared by multiple lynxViews config by the same LynxViewGroup;
@@ -249,6 +250,38 @@ public class LynxViewGroup implements ILynxViewConfigProvider {
   @Override
   public LynxTemplateResourceFetcher getLynxTemplateResourceFetcher() {
     return lynxRuntimeOptions.getTemplateResourceFetcher();
+  }
+
+  @Override
+  public String getUrl() {
+    return this.url;
+  }
+
+  @Override
+  public TemplateBundle getTemplateBundle() {
+    return this.templateBundle;
+  }
+
+  @Override
+  public TemplateData getGlobalProps() {
+    return this.globalProps;
+  }
+
+  /** methods for RuntimeCacheManager **/
+  @Override
+  public void setTemplateBundle(TemplateBundle templateBundle) {
+    this.templateBundle = templateBundle;
+  }
+
+  @Override
+  public void setLynxEngine(ILynxEngine lynxEngine) {
+    // TODO(@huangweiwu): to impl this;
+  }
+
+  @Override
+  public ILynxEngine getLynxEngine() {
+    // TODO(@huangweiwu): to impl this;
+    return null;
   }
 
   public void release() {

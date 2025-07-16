@@ -69,6 +69,7 @@ import com.lynx.tasm.core.resource.LynxResourceLoader;
 import com.lynx.tasm.event.LynxCustomEvent;
 import com.lynx.tasm.eventreport.LynxEventReporter;
 import com.lynx.tasm.group.ILynxViewConfigProvider;
+import com.lynx.tasm.group.ILynxViewRuntimeCacheManager;
 import com.lynx.tasm.performance.PerformanceController;
 import com.lynx.tasm.performance.TimingOption;
 import com.lynx.tasm.performance.longtasktiming.LynxLongTaskMonitor;
@@ -134,6 +135,8 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
   private final LynxViewClientGroupV2 mClientV2 = new LynxViewClientGroupV2();
   private LynxViewBuilder mLynxViewBuilder;
   private ILynxViewConfigProvider mLynxViewConfigProvider;
+  private ILynxViewRuntimeCacheManager mRuntimeCacheManager;
+
   private LynxBackgroundRuntimeOptions mLynxRuntimeOptions;
   protected LynxModuleFactory mModuleFactory;
   private LynxIntersectionObserverManager mIntersectionObserverManager;
@@ -281,6 +284,10 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     mContext = context;
     mBodyView = bodyView;
     mLynxViewConfigProvider = builder;
+    if (builder.lynxViewGroup instanceof ILynxViewRuntimeCacheManager) {
+      mRuntimeCacheManager = ((ILynxViewRuntimeCacheManager) builder.lynxViewGroup);
+    }
+
     mLynxViewBuilder = builder;
     mEmbeddedMode = mLynxViewConfigProvider.getEmbeddedMode();
 
@@ -416,8 +423,8 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     // TODO(heshan): consider use screen width by default to avoid relayout
     if ((mAutoConcurrency || mForceLayoutOnBackgroundThread) && widthMeasureSpec == 0
         && heightMeasureSpec == 0) {
-      widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(
-          mLynxContext.getResources().getDisplayMetrics().widthPixels, View.MeasureSpec.EXACTLY);
+      widthMeasureSpec = MeasureSpec.makeMeasureSpec(
+          mLynxContext.getResources().getDisplayMetrics().widthPixels, MeasureSpec.EXACTLY);
     }
 
     if (!mEnableReuseEngine || !mIsEngineFromReuse) {
@@ -493,7 +500,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     return mPerformanceController;
   }
 
-  public UIGroup<UIBody.UIBodyView> getLynxRootUI() {
+  public UIGroup<UIBodyView> getLynxRootUI() {
     ILynxUIRenderer lynxUIRenderer = lynxUIRenderer();
     return (lynxUIRenderer != null) ? lynxUIRenderer.getLynxRootUI() : null;
   }
@@ -3613,7 +3620,7 @@ public class LynxTemplateRender implements ILynxEngine, ILynxErrorReceiver {
     }
   }
 
-  public void setAttachLynxPageUICallback(UIBody.UIBodyView.attachLynxPageUICallback callback) {
+  public void setAttachLynxPageUICallback(UIBodyView.attachLynxPageUICallback callback) {
     if (mLynxContext != null && mLynxContext.getLynxUIOwner() != null) {
       mLynxContext.getLynxUIOwner().setAttachLynxPageUICallback(callback);
     }

@@ -3,6 +3,7 @@
 // LICENSE file in the root directory of this source tree.
 package com.lynx.tasm.group;
 
+import com.lynx.tasm.ILynxEngine;
 import com.lynx.tasm.TemplateBundle;
 
 /**
@@ -13,11 +14,15 @@ public interface ILynxViewRuntimeCacheManager {
   /**
    * Set A Generated TemplateBundle to CacheManager
    */
-  void setTemplateBundle();
+  void setTemplateBundle(TemplateBundle bundle);
 
   /**
    * Get A Already Generated TemplateBundle from CacheManager
    * @return Already Generated TemplateBundle
    */
   TemplateBundle getTemplateBundle();
+
+  void setLynxEngine(ILynxEngine lynxEngine);
+
+  ILynxEngine getLynxEngine();
 }

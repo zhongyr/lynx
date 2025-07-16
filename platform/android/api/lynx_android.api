@@ -2333,9 +2333,17 @@ public interface com::lynx::tasm::group::ILynxViewConfigProvider {
   public LynxTemplateResourceFetcher com.lynx.tasm.group.ILynxViewConfigProvider.getLynxTemplateResourceFetcher();
 }
 
+public interface com::lynx::tasm::group::ILynxViewGroup {
+  public String com.lynx.tasm.group.ILynxViewGroup.getUrl();
+  public TemplateBundle com.lynx.tasm.group.ILynxViewGroup.getTemplateBundle();
+  public TemplateData com.lynx.tasm.group.ILynxViewGroup.getGlobalProps();
+}
+
 public interface com::lynx::tasm::group::ILynxViewRuntimeCacheManager {
-  public void com.lynx.tasm.group.ILynxViewRuntimeCacheManager.setTemplateBundle();
+  public void com.lynx.tasm.group.ILynxViewRuntimeCacheManager.setTemplateBundle(TemplateBundle bundle);
   public TemplateBundle com.lynx.tasm.group.ILynxViewRuntimeCacheManager.getTemplateBundle();
+  public void com.lynx.tasm.group.ILynxViewRuntimeCacheManager.setLynxEngine(ILynxEngine lynxEngine);
+  public ILynxEngine com.lynx.tasm.group.ILynxViewRuntimeCacheManager.getLynxEngine();
 }
 
 public interface com::lynx::tasm::ILynxViewStateListener {
@@ -5684,7 +5692,7 @@ public class com::lynx::tasm::LynxTemplateRender : com.lynx.tasm.ILynxEngine, co
   public boolean com.lynx.tasm.LynxTemplateRender.enableAirStrictMode();
   public LynxContext com.lynx.tasm.LynxTemplateRender.getLynxContext();
   public PerformanceController com.lynx.tasm.LynxTemplateRender.getPerformanceController();
-  public UIGroup< UIBody.UIBodyView > com.lynx.tasm.LynxTemplateRender.getLynxRootUI();
+  public UIGroup< UIBodyView > com.lynx.tasm.LynxTemplateRender.getLynxRootUI();
   public LynxDevtool com.lynx.tasm.LynxTemplateRender.getDevTool();
   public void com.lynx.tasm.LynxTemplateRender.onEnterForeground();
   public void com.lynx.tasm.LynxTemplateRender.onEnterBackground();
@@ -5798,7 +5806,7 @@ public class com::lynx::tasm::LynxTemplateRender : com.lynx.tasm.ILynxEngine, co
   public void com.lynx.tasm.LynxTemplateRender.scrollToPosition(int containerSign, int position, float offset, int align, boolean smooth);
   public void com.lynx.tasm.LynxTemplateRender.scrollStopped(int containerSign);
   public ILynxUIRenderer com.lynx.tasm.LynxTemplateRender.lynxUIRenderer();
-  public void com.lynx.tasm.LynxTemplateRender.setAttachLynxPageUICallback(UIBody.UIBodyView.attachLynxPageUICallback callback);
+  public void com.lynx.tasm.LynxTemplateRender.setAttachLynxPageUICallback(UIBodyView.attachLynxPageUICallback callback);
   public void com.lynx.tasm.LynxTemplateRender.addRuntimeLifecycleListener(@NonNull RuntimeLifecycleListener listener);
   public native void com.lynx.tasm.LynxTemplateRender.nativeDetachLynxEngineWrapper(long ptr, long lifecycle);
 }
@@ -6326,7 +6334,7 @@ public class com::lynx::tasm::LynxViewBuilder : LynxBaseConfigurator< LynxViewBu
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setUri(@Nullable Uri uri);
   public Uri com.lynx.tasm.LynxViewBuilder.getUri();
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.insertLynxViewConfig(String key, String value);
-  public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setLynxViewGroup(LynxViewGroup group);
+  public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setLynxViewGroup(ILynxViewGroup group);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setLynxModuleExtraData(Object data);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setResourceFetcher(LynxResourceFetcher resourceFetcher);
   public LynxViewBuilder com.lynx.tasm.LynxViewBuilder.setFontLoader(LynxFontFaceLoader.Loader fontLoader);
@@ -6486,45 +6494,11 @@ public interface com::lynx::tasm::behavior::herotransition::HeroTransitionManage
   public void com.lynx.tasm.behavior.herotransition.HeroTransitionManager.LynxViewExitFinishListener.onLynxViewExited();
 }
 
-public class com::lynx::tasm::group::LynxViewGroup : com.lynx.tasm.group.ILynxViewConfigProvider {
-  public BehaviorRegistry com.lynx.tasm.group.LynxViewGroup.getBehaviorRegistry();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableAutoExpose();
-  public Float com.lynx.tasm.group.LynxViewGroup.getDensity();
-  public ThreadStrategyForRendering com.lynx.tasm.group.LynxViewGroup.getThreadStrategy();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableLayoutSafepoint();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableUnifiedPipeline();
-  public Map< String, Object > com.lynx.tasm.group.LynxViewGroup.getContextData();
-  public LynxBackgroundRuntimeOptions com.lynx.tasm.group.LynxViewGroup.getLynxRuntimeOptions();
-  public int com.lynx.tasm.group.LynxViewGroup.getScreenWidth();
-  public int com.lynx.tasm.group.LynxViewGroup.getScreenHeight();
-  public boolean com.lynx.tasm.group.LynxViewGroup.getForceDarkAllowed();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableMultiAsyncThread();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableSyncFlush();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableAutoConcurrency();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableVSyncAlignedMessageLoop();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnablePendingJsTask();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableAsyncHydration();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableJSRuntime();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnableAirStrictMode();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isDebuggable();
-  public int com.lynx.tasm.group.LynxViewGroup.getPresetWidthMeasureSpec();
-  public int com.lynx.tasm.group.LynxViewGroup.getPresetHeightMeasureSpec();
-  public float com.lynx.tasm.group.LynxViewGroup.getFontScale();
-  public boolean com.lynx.tasm.group.LynxViewGroup.isEnablePreUpdateData();
-  public IUIRendererCreator com.lynx.tasm.group.LynxViewGroup.getUIRendererCreator();
-  public int com.lynx.tasm.group.LynxViewGroup.getEmbeddedMode();
-  public LynxBooleanOption com.lynx.tasm.group.LynxViewGroup.isEnableGenericResourceFetcher();
-  public LynxGenericResourceFetcher com.lynx.tasm.group.LynxViewGroup.getLynxGenericResourceFetcher();
-  public LynxMediaResourceFetcher com.lynx.tasm.group.LynxViewGroup.getLynxMediaResourceFetcher();
-  public LynxTemplateResourceFetcher com.lynx.tasm.group.LynxViewGroup.getLynxTemplateResourceFetcher();
-  public void com.lynx.tasm.group.LynxViewGroup.release();
-}
-
 public class com::lynx::tasm::group::LynxViewGroupBuilder : LynxBaseConfigurator< LynxViewGroupBuilder > {
   public LynxViewGroupBuilder com.lynx.tasm.group.LynxViewGroupBuilder.setUrl(@NonNull String url);
   public LynxViewGroupBuilder com.lynx.tasm.group.LynxViewGroupBuilder.setTemplateBundle(@NonNull TemplateBundle templateBundle);
   public LynxViewGroupBuilder com.lynx.tasm.group.LynxViewGroupBuilder.setGlobalProps(@NonNull TemplateData globalProps);
-  public LynxViewGroup com.lynx.tasm.group.LynxViewGroupBuilder.build();
+  public ILynxViewGroup com.lynx.tasm.group.LynxViewGroupBuilder.build();
 }
 
 public interface com::lynx::tasm::behavior::ui::LynxViewVisibleHelper {

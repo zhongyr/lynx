@@ -32,7 +32,7 @@ public class LynxViewGroupBuilder extends LynxBaseConfigurator<LynxViewGroupBuil
     return this;
   }
 
-  public LynxViewGroup build() {
+  public ILynxViewGroup build() {
     return new LynxViewGroup(url, templateBundle, globalProps, behaviorRegistry, lynxRuntimeOptions,
         mContextData, threadStrategy, enableAutoExpose, enableLayoutSafepoint,
         enableUnifiedPipeline, forceDarkAllowed, densityOverride, screenWidth, screenHeight,

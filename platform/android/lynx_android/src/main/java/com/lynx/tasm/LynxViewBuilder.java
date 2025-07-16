@@ -14,8 +14,8 @@ import com.lynx.tasm.behavior.BehaviorRegistry;
 import com.lynx.tasm.behavior.ILynxUIRenderer;
 import com.lynx.tasm.component.DynamicComponentFetcher;
 import com.lynx.tasm.group.ILynxViewConfigProvider;
+import com.lynx.tasm.group.ILynxViewGroup;
 import com.lynx.tasm.group.LynxBaseConfigurator;
-import com.lynx.tasm.group.LynxViewGroup;
 import com.lynx.tasm.image.model.LynxImageFetcher;
 import com.lynx.tasm.loader.LynxFontFaceLoader;
 import com.lynx.tasm.provider.AbsTemplateProvider;
@@ -45,7 +45,7 @@ public class LynxViewBuilder
   Map<String, String> lynxViewConfig;
   LynxBackgroundRuntime lynxBackgroundRuntime;
   Uri uri = null;
-  LynxViewGroup lynxViewGroup;
+  ILynxViewGroup lynxViewGroup;
 
   public LynxViewBuilder() {
     LynxEnv.inst().lazyInitIfNeeded();
@@ -110,7 +110,7 @@ public class LynxViewBuilder
     return this;
   }
 
-  public LynxViewBuilder setLynxViewGroup(LynxViewGroup group) {
+  public LynxViewBuilder setLynxViewGroup(ILynxViewGroup group) {
     this.lynxViewGroup = group;
     return this;
   }
@@ -404,7 +404,7 @@ public class LynxViewBuilder
     if (lynxViewGroup != null) {
       return lynxViewGroup.isEnablePreUpdateData();
     }
-    return this.enableUnifiedPipeline;
+    return this.enablePreUpdateData;
   }
 
   @Override

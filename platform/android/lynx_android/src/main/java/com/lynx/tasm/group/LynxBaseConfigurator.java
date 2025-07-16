@@ -109,6 +109,17 @@ public class LynxBaseConfigurator<T extends LynxBaseConfigurator<T>> {
   }
 
   /**
+   * Use {@link #addBehaviors(List)} instead.
+   */
+  @Deprecated
+  public T setBehaviors(@Nullable List<Behavior> bundle) {
+    if (bundle != null) {
+      behaviorRegistry.addBehaviors(bundle);
+    }
+    return (T) this;
+  }
+
+  /**
    * Adding Behaviour Lists
    */
   public T addBehaviors(@NonNull List<Behavior> behaviorList) {
@@ -392,6 +403,16 @@ public class LynxBaseConfigurator<T extends LynxBaseConfigurator<T>> {
    */
   public T setDebuggable(boolean enable) {
     debuggable = enable;
+    return (T) this;
+  }
+
+  @Deprecated
+  public T setUIRunningMode(boolean ui) {
+    if (ui) {
+      threadStrategy = ThreadStrategyForRendering.ALL_ON_UI;
+    } else {
+      threadStrategy = ThreadStrategyForRendering.PART_ON_LAYOUT;
+    }
     return (T) this;
   }
 
