@@ -234,6 +234,7 @@ subspec_target("lynx") {
     "shadow_node/text/LynxRawTextShadowNode.m",
     "shadow_node/text/LynxTextLayoutManager.m",
     "shadow_node/text/LynxTextLayoutSpec.m",
+    "shadow_node/text/LynxTextRenderManager.m",
     "shadow_node/text/LynxTextRenderer.m",
     "shadow_node/text/LynxTextRendererCache.m",
     "shadow_node/text/LynxTextShadowNode.m",

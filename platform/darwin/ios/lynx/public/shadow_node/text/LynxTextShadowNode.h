@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) CGFloat maxLineDescender;
 @property(nonatomic) BOOL enableLayoutRefactor;
 @property(nonatomic) LynxVerticalAlign textSingleLineVerticalAlign;
-@property(nonatomic) NSMutableAttributedString *attributedString;
+@property(nonatomic) NSAttributedString *attributedString;
 @property(nonatomic) CGFloat baseline;
 @end
 

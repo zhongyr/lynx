@@ -24,10 +24,6 @@ NSAttributedStringKey const LynxInlineTextShadowNodeSignKey = @"LynxInlineTextSh
 NSAttributedStringKey const LynxUsedFontMetricKey = @"LynxUsedFontMetricKey";
 NSAttributedStringKey const LynxVerticalAlignKey = @"LynxVerticalAlignKey";
 
-@interface LynxTextAttachment : NSTextAttachment
-
-@end
-
 @implementation LynxTextAttachment
 
 - (nullable UIImage*)imageForBounds:(CGRect)imageBounds

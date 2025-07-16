@@ -20,6 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class LynxGestureDetectorDarwin;
 @class LynxGestureArenaManager;
 @class LynxMemoryRecord;
+@class LynxTextRenderManager;
 
 @protocol LynxBaseInspectorOwner;
 @protocol LynxForegroundProtocol;
@@ -42,6 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) id<LynxBaseInspectorOwner> baseInspectOwner;
 @property(nonatomic, strong) LynxGestureArenaManager* _Nullable gestureArenaManager;
 @property(nonatomic) attachLynxPageUI attachLynxPageUICallback;
+@property(nonatomic, readonly) LynxTextRenderManager* textRenderManager;
 
 - (void)attachContainerView:(UIView<LUIBodyView>* _Nonnull)containerView;
 - (instancetype)initWithContainerView:(UIView<LUIBodyView>*)containerView

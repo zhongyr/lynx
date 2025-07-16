@@ -5,6 +5,7 @@
 #import <Lynx/LynxComponentRegistry.h>
 #import <Lynx/LynxEnv.h>
 #import <Lynx/LynxPropsProcessor.h>
+#import <Lynx/LynxTextRenderManager.h>
 #import <Lynx/LynxUI+Internal.h>
 #import <Lynx/LynxUIText.h>
 #import <Lynx/LynxUIUnitUtils.h>
@@ -118,6 +119,9 @@ LYNX_PROPS_GROUP_DECLARE(
                  border:(UIEdgeInsets)border
                  margin:(UIEdgeInsets)margin
     withLayoutAnimation:(BOOL)with {
+  if ([self.context.uiOwner isLayoutInElementModeOn]) {
+    [self onReceiveUIOperation:[self.context.uiOwner.textRenderManager takeTextRender:self.sign]];
+  }
   [super updateFrame:frame
               withPadding:padding
                    border:border

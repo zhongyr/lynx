@@ -14,6 +14,7 @@
 #import <Lynx/LynxRootUI.h>
 #import <Lynx/LynxService.h>
 #import <Lynx/LynxShadowNodeOwner.h>
+#import <Lynx/LynxTextRenderManager.h>
 #import <Lynx/LynxTraceEvent.h>
 #import <Lynx/LynxTraceEventDef.h>
 #import <Lynx/LynxTraceEventWrapper.h>
@@ -160,6 +161,9 @@ extern NSString* const kDefaultComponentID;
     _embeddedMode = embeddedMode;
     if (embeddedMode != LynxEmbeddedModeUnset) {
       [LynxComponentScopeRegistry registerBuiltInBehaviors:_componentRegistry];
+    }
+    if ([self isLayoutInElementModeOn]) {
+      _textRenderManager = [[LynxTextRenderManager alloc] init];
     }
     _componentSet = [[NSMutableSet alloc] init];
     _a11yIDHolder = [[NSMutableDictionary alloc] init];

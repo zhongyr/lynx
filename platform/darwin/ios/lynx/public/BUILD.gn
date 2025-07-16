@@ -98,6 +98,7 @@ public_shared_sources = [
   "shadow_node/text/LynxRawTextShadowNode.h",
   "shadow_node/text/LynxTextLayoutManager.h",
   "shadow_node/text/LynxTextLayoutSpec.h",
+  "shadow_node/text/LynxTextRenderManager.h",
   "shadow_node/text/LynxTextRenderer.h",
   "shadow_node/text/LynxTextRendererCache.h",
   "shadow_node/text/LynxTextShadowNode.h",

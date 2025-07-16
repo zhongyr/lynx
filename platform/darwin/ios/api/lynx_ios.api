@@ -110,7 +110,7 @@ public class LineSpacingAdaptation : NSObject, <NSLayoutManagerDelegate> {
   public CGFloat LineSpacingAdaptation::maxLineDescender maxLineDescender;
   public BOOL LineSpacingAdaptation::enableLayoutRefactor enableLayoutRefactor;
   public LynxVerticalAlign LineSpacingAdaptation::textSingleLineVerticalAlign textSingleLineVerticalAlign;
-  public NSMutableAttributedString* LineSpacingAdaptation::attributedString attributedString;
+  public NSAttributedString* LineSpacingAdaptation::attributedString attributedString;
   public CGFloat LineSpacingAdaptation::baseline baseline;
 }
 
@@ -223,6 +223,16 @@ public class LynxAnimationTransformRotation : NSObject {
   public CGFloat LynxAnimationTransformRotation::rotationY rotationY;
   public CGFloat LynxAnimationTransformRotation::rotationZ rotationZ;
   public BOOL LynxAnimationTransformRotation::isEqualToTransformRotation:(LynxAnimationTransformRotation *transformRotation);
+}
+
+public class LynxAttributedTextBundle : NSObject {
+  public NSAttributedString* LynxAttributedTextBundle::attributedString attributedString;
+  public LynxTextStyle* LynxAttributedTextBundle::textStyle textStyle;
+  public NSSet* LynxAttributedTextBundle::inlineElementSigns inlineElementSigns;
+  public LynxTextOverflowType LynxAttributedTextBundle::textOverflow textOverflow;
+  public LynxOverflow LynxAttributedTextBundle::overflow overflow;
+  public LynxWhiteSpaceType LynxAttributedTextBundle::whiteSpace whiteSpace;
+  public NSInteger LynxAttributedTextBundle::maxLineNum maxLineNum;
 }
 
 public class LynxBackgroundCapInsets : NSObject {
@@ -3383,6 +3393,10 @@ public protocol LynxTemplateResourceFetcher-p : <NSObject> {
   public void LynxTemplateResourceFetcher-p::fetchSSRData:onComplete:(LynxResourceRequest *_Nonnull request,[onComplete] LynxSSRResourceCompletionBlock _Nonnull callback);
 }
 
+public class LynxTextAttachment : NSTextAttachment {
+  public NSInteger LynxTextAttachment::sign sign;
+}
+
 public class LynxTextAttachmentInfo : NSObject {
   public NSInteger LynxTextAttachmentInfo::sign sign;
   public CGRect LynxTextAttachmentInfo::frame frame;
@@ -3434,6 +3448,13 @@ public class LynxTextRendererCache : NSObject, <NSCacheDelegate> {
   public instancetype LynxTextRendererCache::NS_UNAVAILABLE();
   public LynxTextRenderer * LynxTextRendererCache::rendererWithString:layoutSpec:(NSAttributedString *str,[layoutSpec] LynxLayoutSpec *spec);
   public void LynxTextRendererCache::clearCache();
+}
+
+public class LynxTextRenderManager : NSObject {
+  public MeasureResult LynxTextRenderManager::measureTextWithSign:width:widthMode:height:heightMode:childrenSizeDic:(int sign,[width] float width,[widthMode] LynxMeasureMode widthMode,[height] float height,[heightMode] LynxMeasureMode heightMode,[childrenSizeDic] nullable NSDictionary *childrenSizeDic);
+  public id LynxTextRenderManager::takeTextRender:(NSInteger sign);
+  public void LynxTextRenderManager::putAttributedTextBundle:textBundle:(NSInteger sign,[textBundle] LynxAttributedTextBundle *textBundle);
+  public NSDictionary * LynxTextRenderManager::getInlineElementOffsetDic:(NSInteger sign);
 }
 
 public class LynxTextShadowNode : LynxBaseTextShadowNode, <LynxCustomMeasureDelegate> {
@@ -4342,6 +4363,7 @@ public class LynxUIOwner : NSObject {
   public id<LynxBaseInspectorOwner> LynxUIOwner::baseInspectOwner baseInspectOwner;
   public LynxGestureArenaManager* _Nullable LynxUIOwner::gestureArenaManager gestureArenaManager;
   public attachLynxPageUI LynxUIOwner::attachLynxPageUICallback attachLynxPageUICallback;
+  public LynxTextRenderManager* LynxUIOwner::textRenderManager textRenderManager;
   public void LynxUIOwner::attachContainerView:(UIView< LUIBodyView > *_Nonnull containerView);
   public instancetype LynxUIOwner::initWithContainerView:componentRegistry:screenMetrics:(UIView< LUIBodyView > *containerView,[componentRegistry] LynxComponentScopeRegistry *registry,[screenMetrics] LynxScreenMetrics *screenMetrics);
   public instancetype LynxUIOwner::initWithContainerView:componentRegistry:screenMetrics:errorHandler:uiConfig:(UIView< LUIBodyView > *containerView,[componentRegistry] LynxComponentScopeRegistry *registry,[screenMetrics] LynxScreenMetrics *screenMetrics,[errorHandler] id< LUIErrorHandling > _Nullable errorHandler,[uiConfig] id< LUIConfig > _Nullable uiConfig);

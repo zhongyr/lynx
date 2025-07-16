@@ -16,6 +16,10 @@ extern NSAttributedStringKey const LynxInlineTextShadowNodeSignKey;
 extern NSAttributedStringKey const LynxUsedFontMetricKey;
 extern NSAttributedStringKey const LynxVerticalAlignKey;
 
+@interface LynxTextAttachment : NSTextAttachment
+@property(readwrite, nonatomic, assign) NSInteger sign;
+@end
+
 @interface LynxBaseTextShadowNode : LynxShadowNode
 
 @property(nonatomic, strong) LynxTextStyle* textStyle;
