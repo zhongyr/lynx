@@ -1628,7 +1628,10 @@ void Element::ResolveAndFlushKeyframes() {
 
 void Element::EnsureTagInfo() {
   if (layout_node_type_ == kLayoutNodeTypeNotInit) {
-    int32_t node_info = element_manager()->GetNodeInfoByTag(tag_);
+    int32_t node_info = EnableLayoutInElementMode() ? GetBuiltInNodeInfo() : 0;
+    if (node_info == 0) {
+      node_info = element_manager()->GetNodeInfoByTag(tag_);
+    }
     layout_node_type_ = (node_info & 0xFFFF);
     create_node_async_ = ((node_info & 0x10000) > 0);
   }

@@ -37,6 +37,19 @@ using ParallelFlushReturn = base::closure;
 using ParallelReduceTaskQueue =
     std::list<base::OnceTaskRefptr<ParallelFlushReturn>>;
 
+enum NodeInfoBits : int32_t {
+  // Mask for layout node type, using lower 16 bits.
+  kLayoutNodeTypeMask = 0x0000FFFF,
+  // Mask for async creation flag.
+  kCreateAsyncMask = 0x00010000,
+};
+
+constexpr const int32_t kCommonBuiltInNodeInfo =
+    (LayoutNodeType::COMMON & NodeInfoBits::kLayoutNodeTypeMask) |
+    NodeInfoBits::kCreateAsyncMask;
+constexpr const int32_t kVirtualBuiltInNodeInfo =
+    (LayoutNodeType::VIRTUAL & NodeInfoBits::kLayoutNodeTypeMask);
+
 class FiberElement : public Element,
                      public SelectorItem,
                      public style::SimpleStyleNode {

@@ -622,6 +622,8 @@ class Element : public lepus::RefCounted {
 
   virtual void MarkAsListItem() { is_list_item_ = true; }
 
+  virtual int32_t GetBuiltInNodeInfo() const { return 0; }
+
   bool is_list_item() const { return is_list_item_; }
 
   void EnsureTagInfo();

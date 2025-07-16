@@ -33,6 +33,8 @@ class ViewElement : public FiberElement {
       const std::shared_ptr<CSSStyleSheetManager>& style_manager,
       bool keep_element_id) override;
 
+  int32_t GetBuiltInNodeInfo() const override { return kCommonBuiltInNodeInfo; }
+
  protected:
   void OnNodeAdded(FiberElement* child) override;
 

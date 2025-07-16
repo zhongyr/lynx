@@ -30,6 +30,10 @@ class RawTextElement : public FiberElement {
   const base::String& content() const { return content_; }
   size_t content_utf16_length() const { return content_utf16_length_; }
 
+  int32_t GetBuiltInNodeInfo() const override {
+    return kVirtualBuiltInNodeInfo;
+  }
+
   constexpr const static char kRawTextTag[] = "raw-text";
   constexpr const static char kTextAttr[] = "text";
 
