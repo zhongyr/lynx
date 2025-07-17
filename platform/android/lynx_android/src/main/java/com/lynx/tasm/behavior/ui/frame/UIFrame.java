@@ -44,14 +44,15 @@ public final class UIFrame extends LynxUI<LynxFrameView> {
     if (data instanceof TemplateBundle) {
       LynxFrameView view = getView();
       if (view != null) {
+        // need to establish the parent-child UI relationship before loadBundle currently
+        // TODO(hexionghui): fix it later
+        attachPageUICallback();
         view.loadBundle((TemplateBundle) data);
       }
     }
   }
 
-  @Override
-  public void onNodeReady() {
-    super.onNodeReady();
+  private void attachPageUICallback() {
     LynxFrameView view = getView();
     if (view == null) {
       return;

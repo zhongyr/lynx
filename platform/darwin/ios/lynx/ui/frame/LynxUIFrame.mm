@@ -31,6 +31,9 @@ LYNX_REGISTER_UI("frame")
 }
 
 - (void)onReceiveAppBundle:(LynxTemplateBundle*)bundle {
+  // need to establish the parent-child UI relationship before loadBundle currently
+  // TODO(hexionghui): fix it later
+  [self attachPageUICallback];
   [[self view] setAppBundle:bundle];
 }
 
@@ -47,8 +50,7 @@ LYNX_REGISTER_UI("frame")
   [[self view] setFrame:frame];
 }
 
-- (void)onNodeReady {
-  [super onNodeReady];
+- (void)attachPageUICallback {
   __weak typeof(self) weakSelf = self;
   [self.view setAttachLynxPageUICallback:^(NSObject* _Nonnull __weak ui) {
     __strong typeof(weakSelf) strongSelf = weakSelf;

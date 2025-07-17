@@ -41,6 +41,7 @@ void FrameElement::OnSetSrc(const base::String& key,
     TRACE_EVENT(LYNX_TRACE_CATEGORY, FRAME_ELEMENT_ON_SET_SRC, "src", src);
     if (src != src_) {
       src_ = std::move(src);
+      template_bundle_ = nullptr;
       element_manager()->element_manager_delegate()->LoadFrameBundle(src_,
                                                                      this);
     }
@@ -60,7 +61,19 @@ bool FrameElement::DidBundleLoaded(
 
 void FrameElement::PostBundle(
     const std::shared_ptr<LynxTemplateBundle>& bundle) {
-  painting_context()->SetFrameAppBundle(id_, bundle);
+  if (HasPaintingNode()) {
+    painting_context()->SetFrameAppBundle(id_, bundle);
+  } else {
+    template_bundle_ = bundle;
+  }
+}
+
+void FrameElement::FlushProps() {
+  FiberElement::FlushProps();
+  if (template_bundle_ && HasPaintingNode()) {
+    painting_context()->SetFrameAppBundle(id_, template_bundle_);
+    template_bundle_ = nullptr;
+  }
 }
 
 }  // namespace tasm

@@ -25,6 +25,8 @@ class FrameElement : public FiberElement {
   bool DidBundleLoaded(const std::string& src,
                        const std::shared_ptr<LynxTemplateBundle>& bundle);
 
+  void FlushProps() override;
+
  protected:
   void OnNodeAdded(FiberElement* child) override;
 
@@ -35,6 +37,7 @@ class FrameElement : public FiberElement {
   // load bundle if src is set
   void OnSetSrc(const base::String& key, const lepus::Value& value);
 
+  std::shared_ptr<LynxTemplateBundle> template_bundle_{nullptr};
   std::string src_{};
 };
 }  // namespace tasm
