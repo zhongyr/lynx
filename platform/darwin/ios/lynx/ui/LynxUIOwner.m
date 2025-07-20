@@ -1133,11 +1133,11 @@ extern NSString* const kDefaultComponentID;
     float objSizeKb = [obj memoryUsageKB];
     LynxMemoryRecord* record = [uiMemUsage objectForKey:tag];
     if (!record) {
-      record = [[LynxMemoryRecord alloc] initWithCategory:tag sizeKb:0.f detail:nil];
+      record = [[LynxMemoryRecord alloc] initWithCategory:tag sizeBytes:0.f detail:nil];
       [uiMemUsage setObject:record forKey:tag];
     }
     record.instanceCount++;
-    record.sizeKb += objSizeKb;
+    record.sizeBytes += objSizeKb;
     NSDictionary* dict = [obj memoryUsageDetail];
     if (dict) {
       if (!record.detail) {

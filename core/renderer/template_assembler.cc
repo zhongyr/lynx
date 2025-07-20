@@ -3550,8 +3550,8 @@ void TemplateAssembler::OnLayoutAfter(PipelineLayoutData& layout_data) {
   if (tasm::performance::MemoryMonitor::Enable()) {
     auto* node_manager = page_proxy()->element_manager()->node_manager();
     int32_t count = static_cast<int32_t>(node_manager->NodeCount());
-    float mem_size_byte = node_manager->GetTotalMemoryUsage();
-    delegate_.ReportElementMemoryInfo(mem_size_byte, count);
+    int64_t mem_size_bytes = node_manager->GetTotalMemoryUsage();
+    delegate_.ReportElementMemoryInfo(mem_size_bytes, count);
   }
 
   pipeline_context_manager_->RemovePipelineContextByVersion(

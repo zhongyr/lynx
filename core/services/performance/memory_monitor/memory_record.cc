@@ -8,26 +8,26 @@ namespace lynx {
 namespace tasm {
 namespace performance {
 
-MemoryRecord::MemoryRecord(MemoryCategory category, float size_kb)
-    : category_(std::move(category)), size_kb_(size_kb) {}
+MemoryRecord::MemoryRecord(MemoryCategory category, int64_t size_bytes)
+    : category_(std::move(category)), size_bytes_(size_bytes) {}
 
 MemoryRecord::MemoryRecord(
-    MemoryCategory category, float size_kb,
+    MemoryCategory category, int64_t size_bytes,
     std::unique_ptr<std::unordered_map<std::string, std::string>> detail)
     : category_(std::move(category)),
-      size_kb_(size_kb),
+      size_bytes_(size_bytes),
       detail_(std::move(detail)) {}
 
 MemoryRecord::MemoryRecord(
-    MemoryCategory category, float size_kb, int32_t instance_count,
+    MemoryCategory category, int64_t size_bytes, int32_t instance_count,
     std::unique_ptr<std::unordered_map<std::string, std::string>> detail)
     : category_(std::move(category)),
-      size_kb_(size_kb),
+      size_bytes_(size_bytes),
       instance_count_(instance_count),
       detail_(std::move(detail)) {}
 
 MemoryRecord& MemoryRecord::operator+=(const MemoryRecord& other) {
-  size_kb_ += other.size_kb_;
+  size_bytes_ += other.size_bytes_;
   instance_count_ += other.instance_count_;
   // Merge detail_
   if (!other.detail_) {
@@ -46,7 +46,7 @@ MemoryRecord& MemoryRecord::operator+=(const MemoryRecord& other) {
 }
 
 MemoryRecord& MemoryRecord::operator-=(const MemoryRecord& other) {
-  size_kb_ -= other.size_kb_;
+  size_bytes_ -= other.size_bytes_;
   instance_count_ -= other.instance_count_;
   // Deduplicate detail_
   if (!other.detail_ || !detail_) {

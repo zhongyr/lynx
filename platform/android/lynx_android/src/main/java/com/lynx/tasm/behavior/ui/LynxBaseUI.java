@@ -431,16 +431,16 @@ public abstract class LynxBaseUI
   }
 
   /**
-   * Returns the current memory usage in kilobytes (KB).
+   * Returns the current memory usage in bytes.
    * The value represents a non-negative memory consumption measurement.
    * Implementations should return the total memory used by the component
    * or resource being monitored. For example:
    *  - An image processor might return decoded pixel data size.
    *
-   * @return memory usage in KB, or {@code 0.0f} if not implemented/unavailable
+   * @return memory usage in bytes, or {@code 0} if not implemented/unavailable
    */
-  public float getMemoryUsageKb() {
-    return 0.f;
+  public long getMemoryUsageBytes() {
+    return 0;
   }
 
   /**

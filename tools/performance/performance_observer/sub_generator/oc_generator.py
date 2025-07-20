@@ -227,7 +227,7 @@ def generate_objc_converter(entry_mapping, file_imports):
 
 # Tool Functions
 def process_primary_type(type_name):
-    if type_name == 'integer' or type_name == 'number' or type_name == 'timestamp':
+    if type_name == 'integer' or type_name == 'long' or type_name == 'number' or type_name == 'timestamp':
         default_value = '@(-1)'
         prop_type = 'NSNumber*'
     elif type_name == 'string':

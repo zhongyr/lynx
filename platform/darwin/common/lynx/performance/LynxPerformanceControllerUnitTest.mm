@@ -103,13 +103,15 @@ class MockPerformanceSender : public performance::PerformanceEventSender {
   NSString *entryName = @"memory";
   NSString *entryType = @"memory";
   NSString *category = @"test";
-  float sizeKb = 1024;
+  float sizeBytes = 1024;
 
   // check allocateMemory
   [self
       asyncVerify:^{
         [self.controller allocateMemory:^LynxMemoryRecord * {
-          return [[LynxMemoryRecord alloc] initWithCategory:category sizeKb:sizeKb detail:nil];
+          return [[LynxMemoryRecord alloc] initWithCategory:category
+                                                  sizeBytes:sizeBytes
+                                                     detail:nil];
         }];
       }
       check:^(LynxPerformanceEntry *entry) {
@@ -120,7 +122,9 @@ class MockPerformanceSender : public performance::PerformanceEventSender {
   [self
       asyncVerify:^{
         [self.controller deallocateMemory:^LynxMemoryRecord * {
-          return [[LynxMemoryRecord alloc] initWithCategory:category sizeKb:sizeKb detail:nil];
+          return [[LynxMemoryRecord alloc] initWithCategory:category
+                                                  sizeBytes:sizeBytes
+                                                     detail:nil];
         }];
       }
       check:^(LynxPerformanceEntry *entry) {
@@ -131,7 +135,9 @@ class MockPerformanceSender : public performance::PerformanceEventSender {
   [self
       asyncVerify:^{
         [self.controller updateMemoryUsage:^LynxMemoryRecord * {
-          return [[LynxMemoryRecord alloc] initWithCategory:category sizeKb:sizeKb detail:nil];
+          return [[LynxMemoryRecord alloc] initWithCategory:category
+                                                  sizeBytes:sizeBytes
+                                                     detail:nil];
         }];
       }
       check:^(LynxPerformanceEntry *entry) {

@@ -49,7 +49,7 @@ class MockTasmDelegate : public TemplateAssembler::Delegate,
 
   tasm::LynxTemplateBundle GetTemplateBundle() { return std::move(bundle_); }
 
-  void ReportElementMemoryInfo(float mem_size_byte,
+  void ReportElementMemoryInfo(int64_t mem_size_bytes,
                                int element_count) override{};
   void OnRuntimeGC(
       std::unordered_map<std::string, std::string> mem_info) override{};

@@ -3692,7 +3692,7 @@ public class abstract com::lynx::tasm::behavior::ui::LynxBaseUI : com.lynx.tasm.
   public void com.lynx.tasm.behavior.ui.LynxBaseUI.recognizeGesturere();
   public CSSPropertySetter.UIPaintStyles com.lynx.tasm.behavior.ui.LynxBaseUI.getOrCreateUIPaintStyles();
   public void com.lynx.tasm.behavior.ui.LynxBaseUI.applyUIPaintStylesToTarget(LynxBaseUI targetUI);
-  public float com.lynx.tasm.behavior.ui.LynxBaseUI.getMemoryUsageKb();
+  public long com.lynx.tasm.behavior.ui.LynxBaseUI.getMemoryUsageBytes();
   public Map< String, String > com.lynx.tasm.behavior.ui.LynxBaseUI.getMemoryUsageDetail();
   public boolean com.lynx.tasm.behavior.ui.LynxBaseUI.getVisibility();
   public boolean com.lynx.tasm.behavior.ui.LynxBaseUI.isVisible();
@@ -6648,10 +6648,10 @@ public class com::lynx::devtoolwrapper::MemoryListener :  {
 }
 
 public class com::lynx::tasm::performance::memory::MemoryRecord :  {
-  public float com.lynx.tasm.performance.memory.MemoryRecord.mSizeKb mSizeKb;
+  public long com.lynx.tasm.performance.memory.MemoryRecord.mSizeBytes mSizeBytes;
   public int com.lynx.tasm.performance.memory.MemoryRecord.mInstanceCount mInstanceCount;
   public Map<String, String> com.lynx.tasm.performance.memory.MemoryRecord.mDetail mDetail;
-  public com.lynx.tasm.performance.memory.MemoryRecord.MemoryRecord(String category, float sizeKb, int instanceCount, Map< String, String > detail);
+  public com.lynx.tasm.performance.memory.MemoryRecord.MemoryRecord(String category, long sizeBytes, int instanceCount, Map< String, String > detail);
   public String com.lynx.tasm.performance.memory.MemoryRecord.getCategory();
 }
 
@@ -6660,14 +6660,14 @@ public interface com::lynx::devtoolwrapper::MemoryListener::MemoryReporter {
 }
 
 public class com::lynx::tasm::performance::performanceobserver::MemoryUsageEntry : com.lynx.tasm.performance.performanceobserver.PerformanceEntry {
-  public double com.lynx.tasm.performance.performanceobserver.MemoryUsageEntry.sizeKb sizeKb;
+  public long com.lynx.tasm.performance.performanceobserver.MemoryUsageEntry.sizeBytes sizeBytes;
   public HashMap<String, MemoryUsageItem> com.lynx.tasm.performance.performanceobserver.MemoryUsageEntry.detail detail;
   public com.lynx.tasm.performance.performanceobserver.MemoryUsageEntry.MemoryUsageEntry(HashMap< String, Object > props);
 }
 
 public class com::lynx::tasm::performance::performanceobserver::MemoryUsageItem :  {
   public String com.lynx.tasm.performance.performanceobserver.MemoryUsageItem.category category;
-  public double com.lynx.tasm.performance.performanceobserver.MemoryUsageItem.sizeKb sizeKb;
+  public long com.lynx.tasm.performance.performanceobserver.MemoryUsageItem.sizeBytes sizeBytes;
   public HashMap<String, String> com.lynx.tasm.performance.performanceobserver.MemoryUsageItem.detail detail;
   public com.lynx.tasm.performance.performanceobserver.MemoryUsageItem.MemoryUsageItem(HashMap< String, Object > props);
 }

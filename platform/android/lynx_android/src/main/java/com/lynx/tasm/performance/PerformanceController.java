@@ -123,7 +123,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
       }
       MemoryRecord record = builder.build();
       nativeAllocateMemory(
-          mNativePerformanceActorPtr, record.getCategory(), record.mSizeKb, null, null);
+          mNativePerformanceActorPtr, record.getCategory(), record.mSizeBytes, null, null);
     });
   }
 
@@ -141,7 +141,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
       }
       MemoryRecord record = builder.build();
       nativeDeallocateMemory(
-          mNativePerformanceActorPtr, record.getCategory(), record.mSizeKb, null, null);
+          mNativePerformanceActorPtr, record.getCategory(), record.mSizeBytes, null, null);
     });
   }
 
@@ -158,7 +158,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
         return;
       }
       MemoryRecord record = builder.build();
-      nativeUpdateMemoryUsage(mNativePerformanceActorPtr, record.getCategory(), record.mSizeKb,
+      nativeUpdateMemoryUsage(mNativePerformanceActorPtr, record.getCategory(), record.mSizeBytes,
           record.mInstanceCount, null);
     });
   }
@@ -177,7 +177,7 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
         if (record == null) {
           continue;
         }
-        nativeUpdateMemoryUsage(mNativePerformanceActorPtr, record.getCategory(), record.mSizeKb,
+        nativeUpdateMemoryUsage(mNativePerformanceActorPtr, record.getCategory(), record.mSizeBytes,
             record.mInstanceCount, record.mDetail);
       }
     });
@@ -345,11 +345,11 @@ public class PerformanceController implements IMemoryMonitor, ITimingCollector {
 
   // Native API
   private native void nativeAllocateMemory(
-      long nativePtr, String category, float sizeKb, String detailKey, String detailValue);
+      long nativePtr, String category, long sizeBytes, String detailKey, String detailValue);
   private native void nativeDeallocateMemory(
-      long nativePtr, String category, float sizeKb, String detailKey, String detailValue);
-  private native void nativeUpdateMemoryUsage(
-      long nativePtr, String category, float sizeKb, int instanceCount, Map<String, String> detail);
+      long nativePtr, String category, long sizeBytes, String detailKey, String detailValue);
+  private native void nativeUpdateMemoryUsage(long nativePtr, String category, long sizeBytes,
+      int instanceCount, Map<String, String> detail);
   private native void nativeSetTiming(
       long nativePtr, String key, long usTimestamp, String pipelineID);
   private native void nativeSetPaintEndTiming(

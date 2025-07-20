@@ -55,11 +55,12 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
   [self ActAsync:^(const std::unique_ptr<performance::PerformanceController>& controller) {
     LynxMemoryRecord* record = recordBuilder();
     if (record.detail) {
-      controller->GetMemoryMonitor().AllocateMemory(performance::MemoryRecord(
-          [record.category UTF8String], record.sizeKb, ConvertNSDictToUnorderedMap(record.detail)));
+      controller->GetMemoryMonitor().AllocateMemory(
+          performance::MemoryRecord([record.category UTF8String], record.sizeBytes,
+                                    ConvertNSDictToUnorderedMap(record.detail)));
     } else {
       controller->GetMemoryMonitor().AllocateMemory(
-          performance::MemoryRecord([record.category UTF8String], record.sizeKb));
+          performance::MemoryRecord([record.category UTF8String], record.sizeBytes));
     }
   }];
 }
@@ -71,11 +72,12 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
   [self ActAsync:^(const std::unique_ptr<performance::PerformanceController>& controller) {
     LynxMemoryRecord* record = recordBuilder();
     if (record.detail) {
-      controller->GetMemoryMonitor().DeallocateMemory(performance::MemoryRecord(
-          [record.category UTF8String], record.sizeKb, ConvertNSDictToUnorderedMap(record.detail)));
+      controller->GetMemoryMonitor().DeallocateMemory(
+          performance::MemoryRecord([record.category UTF8String], record.sizeBytes,
+                                    ConvertNSDictToUnorderedMap(record.detail)));
     } else {
       controller->GetMemoryMonitor().DeallocateMemory(
-          performance::MemoryRecord([record.category UTF8String], record.sizeKb));
+          performance::MemoryRecord([record.category UTF8String], record.sizeBytes));
     }
   }];
 }
@@ -88,7 +90,7 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
     LynxMemoryRecord* record = recordBuilder();
     if (record) {
       controller->GetMemoryMonitor().UpdateMemoryUsage(performance::MemoryRecord(
-          [record.category UTF8String], record.sizeKb, record.instanceCount,
+          [record.category UTF8String], record.sizeBytes, record.instanceCount,
           ConvertNSDictToUnorderedMap(record.detail)));
     }
   }];
@@ -102,7 +104,7 @@ std::unique_ptr<std::unordered_map<std::string, std::string>> ConvertNSDictToUno
     [records enumerateKeysAndObjectsUsingBlock:^(
                  NSString* _Nonnull key, LynxMemoryRecord* _Nonnull record, BOOL* _Nonnull stop) {
       controller->GetMemoryMonitor().UpdateMemoryUsage(performance::MemoryRecord(
-          [record.category UTF8String], record.sizeKb, record.instanceCount,
+          [record.category UTF8String], record.sizeBytes, record.instanceCount,
           ConvertNSDictToUnorderedMap(record.detail)));
     }];
   }];

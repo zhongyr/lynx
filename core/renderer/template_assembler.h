@@ -158,7 +158,7 @@ class TemplateAssembler final : public TemplateEntryHolder,
                                  const std::string& fallback_url) = 0;
     virtual void SetTiming(tasm::Timing timing) = 0;
 
-    virtual void ReportElementMemoryInfo(float mem_size_byte,
+    virtual void ReportElementMemoryInfo(int64_t mem_size_bytes,
                                          int element_count){};
 
     virtual void BindPipelineIDWithTimingFlag(

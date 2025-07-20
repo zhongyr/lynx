@@ -18,15 +18,15 @@
 #include "platform/android/lynx_android/src/main/jni/gen/PerformanceController_jni.h"
 #include "platform/android/lynx_android/src/main/jni/gen/PerformanceController_register_jni.h"
 
-static void AllocateMemory(JNIEnv* env, jobject jcaller, jlong nativePtr,
-                           jstring j_category, jfloat j_sizeKb,
+static void AllocateMemory(JNIEnv* env, jobject jcaller, jlong j_native_ptr,
+                           jstring j_category, jlong j_size_bytes,
                            jstring j_detail_key, jstring j_detail_value) {
-  if (nativePtr == 0) {
+  if (j_native_ptr == 0) {
     return;
   }
   auto* wrapper =
       reinterpret_cast<lynx::tasm::performance::PerformanceControllerAndroid*>(
-          nativePtr);
+          j_native_ptr);
   auto& nativeActorPtr = wrapper->GetActor();
   if (!nativeActorPtr) {
     return;
@@ -47,23 +47,23 @@ static void AllocateMemory(JNIEnv* env, jobject jcaller, jlong nativePtr,
     detail_ptr->emplace(detail_key, detail_value);
   }
   nativeActorPtr->Act(
-      [category = std::move(category), sizeKb = j_sizeKb,
+      [category = std::move(category), size_bytes = j_size_bytes,
        captured_detail = std::move(detail_ptr)](auto& performance) mutable {
         performance->GetMemoryMonitor().AllocateMemory(
-            lynx::tasm::performance::MemoryRecord(category, sizeKb,
+            lynx::tasm::performance::MemoryRecord(category, size_bytes,
                                                   std::move(captured_detail)));
       });
 }
 
-static void DeallocateMemory(JNIEnv* env, jobject jcaller, jlong nativePtr,
-                             jstring j_category, jfloat j_sizeKb,
+static void DeallocateMemory(JNIEnv* env, jobject jcaller, jlong j_native_ptr,
+                             jstring j_category, jlong j_size_bytes,
                              jstring j_detail_key, jstring j_detail_value) {
-  if (nativePtr == 0) {
+  if (j_native_ptr == 0) {
     return;
   }
   auto* wrapper =
       reinterpret_cast<lynx::tasm::performance::PerformanceControllerAndroid*>(
-          nativePtr);
+          j_native_ptr);
   auto& nativeActorPtr = wrapper->GetActor();
   if (!nativeActorPtr) {
     return;
@@ -84,23 +84,23 @@ static void DeallocateMemory(JNIEnv* env, jobject jcaller, jlong nativePtr,
     detail_ptr->emplace(detail_key, detail_value);
   }
   nativeActorPtr->Act(
-      [category = std::move(category), sizeKb = j_sizeKb,
+      [category = std::move(category), size_bytes = j_size_bytes,
        captured_detail = std::move(detail_ptr)](auto& performance) mutable {
         performance->GetMemoryMonitor().DeallocateMemory(
-            lynx::tasm::performance::MemoryRecord(category, sizeKb,
+            lynx::tasm::performance::MemoryRecord(category, size_bytes,
                                                   std::move(captured_detail)));
       });
 }
 
-static void UpdateMemoryUsage(JNIEnv* env, jobject jcaller, jlong nativePtr,
-                              jstring j_category, jfloat j_sizeKb,
-                              jint j_instanceCount, jobject j_detail_map) {
-  if (nativePtr == 0) {
+static void UpdateMemoryUsage(JNIEnv* env, jobject jcaller, jlong j_native_ptr,
+                              jstring j_category, jlong j_size_bytes,
+                              jint j_instance_count, jobject j_detail_map) {
+  if (j_native_ptr == 0) {
     return;
   }
   auto* wrapper =
       reinterpret_cast<lynx::tasm::performance::PerformanceControllerAndroid*>(
-          nativePtr);
+          j_native_ptr);
   auto& nativeActorPtr = wrapper->GetActor();
   if (!nativeActorPtr) {
     return;
@@ -111,23 +111,24 @@ static void UpdateMemoryUsage(JNIEnv* env, jobject jcaller, jlong nativePtr,
       lynx::base::android::JNIConvertHelper::
           ConvertJavaStringHashMapToSTLStringMap(env, j_detail_map);
   nativeActorPtr->Act(
-      [category = std::move(category), size_kb = j_sizeKb,
-       instance_count = j_instanceCount,
+      [category = std::move(category), size_bytes = j_size_bytes,
+       instance_count = j_instance_count,
        captured_detail = std::move(detail_ptr)](auto& performance) mutable {
         performance->GetMemoryMonitor().UpdateMemoryUsage(
-            lynx::tasm::performance::MemoryRecord(
-                category, size_kb, instance_count, std::move(captured_detail)));
+            lynx::tasm::performance::MemoryRecord(category, size_bytes,
+                                                  instance_count,
+                                                  std::move(captured_detail)));
       });
 }
 
-static void SetTiming(JNIEnv* env, jobject jcaller, jlong nativePtr,
-                      jstring key, jlong usTimestamp, jstring pipelineID) {
-  if (nativePtr == 0) {
+static void SetTiming(JNIEnv* env, jobject jcaller, jlong j_native_ptr,
+                      jstring key, jlong us_timestamp, jstring j_pipeline_id) {
+  if (j_native_ptr == 0) {
     return;
   }
   auto* wrapper =
       reinterpret_cast<lynx::tasm::performance::PerformanceControllerAndroid*>(
-          nativePtr);
+          j_native_ptr);
   auto& nativeActorPtr = wrapper->GetActor();
   if (!nativeActorPtr) {
     return;
@@ -135,24 +136,25 @@ static void SetTiming(JNIEnv* env, jobject jcaller, jlong nativePtr,
   auto timing_key = static_cast<lynx::tasm::timing::TimestampKey>(
       lynx::base::android::JNIConvertHelper::ConvertToString(env, key));
   auto pipeline_id = static_cast<lynx::tasm::PipelineID>(
-      lynx::base::android::JNIConvertHelper::ConvertToString(env, pipelineID));
-  nativeActorPtr->Act([timing_key = std::move(timing_key), usTimestamp,
+      lynx::base::android::JNIConvertHelper::ConvertToString(env,
+                                                             j_pipeline_id));
+  nativeActorPtr->Act([timing_key = std::move(timing_key), us_timestamp,
                        pipeline_id =
                            std::move(pipeline_id)](auto& controller) mutable {
     controller->GetTimingHandler().SetTiming(
-        timing_key, static_cast<lynx::tasm::timing::TimestampUs>(usTimestamp),
+        timing_key, static_cast<lynx::tasm::timing::TimestampUs>(us_timestamp),
         pipeline_id);
   });
 }
 
-static void SetPaintEndTiming(JNIEnv* env, jobject jcaller, jlong nativePtr,
+static void SetPaintEndTiming(JNIEnv* env, jobject jcaller, jlong j_native_ptr,
                               jlong j_us_timestamp, jobject j_pipeline_ids) {
-  if (nativePtr == 0) {
+  if (j_native_ptr == 0) {
     return;
   }
   auto* wrapper =
       reinterpret_cast<lynx::tasm::performance::PerformanceControllerAndroid*>(
-          nativePtr);
+          j_native_ptr);
   auto& nativeActorPtr = wrapper->GetActor();
   if (!nativeActorPtr) {
     return;

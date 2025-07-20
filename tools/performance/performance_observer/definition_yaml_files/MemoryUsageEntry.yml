@@ -5,8 +5,8 @@ MemoryUsageEntry:
     - $ref: 'PerformanceEntry.yml#/PerformanceEntry'
     - type: object
       properties:
-        sizeKb:
-          type: number
+        sizeBytes:
+          type: long
         detail:
           type: map
           keyType: string

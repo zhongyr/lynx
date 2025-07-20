@@ -1362,8 +1362,8 @@ void ElementManager::OnPatchFinish(std::shared_ptr<PipelineOptions> &option,
   if (!option->enable_unified_pixel_pipeline && delegate_ &&
       tasm::performance::MemoryMonitor::Enable()) {
     int32_t count = static_cast<int32_t>(node_manager()->NodeCount());
-    float mem_size_byte = node_manager()->GetTotalMemoryUsage();
-    delegate_->ReportElementMemoryInfo(mem_size_byte, count);
+    int64_t mem_size_bytes = node_manager()->GetTotalMemoryUsage();
+    delegate_->ReportElementMemoryInfo(mem_size_bytes, count);
   }
 }
 

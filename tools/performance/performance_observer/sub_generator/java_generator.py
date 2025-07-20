@@ -216,6 +216,9 @@ def process_primary_type(type_name):
     elif type_name == 'number' or type_name == 'timestamp':
         default_value = '-1.0'
         prop_type = 'double'
+    elif type_name == 'long':
+        default_value = '-1'
+        prop_type = 'long'
     elif type_name == 'boolean':
         default_value = 'false'
         prop_type = 'boolean'

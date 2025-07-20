@@ -2523,10 +2523,10 @@ public protocol LynxMemoryMonitorProtocol-p : <NSObject> {
 
 public class LynxMemoryRecord : NSObject {
   public NSString* LynxMemoryRecord::category category;
-  public float LynxMemoryRecord::sizeKb sizeKb;
+  public int64_t LynxMemoryRecord::sizeBytes sizeBytes;
   public int LynxMemoryRecord::instanceCount instanceCount;
   public NSDictionary<NSString*, NSString*>* LynxMemoryRecord::detail detail;
-  public instancetype LynxMemoryRecord::initWithCategory:sizeKb:detail:(NSString *category,[sizeKb] float sizeKb,[detail] NSDictionary< NSString *, NSString * > *_Nullable detail);
+  public instancetype LynxMemoryRecord::initWithCategory:sizeBytes:detail:(NSString *category,[sizeBytes] int64_t sizeBytes,[detail] NSDictionary< NSString *, NSString * > *_Nullable detail);
 }
 
 public protocol LynxMemoryReporter-p : <NSObject> {
@@ -2534,14 +2534,14 @@ public protocol LynxMemoryReporter-p : <NSObject> {
 }
 
 public class LynxMemoryUsageEntry : LynxPerformanceEntry {
-  public NSNumber* LynxMemoryUsageEntry::sizeKb sizeKb;
+  public NSNumber* LynxMemoryUsageEntry::sizeBytes sizeBytes;
   public NSDictionary<NSString*, LynxMemoryUsageItem*>* LynxMemoryUsageEntry::detail detail;
   public instancetype LynxMemoryUsageEntry::initWithDictionary:(NSDictionary *dictionary);
 }
 
 public class LynxMemoryUsageItem : NSObject {
   public NSString* LynxMemoryUsageItem::category category;
-  public NSNumber* LynxMemoryUsageItem::sizeKb sizeKb;
+  public NSNumber* LynxMemoryUsageItem::sizeBytes sizeBytes;
   public NSDictionary<NSString*, NSString*>* LynxMemoryUsageItem::detail detail;
   public instancetype LynxMemoryUsageItem::initWithDictionary:(NSDictionary *dictionary);
 }

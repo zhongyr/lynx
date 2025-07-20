@@ -13,7 +13,7 @@ public class MemoryUsageItemTest {
   public void testConstructorWithFullProps() {
     HashMap<String, Object> props = new HashMap<>();
     props.put("category", "JS");
-    props.put("sizeKb", 1024.5);
+    props.put("sizeBytes", 1024L);
     HashMap<String, String> detail = new HashMap<>();
     detail.put("module", "core");
     props.put("detail", detail);
@@ -21,7 +21,7 @@ public class MemoryUsageItemTest {
     MemoryUsageItem item = new MemoryUsageItem(props);
 
     assertEquals("JS", item.category);
-    assertEquals(1024.5, item.sizeKb, 0.01);
+    assertEquals(1024L, item.sizeBytes);
     assertEquals("core", item.detail.get("module"));
   }
 
@@ -33,7 +33,7 @@ public class MemoryUsageItemTest {
     MemoryUsageItem item = new MemoryUsageItem(props);
 
     assertEquals("", item.category);
-    assertEquals(-1.0, item.sizeKb, 0.01);
+    assertEquals(-1, item.sizeBytes);
     assertTrue(item.detail.isEmpty());
   }
 }

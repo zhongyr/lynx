@@ -1187,14 +1187,14 @@ public class LynxUIOwner {
       if (tag == null) {
         continue;
       }
-      float objSizeKb = baseUI.getMemoryUsageKb();
+      long objSizeBytes = baseUI.getMemoryUsageBytes();
       MemoryRecord record = records.get(tag);
       if (record == null) {
-        record = new MemoryRecord(tag, 0.f, 0, null);
+        record = new MemoryRecord(tag, 0, 0, null);
         records.put(tag, record);
       }
       record.mInstanceCount++;
-      record.mSizeKb += objSizeKb;
+      record.mSizeBytes += objSizeBytes;
       Map<String, String> detail = baseUI.getMemoryUsageDetail();
 
       if (detail != null) {

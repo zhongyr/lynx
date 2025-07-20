@@ -57,9 +57,8 @@ class MemoryMonitor {
   // collection.
   static bool Enable();
 
-  // Checks if memory monitoring is enabled.
-  // Modules can call this before collecting data to avoid unnecessary
-  // collection.
+  // Forces memory monitoring to be enabled or disabled, overriding other
+  // settings.
   static void SetForceEnable(bool force_enable);
 
   // The threshold for memory increase and decrease that triggers collection, in
@@ -87,6 +86,7 @@ class MemoryMonitor {
   int32_t instance_id_ = report::kUninitializedInstanceId;
   PerformanceEventSender* sender_;
   std::unordered_map<MemoryCategory, MemoryRecord> memory_records_;
+  int64_t last_reported_size_bytes_ = 0;
 };
 
 }  // namespace performance

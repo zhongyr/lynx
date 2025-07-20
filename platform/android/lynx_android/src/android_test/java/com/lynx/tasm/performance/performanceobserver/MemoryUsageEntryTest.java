@@ -22,10 +22,10 @@ public class MemoryUsageEntryTest {
     HashMap<String, Object> mockDetail = new HashMap<>();
     HashMap<String, Object> mockItem = new HashMap<>();
     mockItem.put("category", "heap");
-    mockItem.put("sizeKb", 1024.0);
+    mockItem.put("sizeBytes", 1024L);
     mockDetail.put("item1", mockItem);
 
-    when(props.get("sizeKb")).thenReturn(2048.0);
+    when(props.get("sizeBytes")).thenReturn(2048L);
     when(props.get("detail")).thenReturn(mockDetail);
   }
 
@@ -33,7 +33,7 @@ public class MemoryUsageEntryTest {
   public void testConstructorWithValidValues() {
     MemoryUsageEntry entry = new MemoryUsageEntry(props);
 
-    assertEquals(2048.0, entry.sizeKb, 0.001);
+    assertEquals(2048L, entry.sizeBytes);
     assertFalse(entry.detail.isEmpty());
     assertEquals(1, entry.detail.size());
     assertTrue(entry.detail.containsKey("item1"));
@@ -41,12 +41,12 @@ public class MemoryUsageEntryTest {
 
   @Test
   public void testDefaultValuesWhenFieldsMissing() {
-    when(props.get("sizeKb")).thenReturn(null);
+    when(props.get("sizeBytes")).thenReturn(null);
     when(props.get("detail")).thenReturn(null);
 
     MemoryUsageEntry entry = new MemoryUsageEntry(props);
 
-    assertEquals(-1.0, entry.sizeKb, 0.001);
+    assertEquals(-1, entry.sizeBytes);
     assertTrue(entry.detail.isEmpty());
   }
 
@@ -67,6 +67,6 @@ public class MemoryUsageEntryTest {
 
     assertNotNull(item);
     assertEquals("heap", item.category);
-    assertEquals(1024.0, item.sizeKb, 0.001);
+    assertEquals(1024L, item.sizeBytes);
   }
 }

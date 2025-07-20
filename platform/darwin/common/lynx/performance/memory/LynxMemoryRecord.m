@@ -7,11 +7,11 @@
 @implementation LynxMemoryRecord
 
 - (instancetype)initWithCategory:(NSString*)category
-                          sizeKb:(float)sizeKb
+                       sizeBytes:(int64_t)sizeBytes
                           detail:(NSDictionary<NSString*, NSString*>* _Nullable)detail {
   if ([self init]) {
     _category = category;
-    _sizeKb = sizeKb;
+    _sizeBytes = sizeBytes;
     _detail = detail;
   }
   return self;

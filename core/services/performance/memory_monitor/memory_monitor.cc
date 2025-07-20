@@ -4,6 +4,7 @@
 
 #include "core/services/performance/memory_monitor/memory_monitor.h"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -16,12 +17,6 @@
 namespace lynx {
 namespace tasm {
 namespace performance {
-
-// Bit shift position for memory threshold in the mode register
-constexpr uint32_t kMemThresholdShift = 24;
-
-// Maximum allowed value for memory threshold (8-bit unsigned max)
-constexpr uint32_t kMaxMemThreshold = std::numeric_limits<uint8_t>::max();
 
 #if ENABLE_TRACE_PERFETTO
 inline std::string ValueToJsonString(const pub::Value& value) {
@@ -73,10 +68,10 @@ inline MemoryRecord BuildMemoryRecord(
     const rapidjson::Value& obj,
     std::unordered_map<std::string, std::string> info) {
   MemoryRecord record;
-  // size_kb
-  const rapidjson::Value& heapsize_after_v = obj["heapsize_after"];
-  if (heapsize_after_v.IsNumber()) {
-    record.size_kb_ = heapsize_after_v.GetUint();
+  // size_bytes
+  const rapidjson::Value& heap_size_kb_after_v = obj["heapsize_after"];
+  if (heap_size_kb_after_v.IsNumber()) {
+    record.size_bytes_ = heap_size_kb_after_v.GetUint() * 1024;
   }
   // category
   auto category_it = info.find(kCategory);
@@ -113,10 +108,10 @@ inline MemoryRecord BuildMemoryRecord(
 }
 
 enum BoolValue : uint8_t { Unset = 0, False = 1, True = 2 };
-static std::atomic<BoolValue> g_force_enable_{
-    Unset};  // Highest priority setting
-static std::atomic<BoolValue> g_env_enable_{
-    Unset};  // Environment-based setting
+// Highest priority setting
+static std::atomic<BoolValue> g_force_enable_{Unset};
+// Environment-based setting
+static std::atomic<BoolValue> g_env_enable_{Unset};
 
 bool MemoryMonitor::Enable() {
   // [Priority 1] Check force-enable setting first (explicit override)
@@ -151,7 +146,9 @@ void MemoryMonitor::SetForceEnable(bool enable) {
 }
 
 uint32_t MemoryMonitor::MemoryChangeThresholdMb() {
-  return LynxEnv::GetInstance().GetMemoryChangeThresholdMb();
+  static uint32_t threshold_mb =
+      LynxEnv::GetInstance().GetMemoryChangeThresholdMb();
+  return threshold_mb;
 }
 
 uint32_t MemoryMonitor::ScriptingEngineMode() {
@@ -161,12 +158,16 @@ uint32_t MemoryMonitor::ScriptingEngineMode() {
     return mode;
   }
 
+  // Maximum allowed value for memory threshold (8-bit unsigned max)
+  constexpr uint32_t kMaxMemThreshold = std::numeric_limits<uint8_t>::max();
   uint32_t mem_increment_threshold_mb = MemoryChangeThresholdMb();
   // Cap memory threshold at 8-bit maximum (255 MB)
   if (mem_increment_threshold_mb > kMaxMemThreshold) {
     mem_increment_threshold_mb = kMaxMemThreshold;
   }
 
+  // Bit shift position for memory threshold in the mode register
+  constexpr uint32_t kMemThresholdShift = 24;
   /*
    * Mode register bit layout:
    *   Bits [31:24] - Memory increment threshold (MB)
@@ -215,7 +216,7 @@ void MemoryMonitor::UpdateMemoryUsage(MemoryRecord&& record) {
   }
   auto it = memory_records_.find(record.category_);
   if (it != memory_records_.end()) {
-    if (it->second.size_kb_ == record.size_kb_) {
+    if (it->second.size_bytes_ == record.size_bytes_) {
       // No change in memory usage, no need to report.
       return;
     }
@@ -268,15 +269,15 @@ void MemoryMonitor::ReportMemory() {
   auto entry_map = factory->CreateMap();
   entry_map->PushStringToMap(kPerformanceEventType, kMemoryEntryType);
   entry_map->PushStringToMap(kPerformanceEventName, kMemoryEntryType);
-  float sizeKb = 0.f;
+  int64_t size_bytes = 0;
   if (!memory_records_.empty()) {
     auto detail = sender_->GetValueFactory()->CreateMap();
     for (const auto& [category, record] : memory_records_) {
       auto record_map = sender_->GetValueFactory()->CreateMap();
       record_map->PushStringToMap(kCategory, record.category_);
-      record_map->PushDoubleToMap(kSizeKb, record.size_kb_);
+      record_map->PushInt64ToMap(kSizeBytes, record.size_bytes_);
       record_map->PushInt32ToMap(kInstanceCount, record.instance_count_);
-      sizeKb += record.size_kb_;
+      size_bytes += record.size_bytes_;
       if (record.detail_) {
         auto map = sender_->GetValueFactory()->CreateMap();
         for (const auto& [key, value] : *(record.detail_)) {
@@ -288,12 +289,23 @@ void MemoryMonitor::ReportMemory() {
     }
     entry_map->PushValueToMap(kDetail, std::move(detail));
   }
+  // Throttle reporting: only report if memory change exceeds the threshold.
+  static int64_t memory_report_threshold_bytes =
+      static_cast<int64_t>(MemoryChangeThresholdMb()) * 1024 * 1024;
+  if (std::abs(size_bytes - last_reported_size_bytes_) <
+      memory_report_threshold_bytes) {
+    return;
+  }
+  // Update the last reported size for the next check.
+  last_reported_size_bytes_ = size_bytes;
   TRACE_COUNTER(
       LYNX_TRACE_CATEGORY,
-      (std::string("memory_") + std::to_string(instance_id_)).c_str(), sizeKb,
+      (std::string("memory_") + std::to_string(instance_id_)).c_str(),
+      size_bytes,
       [&entry_map, instance_id = instance_id_,
-       sizeKb](perfetto::EventContext ctx) {
-        ctx.event()->add_debug_annotations(kSizeKb, std::to_string(sizeKb));
+       size_bytes](perfetto::EventContext ctx) {
+        ctx.event()->add_debug_annotations(kSizeBytes,
+                                           std::to_string(size_bytes));
         auto detail = entry_map->GetValueForKey(kDetail);
         detail->ForeachMap([debug = ctx.event()](const pub::Value& key,
                                                  const pub::Value& val) {
@@ -316,7 +328,7 @@ void MemoryMonitor::ReportMemory() {
                                            std::to_string(instance_id));
       });
 
-  entry_map->PushDoubleToMap(kSizeKb, sizeKb);
+  entry_map->PushInt64ToMap(kSizeBytes, size_bytes);
   sender_->OnPerformanceEvent(std::move(entry_map), kEventTypePlatform);
 }
 

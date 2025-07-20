@@ -291,7 +291,7 @@ class ElementManager : public ElementContextDelegate {
         const tasm::PipelineID &pipeline_id,
         const tasm::timing::TimingFlag &timing_flag) = 0;
 
-    virtual void ReportElementMemoryInfo(float mem_size_byte,
+    virtual void ReportElementMemoryInfo(int64_t mem_size_bytes,
                                          int element_count) = 0;
   };
 

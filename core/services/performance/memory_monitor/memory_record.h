@@ -16,11 +16,9 @@ namespace performance {
 
 using MemoryCategory = std::string;
 
-inline constexpr float KB = 1024.f;
-
 inline constexpr char kMemoryEntryType[] = "memory";
 inline constexpr char kCategory[] = "category";
-inline constexpr char kSizeKb[] = "sizeKb";
+inline constexpr char kSizeBytes[] = "size_bytes";
 inline constexpr char kInstanceCount[] = "instanceCount";
 inline constexpr char kDetail[] = "detail";
 
@@ -38,8 +36,8 @@ struct MemoryRecord {
   // kMemoryCategoryTasmElement, etc.
   MemoryCategory category_;
 
-  // Memory size, required attribute, in KB.
-  float size_kb_ = 0.0f;
+  // Memory size in bytes.
+  int64_t size_bytes_ = 0;
 
   // The number of instances of the category, default is one.
   int32_t instance_count_ = 1;
@@ -49,22 +47,22 @@ struct MemoryRecord {
   // image URL information.
   std::unique_ptr<std::unordered_map<std::string, std::string>> detail_;
 
-  // @brief Adds `other` to this MemoryRecord, updating `size_kb_` and merging
-  // `detail_`. `size_kb_` is always incremented. `detail_` is merged; `other`'s
-  // values overwrite existing keys. Null `detail_` are handled.
+  // @brief Adds `other` to this MemoryRecord, updating `size_bytes_` and
+  // merging `detail_`. `size_bytes_` is always incremented. `detail_` is
+  // merged; `other`'s values overwrite existing keys.
   MemoryRecord& operator+=(const MemoryRecord& other);
 
-  // Subtracts `other` from this MemoryRecord, updating `size_kb_` and removing
-  // keys from `detail_`. `size_kb_` is decremented. Keys in `other.detail_` are
-  // removed from `detail_`. Null `detail_` are handled.
+  // Subtracts `other` from this MemoryRecord, updating `size_bytes_` and
+  // removing keys from `detail_`. `size_bytes_` is decremented. Keys in
+  // `other.detail_` are removed from `detail_`. Null `detail_` are handled.
   MemoryRecord& operator-=(const MemoryRecord& other);
 
-  MemoryRecord(MemoryCategory category, float size_kb);
+  MemoryRecord(MemoryCategory category, int64_t size_bytes);
   MemoryRecord(
-      MemoryCategory category, float size_kb,
+      MemoryCategory category, int64_t size_bytes,
       std::unique_ptr<std::unordered_map<std::string, std::string>> detail);
   MemoryRecord(
-      MemoryCategory category, float size_kb, int32_t instance_count,
+      MemoryCategory category, int64_t size_bytes, int32_t instance_count,
       std::unique_ptr<std::unordered_map<std::string, std::string>> detail);
   MemoryRecord() = default;
   ~MemoryRecord() = default;

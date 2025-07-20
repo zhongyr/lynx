@@ -12,17 +12,17 @@ import java.util.Map;
 public class MemoryRecord {
   /** The category of the memory record. like "image", "vm", "element" etc. */
   private String mCategory;
-  /** The size of the memory record in kilobytes. */
-  public float mSizeKb;
+  /** The size of the memory record in bytes. */
+  public long mSizeBytes;
   /** The number of instances of the category. */
   public int mInstanceCount = 0;
   /** The detail information of the memory record. */
   public Map<String, String> mDetail = null;
 
   public MemoryRecord(
-      String category, float sizeKb, int instanceCount, Map<String, String> detail) {
+      String category, long sizeBytes, int instanceCount, Map<String, String> detail) {
     mCategory = category;
-    mSizeKb = sizeKb;
+    mSizeBytes = sizeBytes;
     mInstanceCount = instanceCount;
     mDetail = detail;
   }
