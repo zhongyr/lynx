@@ -265,8 +265,10 @@ void LynxTemplateRenderer::LoadTemplate(
   if (inspector_owner_ != nullptr) {
     inspector_owner_->OnLoadTemplate(url, source, template_data);
   }
-  shell_->LoadTemplate(url, source, pipeline_options, template_data, false,
-                       enable_recycle_template_bundle);
+  pipeline_options->enable_pre_painting = false;
+  pipeline_options->enable_recycle_template_bundle =
+      enable_recycle_template_bundle;
+  shell_->LoadTemplate(url, source, pipeline_options, template_data);
 }
 
 void LynxTemplateRenderer::ReloadTemplate(
@@ -282,8 +284,8 @@ void LynxTemplateRenderer::LoadTemplateBundle(
     const std::shared_ptr<lynx::tasm::PipelineOptions>& pipeline_options,
     const std::shared_ptr<lynx::tasm::TemplateData>& template_data,
     bool enable_dump_element_tree) {
-  shell_->LoadTemplateBundle(url, bundle, pipeline_options, template_data,
-                             false, enable_dump_element_tree);
+  pipeline_options->enable_pre_painting = false;
+  shell_->LoadTemplateBundle(url, bundle, pipeline_options, template_data);
 }
 
 std::shared_ptr<lynx::tasm::PipelineOptions>
@@ -992,7 +994,6 @@ napi_value LynxTemplateRenderer::LoadTemplateBundle(napi_env env,
   }
   obj->LoadTemplateBundle(std::move(url), bundle->GetBundle(), pipeline_options,
                           template_data, enable_dump_element_tree);
-
   return nullptr;
 }
 

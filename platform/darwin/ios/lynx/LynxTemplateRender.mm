@@ -615,9 +615,10 @@ LYNX_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder*)aDecoder)
         [self->_devTool attachDebugBridge:url];
         [self markTiming:lynx::tasm::timing::kFfiStart
               pipelineID:pipeline_options->pipeline_id.c_str()];
+        pipeline_options->enable_pre_painting = _enablePrePainting;
+        pipeline_options->enable_dump_element_tree = _enableDumpElement;
         self->shell_->LoadTemplateBundle(lynx::base::SafeStringConvert([url UTF8String]),
-                                         std::move(copied_bundle), pipeline_options, ptr,
-                                         _enablePrePainting, _enableDumpElement);
+                                         std::move(copied_bundle), pipeline_options, ptr);
         _hasStartedLoad = YES;
         [_lynxEngine registerToReuse];
       }
@@ -638,6 +639,10 @@ LYNX_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder*)aDecoder)
   [self markTiming:lynx::tasm::timing::kLoadBundleStart
         pipelineID:pipeline_options->pipeline_id.c_str()];
 
+  pipeline_options->enable_pre_painting = _enablePrePainting;
+  pipeline_options->enable_recycle_template_bundle = _enableRecycleTemplateBundle;
+  pipeline_options->enable_dump_element_tree = _enableDumpElement;
+
   __weak LynxTemplateRender* weakSelf = self;
   [self
       executeNativeOpSafely:^() {
@@ -657,8 +662,7 @@ LYNX_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder*)aDecoder)
           // if securityService is nil, Skip Security Check.
           [self markTiming:lynx::tasm::timing::kFfiStart
                 pipelineID:pipeline_options->pipeline_id.c_str()];
-          self->shell_->LoadTemplate([url UTF8String], ConvertNSBinary(tem), pipeline_options, ptr,
-                                     _enablePrePainting, _enableRecycleTemplateBundle);
+          self->shell_->LoadTemplate([url UTF8String], ConvertNSBinary(tem), pipeline_options, ptr);
           _hasStartedLoad = YES;
         } else {
           [self markTiming:lynx::tasm::timing::kVerifyTasmStart
@@ -674,7 +678,7 @@ LYNX_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder*)aDecoder)
             [self markTiming:lynx::tasm::timing::kFfiStart
                   pipelineID:pipeline_options->pipeline_id.c_str()];
             self->shell_->LoadTemplate([url UTF8String], ConvertNSBinary(tem), pipeline_options,
-                                       ptr, _enablePrePainting, _enableRecycleTemplateBundle);
+                                       ptr);
             _hasStartedLoad = YES;
           } else {
             [self reportError:ECLynxAppBundleVerifyInvalidSignature
