@@ -3,7 +3,7 @@
 The official app for testing and exploring Lynx. It is featured in Lynx Quick Start Guide at <https://lynxjs.org/guide/start/quick-start.html>.
 
 The dir consists of two main parts:
-1. Native mobile applications (Android/iOS) that provide the runtime environment
+1. Native mobile applications (Android/iOS/Harmony) that provide the runtime environment
 2. ReactLynx-based web applications that run inside the native apps
 
 ## Building the Native Apps
@@ -15,6 +15,9 @@ Contains the native Android apps that integrated Lynx. See [Android Build Guide]
 
 ### darwin/
 Contains the native iOS apps that integrated Lynx. See [iOS Build Guide](darwin/ios/README.md) for instructions.
+
+### harmony/
+Contains the native Harmony apps that integrated Lynx. See [Harmony Build Guide](harmony/README.md) for instructions.
 
 ## Developing the Bundled Lynx Projects
 

@@ -492,6 +492,40 @@ jobs:
           ./gradlew :app:assembleDebug
           popd
 
+  harmony-explorer-build:
+    runs-on: lynx-custom-dind
+    container:
+      image: ghcr.io/lynx-family/ubuntu24.04-harmony@sha256:601a0169922d3929a2f77cb0ceda89a3c76b168e1a95e2d419465b295ed2a1d6
+      options: --cap-add=NET_ADMIN
+      env:
+        ACCESS_KEY: ${{ secrets.TOS_AP_ACCESS_KEY }}
+        SECRET_KEY: ${{ secrets.TOS_AP_SECRET_KEY }}
+        ENDPOINT: ${{ secrets.TOS_AP_ENDPOINT }}
+        BUCKET_NAME: actions
+        REGION: ${{ secrets.TOS_AP_REGION }}
+      credentials:
+        username: lynx-family
+        password: ${{ secrets.GITHUB_TOKEN }}
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+        shell: bash
+    steps:
+      - name: Set MTU
+        run: |
+          sudo apt install --no-install-recommends -y iproute2 
+          sudo ip link set dev eth0 mtu 1450
+          echo "MTU set successfully"
+      - name: Download Source
+        uses: actions/checkout@v4.2.2
+        with:
+          path: lynx
+      - name: change permission
+        run: |
+          sudo chmod 777 /
+      - name: Build Explorer App
+        uses: ./lynx/.github/actions/harmony-explorer-build
+
   release-workflow:
     uses: ./.github/workflows/publish-release.yml
     with:

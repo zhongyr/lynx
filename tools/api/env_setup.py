@@ -22,7 +22,7 @@ FEATURE_COUNT_PACKAGE_DIR = os.path.join(LYNX_ROOT_PATH, "tools", "feature_count
 TOOLS_DIR_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 CSS_GENERATOR_PATH = os.path.join(TOOLS_DIR_PATH, "css_generator")
 PERFORMANCE_OBSERVER_PATH = os.path.join(
-    LYNX_ROOT_PATH, "tools", "performance", "performance_observer"
+    TOOLS_DIR_PATH, "performance", "performance_observer"
 )
 API_DOC_ANNOTATION = """/*
  * This file is generated, do not edit.
