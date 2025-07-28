@@ -108,6 +108,8 @@ bool TextElement::ProcessAttributeForLayoutInElement(const base::String& key,
                                                      bool is_reset) {
   if (key.IsEqual(kTextAttr)) {
     content_ = !is_reset ? ConvertContent(value) : base::String();
+    content_utf16_length_ =
+        GetUtf16SizeFromUtf8(content_.c_str(), content_.length());
     return true;
   }
 

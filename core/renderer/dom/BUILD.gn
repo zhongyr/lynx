@@ -116,6 +116,8 @@ unittest_set("dom_testset") {
     "testing/fiber_element_test.h",
     "testing/fiber_mock_painting_context.cc",
     "testing/fiber_mock_painting_context.h",
+    "testing/fiber_mock_text_layout.cc",
+    "testing/fiber_mock_text_layout.h",
     "testing/fiber_new_fixed_test.cc",
     "vdom/radon/radon_element_unittest.cc",
     "vdom/radon/radon_node_unittest.cc",

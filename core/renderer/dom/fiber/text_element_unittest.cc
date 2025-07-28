@@ -6,10 +6,16 @@
 
 #include "core/renderer/dom/fiber/text_element.h"
 
+#include <unordered_map>
+#include <variant>
+#include <vector>
+
 #include "core/base/threading/task_runner_manufactor.h"
 #include "core/renderer/dom/element_manager.h"
 #include "core/renderer/dom/fiber/image_element.h"
 #include "core/renderer/dom/fiber/raw_text_element.h"
+#include "core/renderer/dom/testing/fiber_element_test.h"
+#include "core/renderer/dom/testing/fiber_mock_text_layout.h"
 #include "core/renderer/tasm/react/testing/mock_painting_context.h"
 #include "core/shell/tasm_operation_queue.h"
 #include "core/shell/testing/mock_tasm_delegate.h"
@@ -19,42 +25,9 @@ namespace lynx {
 namespace tasm {
 namespace testing {
 
-static constexpr int32_t kWidth = 1080;
-static constexpr int32_t kHeight = 1920;
-static constexpr float kDefaultLayoutsUnitPerPx = 1.f;
-static constexpr double kDefaultPhysicalPixelsPerLayoutUnit = 1.f;
+class TextElementTest : public FiberElementTest {};
 
-class TextElementTest : public ::testing::Test {
- public:
-  TextElementTest() {}
-  ~TextElementTest() override {}
-  lynx::tasm::ElementManager* manager;
-  std::shared_ptr<::testing::NiceMock<test::MockTasmDelegate>> tasm_mediator;
-  std::shared_ptr<lynx::tasm::TemplateAssembler> tasm;
-
-  void SetUp() override {
-    LynxEnvConfig lynx_env_config(kWidth, kHeight, kDefaultLayoutsUnitPerPx,
-                                  kDefaultPhysicalPixelsPerLayoutUnit);
-    tasm_mediator = std::make_shared<
-        ::testing::NiceMock<lynx::tasm::test::MockTasmDelegate>>();
-    auto unique_manager = std::make_unique<lynx::tasm::ElementManager>(
-        std::make_unique<MockPaintingContext>(), tasm_mediator.get(),
-        lynx_env_config);
-    manager = unique_manager.get();
-    tasm = std::make_shared<lynx::tasm::TemplateAssembler>(
-        *tasm_mediator.get(), std::move(unique_manager), *tasm_mediator.get(),
-        0);
-
-    auto test_entry = std::make_shared<TemplateEntry>();
-    tasm->template_entries_.insert({"test_entry", test_entry});
-
-    auto config = std::make_shared<PageConfig>();
-    config->SetEnableZIndex(true);
-    manager->SetConfig(config);
-  }
-};
-
-TEST_F(TextElementTest, TestInlineText) {
+TEST_P(TextElementTest, TestInlineText) {
   auto config = std::make_shared<PageConfig>();
   config->SetEnableFiberArch(true);
   manager->SetConfig(config);
@@ -97,7 +70,7 @@ TEST_F(TextElementTest, TestInlineText) {
   EXPECT_TRUE(inline_text->GetTag() == "inline-text");
 }
 
-TEST_F(TextElementTest, TestXInlineText) {
+TEST_P(TextElementTest, TestXInlineText) {
   auto config = std::make_shared<PageConfig>();
   config->SetEnableFiberArch(true);
   manager->SetConfig(config);
@@ -140,7 +113,7 @@ TEST_F(TextElementTest, TestXInlineText) {
   EXPECT_EQ(inline_text->GetTag(), "x-inline-text");
 }
 
-TEST_F(TextElementTest, TestInlineTextAndImage) {
+TEST_P(TextElementTest, TestInlineTextAndImage) {
   auto config = std::make_shared<PageConfig>();
   config->SetEnableFiberArch(true);
   manager->SetConfig(config);
@@ -199,7 +172,7 @@ TEST_F(TextElementTest, TestInlineTextAndImage) {
   EXPECT_TRUE(inline_image->parent() == text.get());
 }
 
-TEST_F(TextElementTest, TestSetTextOverflow) {
+TEST_P(TextElementTest, TestSetTextOverflow) {
   auto config = std::make_shared<PageConfig>();
   config->SetEnableFiberArch(true);
   manager->SetConfig(config);
@@ -218,8 +191,12 @@ TEST_F(TextElementTest, TestSetTextOverflow) {
   text->SetAttribute("text-overflow", lepus::Value("ellipsis"));
 
   page->FlushActionsAsRoot();
+  auto painting_context =
+      static_cast<FiberMockPaintingContext*>(page->painting_context()->impl());
+  painting_context->Flush();
+
   auto* mock_text_painting_node_ =
-      static_cast<MockPaintingContext*>(
+      static_cast<FiberMockPaintingContext*>(
           page->painting_context()->platform_impl_.get())
           ->node_map_.at(text->impl_id())
           .get();
@@ -234,6 +211,7 @@ TEST_F(TextElementTest, TestSetTextOverflow) {
   text->SetAttribute("layout-only", lepus::Value("false"));
 
   text->FlushActionsAsRoot();
+  painting_context->Flush();
 
   EXPECT_TRUE(mock_text_painting_node_->props_.size() == 2);
   EXPECT_TRUE(
@@ -241,7 +219,7 @@ TEST_F(TextElementTest, TestSetTextOverflow) {
       lepus::Value(static_cast<int>(starlight::TextOverflowType::kClip)));
 }
 
-TEST_F(TextElementTest, TestConvertContent) {
+TEST_P(TextElementTest, TestConvertContent) {
   EXPECT_EQ(TextElement::ConvertContent(lepus::Value("test")),
             base::String("test"));
   EXPECT_EQ(TextElement::ConvertContent(lepus::Value((int32_t)1)),
@@ -256,7 +234,7 @@ TEST_F(TextElementTest, TestConvertContent) {
   EXPECT_EQ(TextElement::ConvertContent(lepus::Value()), base::String("null"));
 }
 
-TEST_F(TextElementTest, TestResolveStyleValue) {
+TEST_P(TextElementTest, TestResolveStyleValue) {
   auto config = std::make_shared<PageConfig>();
   config->SetEnableFiberArch(true);
   manager->SetConfig(config);
@@ -277,11 +255,11 @@ TEST_F(TextElementTest, TestResolveStyleValue) {
   text->SetRawInlineStyles(base::String("color:red;"));
 
   page->FlushActionsAsRoot();
+  auto painting_context =
+      static_cast<FiberMockPaintingContext*>(page->painting_context()->impl());
+  painting_context->Flush();
   auto* mock_text_painting_node_ =
-      static_cast<MockPaintingContext*>(
-          page->painting_context()->platform_impl_.get())
-          ->node_map_.at(text->impl_id())
-          .get();
+      painting_context->node_map_.at(text->impl_id()).get();
 
   EXPECT_EQ(mock_text_painting_node_->props_.size(), 0);
   std::string key("text-overflow");
@@ -300,6 +278,119 @@ TEST_F(TextElementTest, TestResolveStyleValue) {
   EXPECT_TRUE(text->property_bits_.Has(kPropertyIDColor));
   EXPECT_EQ(text->computed_css_style()->GetTextAttributes()->color, 4278190080);
 }
+
+TEST_P(TextElementTest, TestMeasureCase0) {
+  auto config = std::make_shared<PageConfig>();
+  config->SetEnableFiberArch(true);
+  manager->SetConfig(config);
+  manager->enable_layout_in_element_mode_ = true;
+  manager->OnUpdateViewport(720, 1, 1080, 1, true);
+
+  auto page = manager->CreateFiberPage("page", 11);
+
+  auto text = manager->CreateFiberText("text");
+
+  text->SetRawInlineStyles(base::String("color:red;"));
+  text->SetAttribute("text-maxline", lepus::Value(1));
+
+  auto raw_text = manager->CreateFiberRawText();
+  auto content = lepus::Value("text-content");
+  raw_text->SetText(content);
+
+  page->InsertNode(text);
+  text->InsertNode(raw_text);
+
+  auto options = std::make_shared<PipelineOptions>();
+  manager->OnPatchFinish(options, page.get());
+
+  auto painting_context =
+      static_cast<FiberMockPaintingContext*>(page->painting_context()->impl());
+  painting_context->Flush();
+
+  auto* mock_text_painting_node_ =
+      painting_context->node_map_.at(text->impl_id()).get();
+
+  EXPECT_EQ(mock_text_painting_node_->props_.size(), 0);
+  EXPECT_EQ(text->text_props_->text_max_line, 1);
+  EXPECT_TRUE(text->property_bits_.Has(kPropertyIDColor));
+  EXPECT_EQ(text->computed_css_style()->GetTextAttributes()->color, 4294901760);
+
+  auto* mock_text_layout =
+      static_cast<TextLayoutMock*>((painting_context->text_layout_impl_).get());
+
+  auto& mock_text_prop_array =
+      mock_text_layout->text_layout_results_.at(text->impl_id()).get()->props_;
+
+  // check prop array
+  // color
+  EXPECT_TRUE(std::get<int>(mock_text_prop_array[0]) == kTextPropColor);
+  EXPECT_TRUE(std::get<int>(mock_text_prop_array[1]) == -65536);
+
+  // text max-line
+  EXPECT_TRUE(std::get<int>(mock_text_prop_array[2]) == kTextPropTextMaxLine);
+  EXPECT_TRUE(std::get<int>(mock_text_prop_array[3]) == 1);
+
+  // text string
+  EXPECT_TRUE(std::get<int>(mock_text_prop_array[4]) == kPropTextString);
+  EXPECT_TRUE(std::get<std::string>(mock_text_prop_array[5]) == "text-content");
+
+  // inline-text
+  auto inline_text = manager->CreateFiberText("text");
+  //'测试' is 'testing', used for test the word's lenght in Chinese
+  inline_text->SetAttribute("text", lepus::Value("-inline-测试"));
+  inline_text->SetRawInlineStyles(base::String("color:blue;"));
+  text->InsertNode(inline_text);
+
+  manager->OnPatchFinish(options, page.get());
+  painting_context->Flush();
+
+  int para_content_utf16_length = raw_text->content_utf16_length();
+  int inline_content_utf16_length = inline_text->content_utf16_length();
+
+  EXPECT_TRUE(para_content_utf16_length == 12);
+  EXPECT_TRUE(inline_content_utf16_length == 10);
+
+  auto& inline_mock_text_prop_array =
+      mock_text_layout->text_layout_results_.at(text->impl_id()).get()->props_;
+  (void)inline_mock_text_prop_array;
+
+  // kPropInlineStart
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[0]) ==
+              kPropInlineStart);
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[1]) ==
+              para_content_utf16_length);
+
+  // kTextPropColor
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[2]) == kTextPropColor);
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[3]) ==
+              -16776961);  // blue
+
+  // kPropInlineEnd
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[4]) == kPropInlineEnd);
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[5]) ==
+              para_content_utf16_length + inline_content_utf16_length);
+
+  //--- para
+  // color
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[6]) == kTextPropColor);
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[7]) == -65536);
+
+  // text max-line
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[8]) ==
+              kTextPropTextMaxLine);
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[9]) == 1);
+
+  // string
+  EXPECT_TRUE(std::get<int>(inline_mock_text_prop_array[10]) ==
+              kPropTextString);
+
+  //'测试' is 'testing', used for test the word's lenght in Chinese
+  EXPECT_TRUE(std::get<std::string>(inline_mock_text_prop_array[11]) ==
+              "text-content-inline-测试");
+}
+
+INSTANTIATE_TEST_SUITE_P(TextElementTestModule, TextElementTest,
+                         ::testing::ValuesIn(fiber_element_generation_params));
 
 }  // namespace testing
 }  // namespace tasm

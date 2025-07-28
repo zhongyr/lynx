@@ -9,9 +9,14 @@
 #include <unordered_map>
 #include <utility>
 
+#include "core/renderer/dom/testing/fiber_mock_text_layout.h"
+
 namespace lynx {
 namespace tasm {
 namespace testing {
+FiberMockPaintingContext::FiberMockPaintingContext() {
+  text_layout_impl_ = std::make_unique<TextLayoutMock>();
+}
 
 void FiberMockPaintingContext::ResetFlushFlag() { flush_ = false; }
 

@@ -19,6 +19,7 @@ namespace testing {
 
 class FiberMockPaintingContext : public PaintingContextPlatformImpl {
  public:
+  FiberMockPaintingContext();
   void ResetFlushFlag();
 
   bool HasFlushed();
