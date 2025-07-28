@@ -45,10 +45,12 @@ enum NodeInfoBits : int32_t {
 };
 
 constexpr const int32_t kCommonBuiltInNodeInfo =
-    (LayoutNodeType::COMMON & NodeInfoBits::kLayoutNodeTypeMask) |
+    (static_cast<int32_t>(LayoutNodeType::COMMON) &
+     NodeInfoBits::kLayoutNodeTypeMask) |
     NodeInfoBits::kCreateAsyncMask;
 constexpr const int32_t kVirtualBuiltInNodeInfo =
-    (LayoutNodeType::VIRTUAL & NodeInfoBits::kLayoutNodeTypeMask);
+    (static_cast<int32_t>(LayoutNodeType::VIRTUAL) &
+     NodeInfoBits::kLayoutNodeTypeMask);
 
 class FiberElement : public Element,
                      public SelectorItem,
