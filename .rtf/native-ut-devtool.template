@@ -99,5 +99,11 @@ targets({
         "owners":["ZhaoSongGOO"],
         "coverage": True,
         "enable_parallel":True,
-    }
+    },
+    "message_handler_unittest_exec": {
+        "cwd": ".",
+        "owners":["ZhaoSongGOO"],
+        "coverage": True,
+        "enable_parallel":True,
+    },
 })

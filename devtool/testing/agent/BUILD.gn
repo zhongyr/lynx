@@ -6,7 +6,10 @@ import("../../../testing/test.gni")
 
 unittest_set("devtool_agent_testset") {
   testonly = true
-  sources = [ "devtool_mediator_unittest.cc" ]
+  sources = [
+    "../../lynx_devtool/lynx_devtool_ng_unittest.cc",
+    "devtool_mediator_unittest.cc",
+  ]
 
   public_deps = [
     "../../../core/inspector:inspector",
@@ -24,6 +27,7 @@ unittest_set("devtool_agent_testset") {
     "../../lynx_devtool/config:config",
     "../../lynx_devtool/element:element",
     "../../lynx_devtool/js_debug:js_debug",
+    "../../lynx_devtool/message_handler:message_handler",
     "../../lynx_devtool/shared_data:shared_data",
     "//third_party/zlib",
   ]

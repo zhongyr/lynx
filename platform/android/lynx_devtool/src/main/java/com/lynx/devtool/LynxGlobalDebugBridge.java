@@ -35,17 +35,8 @@ public class LynxGlobalDebugBridge
   private static final String TAG = "LynxGlobalDebugBridge";
 
   // protocol
-  private static final String GET_STOP_AT_ENTRY = "GetStopAtEntry";
-  private static final String SET_STOP_AT_ENTRY = "SetStopAtEntry";
-  private static final String GET_FETCH_DEBUG_INFO = "GetFetchDebugInfo";
-  private static final String SET_FETCH_DEBUG_INFO = "SetFetchDebugInfo";
   private static final String CUSTOM_FOR_SET_GLOBAL_SWITCH = "SetGlobalSwitch";
   private static final String CUSTOM_FOR_GET_GLOBAL_SWITCH = "GetGlobalSwitch";
-  private static final String KEY_TYPE = "type";
-  private static final String KEY_VALUE = "value";
-  private static final String KEY_MTS = "MTS";
-  private static final String KEY_BTS = "BTS";
-  private static final String KEY_DEFAULT = "DEFAULT";
 
   private boolean mHasContext = false;
   private Context mContext;
@@ -130,51 +121,6 @@ public class LynxGlobalDebugBridge
       Object result = mAgentDispatcher.getGlobalSwitch(message);
       DebugRouter.getInstance().sendDataAsync(
           CUSTOM_FOR_GET_GLOBAL_SWITCH, -1, String.valueOf(result));
-    } else {
-      handleDevToolConfigMessage(message, type);
-    }
-  }
-
-  private void handleDevToolConfigMessage(String message, String type) {
-    if (!type.equals(GET_STOP_AT_ENTRY) && !type.equals(SET_STOP_AT_ENTRY)
-        && !type.equals(GET_FETCH_DEBUG_INFO) && !type.equals(SET_FETCH_DEBUG_INFO)) {
-      return;
-    }
-    try {
-      JSONObject messageObj = new JSONObject(message);
-      String key = messageObj.getString(KEY_TYPE);
-      if (type.equals(GET_STOP_AT_ENTRY)) {
-        boolean result = false;
-        if (key.equals(KEY_MTS)) {
-          result = mAgentDispatcher.getStopAtEntry(true);
-        } else if (key.equals(KEY_BTS) || key.equals(KEY_DEFAULT)) {
-          result = mAgentDispatcher.getStopAtEntry(false);
-        }
-        messageObj.put(KEY_VALUE, result);
-      } else if (type.equals(SET_STOP_AT_ENTRY)) {
-        boolean value = messageObj.getBoolean(KEY_VALUE);
-        if (key.equals(KEY_MTS)) {
-          mAgentDispatcher.setStopAtEntry(value, true);
-        } else if (key.equals(KEY_BTS) || key.equals(KEY_DEFAULT)) {
-          mAgentDispatcher.setStopAtEntry(value, false);
-        }
-      } else if (type.equals(GET_FETCH_DEBUG_INFO)) {
-        boolean result = false;
-        if (key.equals(KEY_MTS)) {
-          result = mAgentDispatcher.getFetchDebugInfo(true);
-        }
-        messageObj.put(KEY_VALUE, result);
-      } else if (type.equals(SET_FETCH_DEBUG_INFO)) {
-        boolean value = messageObj.getBoolean(KEY_VALUE);
-        if (key.equals(KEY_MTS)) {
-          mAgentDispatcher.setFetchDebugInfo(value, true);
-        }
-      }
-      DebugRouter.getInstance().sendDataAsync(type, -1, messageObj.toString());
-    } catch (JSONException e) {
-      LLog.e(TAG,
-          String.format("handleStopAtEntry error! message: %s, type: %s, description: %s", message,
-              type, e.getMessage()));
     }
   }
 

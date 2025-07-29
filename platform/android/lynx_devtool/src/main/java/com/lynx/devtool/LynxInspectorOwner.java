@@ -443,22 +443,6 @@ public class LynxInspectorOwner implements LynxBaseInspectorOwnerNG {
     }
   }
 
-  public void setStopAtEntry(boolean stop, boolean isMTS) {
-    nativeSetStopAtEntry(stop, isMTS);
-  }
-
-  public boolean getStopAtEntry(boolean isMTS) {
-    return nativeGetStopAtEntry(isMTS);
-  }
-
-  public void setFetchDebugInfo(boolean fetch, boolean isMTS) {
-    nativeSetFetchDebugInfo(fetch, isMTS);
-  }
-
-  public boolean getFetchDebugInfo(boolean isMTS) {
-    return nativeGetFetchDebugInfo(isMTS);
-  }
-
   public Object setGlobalSwitch(String message) {
     try {
       JSONObject messageObj = new JSONObject(message);
@@ -684,10 +668,6 @@ public class LynxInspectorOwner implements LynxBaseInspectorOwnerNG {
     void onGlobalPropsUpdated(Map globalProps);
   }
 
-  private native void nativeSetStopAtEntry(boolean stop, boolean isMTS);
-  private native boolean nativeGetStopAtEntry(boolean isMTS);
-  private native void nativeSetFetchDebugInfo(boolean fetch, boolean isMTS);
-  private native boolean nativeGetFetchDebugInfo(boolean isMTS);
   private native void nativeInitRecorderConfig(
       String filePath, int sessionID, float screenWidth, float screenHeight, long recordID);
   private native void nativeSendFileByAgent(String type, String file);

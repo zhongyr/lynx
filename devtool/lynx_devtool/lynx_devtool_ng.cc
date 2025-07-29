@@ -31,10 +31,17 @@
 #include "devtool/lynx_devtool/agent/domain_agent/inspector_white_board_agent.h"
 #include "devtool/lynx_devtool/agent/domain_agent/system_info_agent.h"
 #include "devtool/lynx_devtool/agent/lynx_devtool_mediator.h"
+#include "devtool/lynx_devtool/message_handler/fetch_debug_info_handler.h"
+#include "devtool/lynx_devtool/message_handler/stop_at_entry_handler.h"
 
 namespace lynx {
 namespace devtool {
 static constexpr char kDomainKeyPrefix[] = "enable_cdp_domain_";
+static constexpr char kTypeGetStopAtEntry[] = "GetStopAtEntry";
+static constexpr char kTypeSetStopAtEntry[] = "SetStopAtEntry";
+static constexpr char kTypeGetFetchDebugInfo[] = "GetFetchDebugInfo";
+static constexpr char kTypeSetFetchDebugInfo[] = "SetFetchDebugInfo";
+
 LynxDevToolNG::LynxDevToolNG()
     : devtool_mediator_(std::make_shared<LynxDevToolMediator>()) {
   static std::once_flag flag;
@@ -53,6 +60,15 @@ LynxDevToolNG::LynxDevToolNG()
         RegisterGlobalDomainAgents(global_dispatcher, domain);
       }
     }
+
+    global_dispatcher.RegisterMessageHandler(
+        kTypeGetStopAtEntry, std::make_unique<StopAtEntryHandler>());
+    global_dispatcher.RegisterMessageHandler(
+        kTypeSetStopAtEntry, std::make_unique<StopAtEntryHandler>());
+    global_dispatcher.RegisterMessageHandler(
+        kTypeGetFetchDebugInfo, std::make_unique<FetchDebugInfoHandler>());
+    global_dispatcher.RegisterMessageHandler(
+        kTypeSetFetchDebugInfo, std::make_unique<FetchDebugInfoHandler>());
   });
   if (lynx::tasm::LynxEnv::GetInstance().IsDevToolEnabled() ||
       lynx::tasm::LynxEnv::GetInstance().IsDebugModeEnabled()) {

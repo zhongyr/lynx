@@ -23,24 +23,6 @@ bool RegisterJNIForLynxInspectorOwner(JNIEnv* env) {
 }  // namespace jni
 }  // namespace lynx
 
-void SetStopAtEntry(JNIEnv* env, jobject jcaller, jboolean stop,
-                    jboolean isMTS) {
-  lynx::devtool::DevToolConfig::SetStopAtEntry(stop, isMTS);
-}
-
-jboolean GetStopAtEntry(JNIEnv* env, jobject jcaller, jboolean isMTS) {
-  return lynx::devtool::DevToolConfig::ShouldStopAtEntry(isMTS);
-}
-
-void SetFetchDebugInfo(JNIEnv* env, jobject jcaller, jboolean fetch,
-                       jboolean isMTS) {
-  lynx::devtool::DevToolConfig::SetFetchDebugInfo(fetch, isMTS);
-}
-
-jboolean GetFetchDebugInfo(JNIEnv* env, jobject jcaller, jboolean isMTS) {
-  return lynx::devtool::DevToolConfig::ShouldFetchDebugInfo(isMTS);
-}
-
 void InitRecorderConfig(JNIEnv* env, jobject jcaller, jstring filePath,
                         jint sessionID, jfloat screenWidth, jfloat screenHeight,
                         jlong recordID) {

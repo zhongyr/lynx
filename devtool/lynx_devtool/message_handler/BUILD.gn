@@ -1,0 +1,37 @@
+# Copyright 2025 The Lynx Authors. All rights reserved.
+# Licensed under the Apache License Version 2.0 that can be found in the
+# LICENSE file in the root directory of this source tree.
+import("../../../testing/test.gni")
+import("../devtool.gni")
+
+devtool_source_set("message_handler") {
+  sources = [
+    "fetch_debug_info_handler.cc",
+    "fetch_debug_info_handler.h",
+    "stop_at_entry_handler.cc",
+    "stop_at_entry_handler.h",
+  ]
+}
+
+unittest_set("message_handler_testset") {
+  public_configs = [
+    "../../../core:lynx_public_config",
+    "../:devtool_common_config",
+  ]
+  sources = [
+    "fetch_debug_info_handler_unittest.cc",
+    "stop_at_entry_handler_unittest.cc",
+  ]
+  public_deps = [
+    ":message_handler",
+    "../../base_devtool/native:base_devtool",
+    "../../testing/mock:devtool_mock",
+    "../config:config",
+  ]
+  include_dirs = [ "//third_party/googletest/googletest/include" ]
+}
+
+unittest_exec("message_handler_unittest_exec") {
+  sources = []
+  deps = [ ":message_handler_testset" ]
+}

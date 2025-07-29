@@ -124,7 +124,8 @@ void TestBenchBaseRecorder::EndRecord(
         if (ifs.is_open()) {
           rapidjson::Value& doc = lynx_view_pair.second;
           rapidjson::Document::AllocatorType& allocator = GetAllocator();
-          doc.AddMember(rapidjson::StringRef(kScripts), scripts_table_,
+          doc.AddMember(rapidjson::StringRef(kScripts),
+                        rapidjson::Value(scripts_table_, GetAllocator()),
                         allocator);
           doc.AddMember(rapidjson::StringRef(kConfig), config, allocator);
           rapidjson::StringBuffer os;

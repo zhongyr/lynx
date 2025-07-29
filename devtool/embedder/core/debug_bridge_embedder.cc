@@ -85,8 +85,6 @@ void DebugBridgeEmbedder::OnMessage(const std::string& message,
     EnvEmbedder::SetSwitch(key, value);
 
     DebugRouter::GetInstance().SendDataAsync(message, "SetGlobalSwitch", -1);
-  } else {
-    HandleDevToolConfigMessage(message, type);
   }
 }
 
@@ -95,50 +93,6 @@ void DebugBridgeEmbedder::SetAppInfo(
   for (auto it = app_infos.begin(); it != app_infos.end(); it++) {
     DebugRouter::GetInstance().SetAppInfo(it->first, it->second);
   }
-}
-
-void DebugBridgeEmbedder::HandleDevToolConfigMessage(const std::string& message,
-                                                     const std::string& type) {
-  if (type != devtool::kTypeGetStopAtEntry &&
-      type != devtool::kTypeSetStopAtEntry &&
-      type != devtool::kTypeGetFetchDebugInfo &&
-      type != devtool::kTypeSetFetchDebugInfo) {
-    return;
-  }
-  Json::Value content;
-  Json::Reader reader;
-  if (!reader.parse(message, content, false)) {
-    return;
-  }
-  std::string key = content[devtool::kKeyType].asString();
-  if (type == devtool::kTypeGetStopAtEntry) {
-    bool result = false;
-    if (key == devtool::kKeyMTS) {
-      result = devtool::DevToolConfig::ShouldStopAtEntry(true);
-    } else if (key == devtool::kKeyBTS || key == devtool::kKeyDefault) {
-      result = devtool::DevToolConfig::ShouldStopAtEntry(false);
-    }
-    content[devtool::kKeyValue] = result;
-  } else if (type == devtool::kTypeSetStopAtEntry) {
-    bool value = content[devtool::kKeyValue].asBool();
-    if (key == devtool::kKeyMTS) {
-      lynx::devtool::DevToolConfig::SetStopAtEntry(value, true);
-    } else if (key == devtool::kKeyBTS || key == devtool::kKeyDefault) {
-      lynx::devtool::DevToolConfig::SetStopAtEntry(value, false);
-    }
-  } else if (type == devtool::kTypeGetFetchDebugInfo) {
-    bool result = false;
-    if (key == devtool::kKeyMTS) {
-      result = devtool::DevToolConfig::ShouldFetchDebugInfo(true);
-    }
-    content[devtool::kKeyValue] = result;
-  } else if (type == devtool::kTypeSetFetchDebugInfo) {
-    bool value = content[devtool::kKeyValue].asBool();
-    if (key == devtool::kKeyMTS) {
-      lynx::devtool::DevToolConfig::SetFetchDebugInfo(value, true);
-    }
-  }
-  DebugRouter::GetInstance().SendDataAsync(content.toStyledString(), type, -1);
 }
 
 }  // namespace devtool

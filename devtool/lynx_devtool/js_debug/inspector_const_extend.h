@@ -16,14 +16,6 @@ constexpr char kLepusDefaultContextName[] = "__Card__";
 constexpr char kScriptUrlPrefix[] = "file://view";
 constexpr char kScriptCoreUrl[] = "lynx_core.js";
 
-constexpr char kTypeGetStopAtEntry[] = "GetStopAtEntry";
-constexpr char kTypeSetStopAtEntry[] = "SetStopAtEntry";
-constexpr char kTypeGetFetchDebugInfo[] = "GetFetchDebugInfo";
-constexpr char kTypeSetFetchDebugInfo[] = "SetFetchDebugInfo";
-constexpr char kKeyDefault[] = "DEFAULT";
-constexpr char kKeyMTS[] = "MTS";
-constexpr char kKeyBTS[] = "BTS";
-
 // parameters defined in CDP
 constexpr char kKeyScriptId[] = "scriptId";
 constexpr char kKeyExecutionContextId[] = "executionContextId";

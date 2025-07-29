@@ -15,6 +15,7 @@ group("lynx_devtool_group") {
     "config",
     "element",
     "js_debug",
+    "message_handler",
     "recorder",
     "shared_data",
     "tracing",
