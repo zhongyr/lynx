@@ -92,7 +92,7 @@ napi_value PerformanceControllerHarmonyJSWrapper::SetTiming(
     return nullptr;
   }
   // 0 - timestamp: number
-  uint64_t timestamp_us = base::NapiUtil::ConvertToBigUInt64(env, argv[0]);
+  uint64_t timestamp_us = base::NapiUtil::ConvertToInt64(env, argv[0]);
   // 1 - timingKey: string
   std::string timing_key = base::NapiUtil::ConvertToShortString(env, argv[1]);
   // 2 - pipelineID: string
