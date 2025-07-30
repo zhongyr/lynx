@@ -296,14 +296,6 @@ std::unique_ptr<lynx::pub::Value> TimingInfoNg::GetMetricFcpEntry(
   }
   bool has_update_metrics = false;
 
-  // By default kLoadBundleStart precedes kPaintEnd. Only kPaintEnd is checked.
-  static const std::initializer_list<std::string> check_keys = {
-      kPrepareTemplateStart, kOpenTime, kPaintEnd};
-  if (std::find(check_keys.begin(), check_keys.end(), current_key) ==
-      check_keys.end()) {
-    return nullptr;
-  }
-
   auto it = pipeline_timing_info_.find(load_bundle_pipeline_id_);
   if (it == pipeline_timing_info_.end()) {
     LOGE("TimingInfoNg: fcp must be calculated after loadBundle/reloadBundle.")
@@ -396,14 +388,6 @@ std::unique_ptr<lynx::pub::Value> TimingInfoNg::GetMetricFmpEntry(
     return nullptr;
   }
   bool has_update_metrics = false;
-
-  // By default kLoadBundleStart precedes kPaintEnd. Only kPaintEnd is checked.
-  static const std::initializer_list<std::string> check_keys = {
-      kPrepareTemplateStart, kOpenTime, kPaintEnd};
-  if (std::find(check_keys.begin(), check_keys.end(), current_key) ==
-      check_keys.end()) {
-    return nullptr;
-  }
 
   uint64_t paint_end = 0;
   if (pipeline_id.empty()) {
