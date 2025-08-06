@@ -752,8 +752,7 @@ void UIBase::ApplyOverflowClip() {
       NodeManager::Instance().SetAttributeWithNumberValue(Node(), NODE_CLIP, 0);
     }
   } else if ((overflow_.overflow_x || overflow_.overflow_y) &&
-             ((dirty_flags_ & kFlagOverflowChanged) != 0 ||
-              (dirty_flags_ & kFlagFrameSizeChanged) != 0)) {
+             (dirty_flags_ & kFlagOverflowChanged) != 0) {
     need_clip_ = true;
     if (background_drawable_ && background_drawable_->GetBorderRadius() &&
         !background_drawable_->GetBorderRadius()->IsZero()) {
