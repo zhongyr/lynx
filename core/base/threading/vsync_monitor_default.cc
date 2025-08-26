@@ -9,9 +9,7 @@
 namespace lynx {
 namespace base {
 
-std::shared_ptr<VSyncMonitor> VSyncMonitor::Create(bool is_on_ui_thread) {
-  return nullptr;
-}
+std::shared_ptr<VSyncMonitor> VSyncMonitor::Create() { return nullptr; }
 
 }  // namespace base
 }  // namespace lynx

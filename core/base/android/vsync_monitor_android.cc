@@ -35,9 +35,11 @@ void OnVSync(JNIEnv* env, jclass jcaller, jlong nativePtr,
 namespace lynx {
 namespace base {
 
-std::shared_ptr<VSyncMonitor> VSyncMonitor::Create(bool is_on_ui_thread) {
-  return std::make_shared<lynx::base::VSyncMonitorAndroid>(is_on_ui_thread);
+std::shared_ptr<VSyncMonitor> VSyncMonitor::Create() {
+  return std::make_shared<lynx::base::VSyncMonitorAndroid>();
 }
+
+VSyncMonitorAndroid::VSyncMonitorAndroid() {}
 
 void VSyncMonitorAndroid::RequestVSync() {
   auto* weak_self = new std::weak_ptr<VSyncMonitor>(shared_from_this());
@@ -62,12 +64,5 @@ void VSyncMonitorAndroid::RequestVSyncOnUIThread(Callback callback) {
   JNIEnv* env = base::android::AttachCurrentThread();
   Java_VSyncMonitor_requestOnUIThread(env, reinterpret_cast<jlong>(weak_self));
 }
-
-void VSyncMonitorAndroid::RequestVSyncOnUIThread() {
-  auto* weak_self = new std::weak_ptr<VSyncMonitor>(shared_from_this());
-  JNIEnv* env = base::android::AttachCurrentThread();
-  Java_VSyncMonitor_requestOnUIThread(env, reinterpret_cast<jlong>(weak_self));
-}
-
 }  // namespace base
 }  // namespace lynx

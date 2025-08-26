@@ -14,15 +14,10 @@ namespace base {
 
 class VSyncMonitorAndroid : public VSyncMonitor {
  public:
-  VSyncMonitorAndroid() : VSyncMonitor(false) {}
-
-  VSyncMonitorAndroid(bool is_on_ui_thread) : VSyncMonitor(is_on_ui_thread) {}
-
+  VSyncMonitorAndroid();
   ~VSyncMonitorAndroid() override = default;
 
   void RequestVSyncOnUIThread(Callback callback) override;
-
-  void RequestVSyncOnUIThread() override;
 
  protected:
   void RequestVSync() override;
