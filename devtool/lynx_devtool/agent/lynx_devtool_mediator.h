@@ -76,8 +76,6 @@ class LynxDevToolMediator
   void SetRuntimeEnableNeeded(bool enable);
   void OnAttached();
 
-  void SetTag(const std::string& tag);
-
  public:
   // DOM domain -> tasm executor
   DECLARE_DEVTOOL_METHOD(QuerySelector);

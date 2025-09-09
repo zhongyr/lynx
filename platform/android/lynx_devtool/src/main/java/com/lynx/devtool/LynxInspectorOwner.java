@@ -671,13 +671,6 @@ public class LynxInspectorOwner implements LynxBaseInspectorOwnerNG {
     sendConsoleMessage(message, level, System.currentTimeMillis());
   }
 
-  @Override
-  public void setDebugTag(String debugTag) {
-    if (mLynxDevToolNG != null) {
-      mLynxDevToolNG.setTag(debugTag);
-    }
-  }
-
   public interface GlobalPropsObserver {
     void onGlobalPropsUpdated(Map globalProps);
   }

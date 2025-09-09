@@ -182,7 +182,6 @@ class V8Runtime : public Runtime {
   void InitInspector(
       const std::shared_ptr<InspectorRuntimeObserverNG>& observer) override;
   void DestroyInspector() override;
-  std::string AddPrefixToUrlIfNeeded(const std::string& url) override;
 
  private:
   std::shared_ptr<V8IsolateInstance> CreateVM_(const char* arg,

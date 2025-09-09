@@ -200,8 +200,6 @@ class JSCRuntime : public Runtime {
 
   void RequestGCForTesting() override;
 
-  std::string AddPrefixToUrlIfNeeded(const std::string& url) override;
-
  private:
   ArrayBuffer createEmptyArrayBuffer();
   std::shared_ptr<JSCContextGroupWrapper> ctx_group_;

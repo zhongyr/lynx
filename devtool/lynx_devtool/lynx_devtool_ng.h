@@ -41,8 +41,6 @@ class LynxDevToolNG : public lynx::devtool::AbstractDevTool,
 
   virtual std::shared_ptr<MessageSender> GetMessageSender() const;
 
-  void SetTag(const std::string& tag);
-
  protected:
   std::shared_ptr<LynxDevToolMediator> devtool_mediator_;
   int32_t session_id_ = -1;

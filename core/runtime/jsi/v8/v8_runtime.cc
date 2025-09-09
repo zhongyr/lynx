@@ -116,7 +116,11 @@ base::expected<Value, JSINativeException> V8Runtime::evaluateJavaScript(
       isolate_, reinterpret_cast<const char*>(buffer->data()),
       v8::NewStringType::kNormal, static_cast<int>(buffer->size()));
 
-  std::string origin_url = AddPrefixToUrlIfNeeded(sourceURL);
+  std::string origin_url = sourceURL;
+  if (inspector_manager_ != nullptr) {
+    origin_url = inspector_manager_->BuildInspectorUrl(origin_url);
+    inspector_manager_->PrepareForScriptEval();
+  }
 
   TRACE_EVENT_INSTANT(LYNX_TRACE_CATEGORY, EVALUATE_PREPARED_JAVA_SCRIPT, "url",
                       origin_url, "runtime_id", getRuntimeId());
@@ -855,15 +859,6 @@ void V8Runtime::DestroyInspector() {
   if (inspector_manager_ != nullptr) {
     inspector_manager_->DestroyInspector();
   }
-}
-
-std::string V8Runtime::AddPrefixToUrlIfNeeded(const std::string& url) {
-  if (inspector_manager_ != nullptr) {
-    std::string res = inspector_manager_->BuildInspectorUrl(url);
-    inspector_manager_->PrepareForScriptEval();
-    return res;
-  }
-  return Runtime::AddPrefixToUrlIfNeeded(url);
 }
 
 std::unique_ptr<piper::Runtime> makeV8Runtime() {
