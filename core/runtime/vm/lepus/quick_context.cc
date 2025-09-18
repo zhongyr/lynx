@@ -445,11 +445,6 @@ bool QuickContext::ExecuteBinaryInternal(Value* ret_val) {
   return true;
 }
 
-void QuickContext::TriggerVmGC() {
-  if (!gc_flag_) return;
-  LEPUS_TrigGC(runtime_);
-}
-
 void QuickContext::UpdateGCTiming(bool is_start) {
   if (!gc_flag_) return;
   if (is_start) {
