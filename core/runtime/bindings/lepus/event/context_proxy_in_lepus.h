@@ -22,8 +22,7 @@ class ContextProxyInLepus : public runtime::ContextProxy {
   static ContextProxyInLepus* GetContextProxyFromLepusValue(
       const lepus::Value& binding_object);
 
-  fml::RefPtr<runtime::MessageEvent> CreateMessageEvent(
-      const lepus::Value& event);
+  runtime::MessageEvent CreateMessageEvent(const lepus::Value& event);
 
   lepus::Value GetBinding(lepus::Context* context);
 

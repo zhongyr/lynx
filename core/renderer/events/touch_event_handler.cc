@@ -171,7 +171,8 @@ void TouchEventHandler::HandleTouchEvent(TemplateAssembler *tasm,
     return;
   }
 
-  if (tasm->EnableEventHandleRefactor() || tasm->IsEmbeddedModeOn()) {
+  if (LynxEnv::GetInstance().EnableEventHandleRefactor() ||
+      tasm->IsEmbeddedModeOn()) {
     if (info.is_multi_finger) {
       for (auto events : *info.params.Table()) {
         int tag = std::stoi(events.first.str());
@@ -371,7 +372,8 @@ void TouchEventHandler::HandleCustomEvent(TemplateAssembler *tasm,
     return;
   }
 
-  if (tasm->EnableEventHandleRefactor() || tasm->IsEmbeddedModeOn()) {
+  if (LynxEnv::GetInstance().EnableEventHandleRefactor() ||
+      tasm->IsEmbeddedModeOn()) {
     auto target = node_manager_->Get(tag);
     if (!target) {
       LOGE("HandleCustomEvent error: the target is null.");
@@ -552,7 +554,7 @@ void TouchEventHandler::CallJSFunctionInLepusEvent(
   args->emplace_back(name);
   // info be ShallowCopy first to avoid to be marked const.
   args->emplace_back(lepus_value::ShallowCopy(params));
-  auto event = fml::MakeRefCounted<runtime::MessageEvent>(
+  runtime::MessageEvent event(
       runtime::kMessageEventTypeCallJSFunctionInLepusEvent,
       runtime::ContextProxy::Type::kCoreContext,
       runtime::ContextProxy::Type::kJSContext,
@@ -1289,12 +1291,12 @@ void TouchEventHandler::SendPageEvent(const EventType &type,
   args->emplace_back(handler);
   // info be ShallowCopy first to avoid to be marked const.
   args->emplace_back(lepus_value::ShallowCopy(info));
-  auto event = fml::MakeRefCounted<runtime::MessageEvent>(
+  runtime::MessageEvent event(
       runtime::kMessageEventTypeSendPageEvent,
       runtime::ContextProxy::Type::kCoreContext,
       runtime::ContextProxy::Type::kJSContext,
       std::make_unique<pub::ValueImplLepus>(lepus::Value(std::move(args))));
-  event->SetTraceFlowId(trace_flow_id);
+  event.SetTraceFlowId(trace_flow_id);
   context_proxy_delegate_.DispatchMessageEvent(std::move(event));
   if (type != EventType::kComponent) {
     constexpr const static char *kPrefix = "Page";
@@ -1318,12 +1320,12 @@ void TouchEventHandler::PublishComponentEvent(const EventType &type,
   args->emplace_back(handler);
   // info be ShallowCopy first to avoid to be marked const.
   args->emplace_back(lepus_value::ShallowCopy(info));
-  auto event = fml::MakeRefCounted<runtime::MessageEvent>(
+  runtime::MessageEvent event(
       runtime::kMessageEventTypePublishComponentEvent,
       runtime::ContextProxy::Type::kCoreContext,
       runtime::ContextProxy::Type::kJSContext,
       std::make_unique<pub::ValueImplLepus>(lepus::Value(std::move(args))));
-  event->SetTraceFlowId(trace_flow_id);
+  event.SetTraceFlowId(trace_flow_id);
   context_proxy_delegate_.DispatchMessageEvent(std::move(event));
   if (type != EventType::kComponent) {
     constexpr const static char *kPrefix = "Component";
@@ -1341,7 +1343,7 @@ void TouchEventHandler::SendGlobalEvent(const EventType &type,
   args->emplace_back(name);
   // info be ShallowCopy first to avoid to be marked const.
   args->emplace_back(lepus_value::ShallowCopy(info));
-  auto event = fml::MakeRefCounted<runtime::MessageEvent>(
+  runtime::MessageEvent event(
       runtime::kMessageEventTypeSendGlobalEvent,
       runtime::ContextProxy::Type::kCoreContext,
       runtime::ContextProxy::Type::kJSContext,

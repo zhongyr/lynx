@@ -35,8 +35,7 @@ NSDictionary* EventConverterDarwin::ConverMessageEventToNSDictionary(
 }
 
 // Convert NSDictionary to MessageEvent
-fml::RefPtr<runtime::MessageEvent> EventConverterDarwin::ConvertNSDictionaryToMessageEvent(
-    NSDictionary* dict) {
+runtime::MessageEvent EventConverterDarwin::ConvertNSDictionaryToMessageEvent(NSDictionary* dict) {
   auto event = LynxConvertToLepusValue(dict);
   const auto& type = event.GetProperty(BASE_STATIC_STRING(kType)).StdString();
   auto time_stamp =
@@ -46,8 +45,8 @@ fml::RefPtr<runtime::MessageEvent> EventConverterDarwin::ConvertNSDictionaryToMe
   auto origin = runtime::ContextProxy::ConvertStringToContextType(
       event.GetProperty(BASE_STATIC_STRING(kOrigin)).StdString());
   auto data = event.GetProperty(BASE_STATIC_STRING(kData));
-  return fml::MakeRefCounted<runtime::MessageEvent>(
-      type, time_stamp, origin, target, std::make_unique<pub::ValueImplLepus>(std::move(data)));
+  return runtime::MessageEvent(type, time_stamp, origin, target,
+                               std::make_unique<pub::ValueImplLepus>(std::move(data)));
 }
 
 }  // namespace darwin

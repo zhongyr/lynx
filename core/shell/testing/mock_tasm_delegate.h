@@ -239,7 +239,7 @@ class MockTasmDelegate : public TemplateAssembler::Delegate,
       const std::shared_ptr<tasm::PipelineOptions>& options) override{};
 
   event::DispatchEventResult DispatchMessageEvent(
-      fml::RefPtr<runtime::MessageEvent> event) override;
+      runtime::MessageEvent event) override;
 
   bool has_received_animation_start_event() {
     return animation_start_event_count_ == 1;

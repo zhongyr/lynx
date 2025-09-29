@@ -31,9 +31,8 @@ EventConverterAndroid::ConvertMessageEventToJavaOnlyMap(
   return jni_map;
 }
 
-fml::RefPtr<runtime::MessageEvent>
-EventConverterAndroid::ConvertJavaOnlyMapToMessageEvent(JNIEnv* env,
-                                                        jobject map) {
+runtime::MessageEvent EventConverterAndroid::ConvertJavaOnlyMapToMessageEvent(
+    JNIEnv* env, jobject map) {
   auto event = ValueConverterAndroid::ConvertJavaOnlyMapToLepus(env, map);
   const auto& type = event.GetProperty(BASE_STATIC_STRING(kType)).StdString();
   auto time_stamp = static_cast<int64_t>(
@@ -43,9 +42,8 @@ EventConverterAndroid::ConvertJavaOnlyMapToMessageEvent(JNIEnv* env,
   auto origin = runtime::ContextProxy::ConvertStringToContextType(
       event.GetProperty(BASE_STATIC_STRING(kOrigin)).StdString());
   auto data = event.GetProperty(BASE_STATIC_STRING(kData));
-  return fml::MakeRefCounted<runtime::MessageEvent>(
-      type, time_stamp, origin, target,
-      std::make_unique<pub::ValueImplLepus>(data));
+  return runtime::MessageEvent(type, time_stamp, origin, target,
+                               std::make_unique<pub::ValueImplLepus>(data));
 }
 
 }  // namespace android

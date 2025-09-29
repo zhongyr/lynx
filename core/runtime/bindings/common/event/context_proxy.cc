@@ -78,8 +78,7 @@ event::DispatchEventResult ContextProxy::DispatchEvent(event::Event& event) {
     consumed |= EventTarget::DispatchEvent(message_event).consumed;
     return {event::EventCancelType::kNotCanceled, consumed};
   }
-  return delegate_.DispatchMessageEvent(
-      fml::RefPtr<runtime::MessageEvent>(&message_event));
+  return delegate_.DispatchMessageEvent(std::move(message_event));
 }
 
 }  // namespace runtime

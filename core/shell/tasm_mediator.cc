@@ -471,11 +471,10 @@ void TasmMediator::OnJSAppReload(
 }
 
 void TasmMediator::OnLifecycleEvent(const lepus::Value& args) {
-  auto event = fml::MakeRefCounted<runtime::MessageEvent>(
-      runtime::kMessageEventTypeOnLifecycleEvent,
-      runtime::ContextProxy::Type::kCoreContext,
-      runtime::ContextProxy::Type::kJSContext,
-      std::make_unique<pub::ValueImplLepus>(args));
+  runtime::MessageEvent event(runtime::kMessageEventTypeOnLifecycleEvent,
+                              runtime::ContextProxy::Type::kCoreContext,
+                              runtime::ContextProxy::Type::kJSContext,
+                              std::make_unique<pub::ValueImplLepus>(args));
   DispatchMessageEvent(std::move(event));
 }
 
@@ -740,9 +739,9 @@ void TasmMediator::RecycleTemplateBundle(
 }
 
 event::DispatchEventResult TasmMediator::DispatchMessageEvent(
-    fml::RefPtr<runtime::MessageEvent> event) {
-  auto copy_event = runtime::MessageEvent::ShallowCopy(*event);
-  if (event->IsSendingToJSThread()) {
+    runtime::MessageEvent event) {
+  auto copy_event = runtime::MessageEvent::ShallowCopy(event);
+  if (event.IsSendingToJSThread()) {
     if (runtime_actor_) {
       auto enqueue_info =
           tasm::performance::JSBlockingMonitor::MarkJSTaskEnqueue();
@@ -757,7 +756,7 @@ event::DispatchEventResult TasmMediator::DispatchMessageEvent(
         runtime->OnReceiveMessageEvent(std::move(message_event));
       });
     }
-  } else if (event->IsSendingToUIThread()) {
+  } else if (event.IsSendingToUIThread()) {
     facade_actor_->Act(
         [message_event = std::move(copy_event)](auto& facade) mutable {
           facade->OnReceiveMessageEvent(std::move(message_event));

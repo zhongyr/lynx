@@ -361,8 +361,7 @@ class TemplateAssembler final : public TemplateEntryHolder,
 
   void OnLynxEvent(const lepus::Value& event_detail);
 
-  event::DispatchEventResult DispatchMessageEvent(
-      fml::RefPtr<runtime::MessageEvent> event) {
+  event::DispatchEventResult DispatchMessageEvent(runtime::MessageEvent event) {
     return delegate_.DispatchMessageEvent(std::move(event));
   }
 
@@ -760,7 +759,7 @@ class TemplateAssembler final : public TemplateEntryHolder,
     return page_config_ && page_config_->GetEnableFiberArch();
   }
 
-  void OnReceiveMessageEvent(fml::RefPtr<runtime::MessageEvent> event);
+  void OnReceiveMessageEvent(runtime::MessageEvent event);
 
   ContextProxyInLepus* GetContextProxy(runtime::ContextProxy::Type type);
 
@@ -800,10 +799,6 @@ class TemplateAssembler final : public TemplateEntryHolder,
   }
 
   bool IsEmbeddedModeOn() const { return page_options_.IsEmbeddedModeOn(); }
-
-  bool EnableEventHandleRefactor() const {
-    return page_config_ ? page_config_->GetEnableEventHandleRefactor() : false;
-  }
 
  private:
   void ExecuteOnLayoutReadyHooks();

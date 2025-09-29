@@ -237,7 +237,7 @@ class TasmMediator : public LynxEngine::Delegate {
       const std::shared_ptr<tasm::PipelineOptions>& options) override;
 
   event::DispatchEventResult DispatchMessageEvent(
-      fml::RefPtr<runtime::MessageEvent> event) override;
+      runtime::MessageEvent event) override;
 
   TasmMediator(const TasmMediator&) = delete;
   TasmMediator& operator=(const TasmMediator&) = delete;

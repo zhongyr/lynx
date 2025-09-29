@@ -17,7 +17,7 @@ class EventConverterDarwin {
   // Convert MessageEvent to NSDictionary
   static NSDictionary* ConverMessageEventToNSDictionary(const runtime::MessageEvent& event);
   // Convert NSDictionary to MessageEvent
-  static fml::RefPtr<runtime::MessageEvent> ConvertNSDictionaryToMessageEvent(NSDictionary* dict);
+  static runtime::MessageEvent ConvertNSDictionaryToMessageEvent(NSDictionary* dict);
 };
 
 }  // namespace darwin

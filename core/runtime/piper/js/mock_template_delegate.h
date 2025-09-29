@@ -155,7 +155,7 @@ class MockTemplateDelegate : public runtime::TemplateDelegate {
                        const piper::ApiCallBack& callback) override {}
 
   event::DispatchEventResult DispatchMessageEvent(
-      fml::RefPtr<runtime::MessageEvent> event) override {
+      runtime::MessageEvent event) override {
     return {event::EventCancelType::kNotCanceled, false};
   }
 

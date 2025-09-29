@@ -13,10 +13,10 @@ namespace piper {
 namespace test {
 
 event::DispatchEventResult JSRuntimeTestMockDelegate::DispatchMessageEvent(
-    fml::RefPtr<runtime::MessageEvent> event) {
-  ss_ << "target: " << event->GetTargetString()
-      << ", origin: " << event->GetOriginString() << ", message: "
-      << pub::ValueUtils::ConvertValueToLepusValue(*(event->message_));
+    runtime::MessageEvent event) {
+  ss_ << "target: " << event.GetTargetString()
+      << ", origin: " << event.GetOriginString() << ", message: "
+      << pub::ValueUtils::ConvertValueToLepusValue(*event.message_);
   return {event::EventCancelType::kNotCanceled, true};
 }
 

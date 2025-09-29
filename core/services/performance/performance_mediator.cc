@@ -38,7 +38,7 @@ void PerformanceMediator::OnPerformanceEvent(
       auto args = lepus::CArray::Create();
       args->emplace_back(BASE_STATIC_STRING(kPerformanceRuntimeCallback));
       args->emplace_back((lepus_value::ShallowCopy(entry)));
-      auto event = fml::MakeRefCounted<runtime::MessageEvent>(
+      runtime::MessageEvent event(
           runtime::kMessageEventTypeSendGlobalEvent,
           runtime::ContextProxy::Type::kCoreContext,
           runtime::ContextProxy::Type::kJSContext,

@@ -30,7 +30,7 @@ enum class RefType : int32_t {
   kOtherType,
   kStyleObject,
   kJSIObject,
-  kEvent,
+  kEventObject,
   kClosure,
   kCDate,
   kRegExp,

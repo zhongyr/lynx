@@ -4,8 +4,6 @@
 
 #include "core/runtime/bindings/lepus/event/lepus_event_listener.h"
 
-#include <utility>
-
 #include "base/trace/native/trace_event.h"
 #include "core/renderer/trace/renderer_trace_event_def.h"
 #include "core/runtime/bindings/common/event/message_event.h"
@@ -65,10 +63,7 @@ lepus::Value LepusClosureEventListener::ConvertEventToLepusValue(
   if (event->event_type() == event::Event::EventType::kTouchEvent ||
       event->event_type() == event::Event::EventType::kCustomEvent) {
     event->HandleEventBaseDetail();
-    auto event_detail = event->detail();
-    BASE_STATIC_STRING_DECL(kEventRef, "ref");
-    event_detail.Table()->SetValue(kEventRef, event);
-    return event_detail;
+    return event->detail();
   }
   return value;
 }
