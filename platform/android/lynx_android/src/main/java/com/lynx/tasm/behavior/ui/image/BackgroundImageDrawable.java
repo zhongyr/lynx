@@ -159,7 +159,6 @@ public class BackgroundImageDrawable extends BackgroundLayerDrawable {
     mLynxImageManager.setLynxBaseUI(ui);
     mLynxImageManager.setSkipRedirection(ui.getSkipRedirection());
     mLynxImageManager.setSrc(mUrl);
-    mLynxImageManager.setDisableDefaultResize(ui.getDisableDefaultResize());
     mLynxImageManager.updateRedirectCheckResult();
   }
 }
