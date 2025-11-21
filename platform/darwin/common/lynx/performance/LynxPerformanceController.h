@@ -3,7 +3,6 @@
 // LICENSE file in the root directory of this source tree.
 
 #import <Foundation/Foundation.h>
-#import <Lynx/LynxFSPTracer.h>
 #import <Lynx/LynxPerformanceObserverProtocol.h>
 #import "LynxMemoryMonitorProtocol.h"
 #import "LynxTimingCollectorProtocol.h"
@@ -19,7 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
                                                  LynxPerformanceObserverProtocol>
 /** The observer that will receive performance event notifications. */
 @property(nonatomic, weak, readonly, nullable) id<LynxPerformanceObserverProtocol> observer;
-@property(nonatomic, strong, readonly) LynxFSPTracer *fspTracer;
 
 /**
  * @brief Initializes a LynxPerformanceController instance with a specified observer.
