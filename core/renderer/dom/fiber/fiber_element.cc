@@ -3313,7 +3313,7 @@ bool FiberElement::RefreshStyle(StyleMap &parsed_styles,
       ProcessFullRawInlineStyle(nullptr);
       MergeInlineStyles(parsed_styles_map_);
     }
-    // Handle CSS varibale
+    // Handle CSS variable
     HandleCSSVariables(parsed_styles_map_);
   }
   if (force_use_parsed_styles_map) {
@@ -3425,8 +3425,7 @@ bool FiberElement::IsDirectionChangedEnabled() const {
   // direction temporarily
   // DirectionChange is enabled by default in RadonArch mode.
   // TODO(kechenglong): Avoid using IsRadonArch() & IsFiberArch() in Dom layer.
-  return IsRadonArch() ||
-         element_manager_->GetDynamicCSSConfigs().enable_css_inheritance_;
+  return IsRadonArch() || element_manager_->GetCSSInheritance();
 }
 
 // return ture means the style has already been processed
