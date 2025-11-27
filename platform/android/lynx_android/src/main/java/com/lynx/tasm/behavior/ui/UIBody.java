@@ -72,7 +72,10 @@ public class UIBody extends UIGroup<UIBodyView> {
     super(context);
     mBodyView = view;
     if (mBodyView != null) {
-      mBodyView.mLynxContext = context;
+      if (context != null && context.isFragmentLayerRenderOn()) {
+        mBodyView.mLynxContext = context;
+        mBodyView.setClipChildren(false);
+      }
     }
     initialize();
 
@@ -453,7 +456,7 @@ public class UIBody extends UIGroup<UIBodyView> {
       return mLynxFrame;
     }
 
-    public void setLynxFrame(int l, int t, int r, int b) {
+    public void setLynxFrame(int l, int t, int r, int b, int dx, int dy) {
       mLynxFrame.set(l, t, r, b);
     }
 
@@ -722,7 +725,14 @@ public class UIBody extends UIGroup<UIBodyView> {
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
       if (shouldDrawWithDisplayList()) {
         mDisplayListApplier.drawTillNextView(canvas);
-        return super.drawChild(canvas, child, drawingTime);
+        canvas.save();
+        if (child instanceof ContainerRenderer) {
+          canvas.translate(-((ContainerRenderer) child).mRenderOffset.x,
+              -((ContainerRenderer) child).mRenderOffset.y);
+        }
+        boolean ret = super.drawChild(canvas, child, drawingTime);
+        canvas.restore();
+        return ret;
       }
       Rect bound = null;
       if (mDrawChildHook != null) {
