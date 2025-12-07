@@ -212,8 +212,7 @@ bool LynxEnv::IsLynxDebugEnabled() {
 }
 
 bool LynxEnv::IsDevToolEnabled() {
-  return IsLynxDebugEnabled() &&
-         GetBoolEnv(Key::ENABLE_DEVTOOL, false, EnvType::LOCAL);
+  return GetBoolEnv(Key::ENABLE_DEVTOOL, false, EnvType::LOCAL);
 }
 
 bool LynxEnv::IsLogBoxEnabled() {

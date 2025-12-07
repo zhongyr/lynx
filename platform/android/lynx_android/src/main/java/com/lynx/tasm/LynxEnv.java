@@ -775,7 +775,6 @@ public class LynxEnv {
     if (devtoolService != null) {
       devtoolService.setLynxDebugPresetValue(enableLynxDebug);
     }
-    setBooleanLocalEnv(LynxEnvKey.LYNX_DEBUG_ENABLED, isLynxDebugEnabled());
     initDevtoolEnv();
   }
 
