@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "base/include/log/logging.h"
-#include "core/base/android/java_only_array.h"
 #include "core/base/android/java_only_map.h"
 
 namespace lynx {
@@ -54,29 +53,6 @@ ScopedLocalJavaRef<jobject> JNIHelper::ConvertSTLStringMapToJavaMap(
   ScopedLocalJavaRef<jobject> scoped_j_map;
   scoped_j_map.Reset(env, j_map.jni_object());
   return scoped_j_map;
-}
-
-void JNIHelper::PushByteArrayToJavaArray(runtime::js::Runtime* rt,
-                                         const runtime::js::ArrayBuffer& buf,
-                                         JavaOnlyArray* jarray) {
-  if (jarray == nullptr) {
-    return;
-  }
-  size_t length = buf.length(*rt);
-  uint8_t* buffer = buf.data(*rt);
-  jarray->PushByteArray(buffer, static_cast<int>(length));
-}
-
-void JNIHelper::PushByteArrayToJavaMap(runtime::js::Runtime* rt,
-                                       const std::string& key,
-                                       const runtime::js::ArrayBuffer& buf,
-                                       JavaOnlyMap* jmap) {
-  if (jmap == nullptr) {
-    return;
-  }
-  size_t length = buf.length(*rt);
-  uint8_t* buffer = buf.data(*rt);
-  jmap->PushByteArray(key, buffer, static_cast<int>(length));
 }
 
 }  // namespace android

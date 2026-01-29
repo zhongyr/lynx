@@ -7,6 +7,7 @@
 
 namespace lynx {
 namespace runtime {
+namespace js {
 constexpr int CONSOLE_UNKNOWN = -99;
 constexpr int CONSOLE_LOG_VERBOSE = -1;
 constexpr int CONSOLE_LOG_INFO = 0;
@@ -24,6 +25,8 @@ constexpr char LepusConsoleInfo[] = "info";
 constexpr char LepusConsoleLog[] = "log";
 constexpr char LepusConsoleReport[] = "report";
 constexpr char LepusConsoleWarn[] = "warn";
+
+}  // namespace js
 
 }  // namespace runtime
 }  // namespace lynx

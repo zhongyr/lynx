@@ -12,8 +12,8 @@
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace lynx {
-namespace runtime {
-namespace test {
+namespace common {
+namespace testing {
 namespace {
 
 const std::string kLepusNgRuntimeOriginErr =
@@ -1555,6 +1555,6 @@ TEST(JSErrorReporterTest, CustomInfo) {
   EXPECT_EQ(error.custom_info_["foo"], "bar");
 }
 
-}  // namespace test
-}  // namespace runtime
+}  // namespace testing
+}  // namespace common
 }  // namespace lynx
