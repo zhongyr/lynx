@@ -187,9 +187,9 @@ export class LynxTemplateRenderer {
   invokeLepusCallback(id: number, entryName: string, args: Object): void;
 }
 
-export type JSMeasureFunc = (width: number, widthMode: number, height: number, heightMode: number) => [number, number, number];
+type JSMeasureFunc = (width: number, widthMode: number, height: number, heightMode: number) => [number, number, number];
 
-export type JSAlignLayoutFunc = () => void;
+type JSAlignLayoutFunc = () => void;
 
 export class ShadowNode {
   constructor(ref: Object, sign: number, tag: string);
@@ -356,12 +356,3 @@ export class LynxRuntimeWrapper {
   protected nativeUnsubscribeSessionStorage(key: string, listenerId: number): void;
   
 }
-
-export const registerStaticTask: (
-  taskId: string,
-  callback: (nativeContextPtr: bigint) => void,
-) => boolean;
-
-export const unregisterStaticTask: (taskId: string) => boolean;
-
-export { RendererFunctionNG, FiberEventListenerOption, CommonCallbackNG } from './HarmonyRendererFunctionNG';

@@ -281,6 +281,7 @@ export struct LynxView {
     }
 
     this.nodeController?.updateNode(this.uiRenderer, this.fitContentHeight && !!this.experimentalFixFitContent);
+
     if (!this.enableAirStrictMode) {
       this.setupExtensionModules();
     }
