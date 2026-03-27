@@ -1,0 +1,45 @@
+apply plugin: 'base'
+
+configurations {
+    kotlinCompiler
+    compilerPlugin
+    sampleCompile
+}
+
+dependencies {
+    kotlinCompiler "org.jetbrains.kotlin:kotlin-compiler:$kotlin_version"
+    sampleCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    sampleCompile project(':runtime')
+    compilerPlugin project(':compiler-plugin')
+}
+
+def sampleSource = file('src/main/kotlin/dev/lynx/compose/demo/DemoPage.kt')
+def classesDir = file("$buildDir/classes")
+def generatedDir = file("$buildDir/generated/lynx")
+
+task compileComposeSample(type: JavaExec) {
+    dependsOn ':compiler-plugin:jar'
+    dependsOn ':runtime:jar'
+
+    inputs.file(sampleSource)
+    outputs.dir(classesDir)
+    outputs.dir(generatedDir)
+
+    classpath = configurations.kotlinCompiler
+    main = 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler'
+
+    doFirst {
+        classesDir.mkdirs()
+        generatedDir.mkdirs()
+    }
+
+    args(
+        sampleSource.absolutePath,
+        '-d', classesDir.absolutePath,
+        '-classpath', configurations.sampleCompile.asPath,
+        '-no-reflect',
+        '-no-stdlib',
+        "-Xplugin=${project(':compiler-plugin').tasks.jar.archiveFile.get().asFile.absolutePath}",
+        '-P', "plugin:dev.lynx.compose.lynx:outputDir=${generatedDir.absolutePath}"
+    )
+}

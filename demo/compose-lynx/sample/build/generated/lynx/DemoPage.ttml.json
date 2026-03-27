@@ -1,0 +1,23 @@
+{
+  "appType": "card",
+  "dsl": "react_nodiff",
+  "config": {
+    "lepusStrict": true,
+    "useNewSwiper": true,
+    "enableICU": false,
+    "enableNewIntersectionObserver": true,
+    "enableNativeList": false,
+    "enableA11y": true,
+    "enableAccessibilityElement": false,
+    "enableCSSInheritance": false,
+    "enableNewGesture": false,
+    "pipelineSchedulerConfig": 65536,
+    "removeDescendantSelectorScope": true,
+    "enableJsBindingApiThrowException": true
+  },
+  "__version": {
+    "cli": "compose-lynx-demo",
+    "entryName": "DemoPage"
+  },
+  "pages": []
+}

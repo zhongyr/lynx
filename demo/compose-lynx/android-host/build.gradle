@@ -1,0 +1,73 @@
+buildscript {
+    ext {
+        gradle_version = '3.5.0'
+        kotlin_version = '1.5.32'
+        minSdkVersion = 21
+        compileSdkVersion = 33
+        targetSdkVersion = 29
+        buildToolsVersion = "29.0.2"
+        ndkVersion = ndk_version
+        if(project.hasProperty("buildLynxDebugSo")){
+            buildLynxDebugSo = true
+        }else{
+            buildLynxDebugSo = false
+        }
+        value = project.properties["abiList"]
+        abiList = value ? value.toString().split(",") : ["arm64-v8a"]
+        pythonExec = project.file(python_exec).absolutePath
+        enable_coverage_bool = (enable_coverage == 'true')
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.android.tools:r8:3.1.51"
+        classpath 'de.undercouch:gradle-download-task:3.1.2'
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
+
+ext.getCppLib = {
+    if (project.hasProperty('use_cpp_shared') && project.property('use_cpp_shared') == 'true') {
+        return 'c++_shared'
+    }
+    if (project.hasProperty('use_cpp_static') && project.property('use_cpp_static') == 'true') {
+        return 'c++_static'
+    }
+    return 'c++_static'
+}
+
+ext.getFlavorNamesAndBuildTypes = { Project project ->
+    def flavorNames = []
+    def buildTypes = []
+    if (project.hasProperty('android')) {
+        project.android.productFlavors.all { flavor ->
+            flavorNames << flavor.name
+        }
+        project.android.buildTypes.all { buildType ->
+            buildTypes << buildType.name
+        }
+    }
+    return [flavorNames, buildTypes]
+}
+
+ext.writeGnArgs = { String gnArgs ->
+    exec {
+        workingDir "../../../"
+        commandLine pythonExec, "tools/android_tools/write_gn_args.py", "--gn-args", gnArgs.replaceAll('"', '#')
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

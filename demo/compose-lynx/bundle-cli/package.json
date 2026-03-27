@@ -1,0 +1,18 @@
+{
+  "name": "compose-lynx-bundle-cli",
+  "private": true,
+  "version": "0.1.0",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "bundle": "npm run build && node dist/build-bundle.js"
+  },
+  "dependencies": {
+    "@lynx-js/tasm": "0.0.20",
+    "@lynx-js/types": "3.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.30",
+    "typescript": "5.8.3"
+  }
+}
