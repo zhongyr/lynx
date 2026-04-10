@@ -100,7 +100,6 @@ dependencies {
     implementation project(':LynxXElement:Input')
     implementation project(':LynxXElement:Overlay')
     implementation project(':LynxXElement:ViewPager')
-    implementation project(':LynxXElement:ScrollCoordinator')
     implementation project(':LynxXElement:SVG')
     implementation project(':LynxXElement:Refresh')
 
