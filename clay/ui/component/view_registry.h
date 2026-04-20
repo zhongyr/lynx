@@ -115,8 +115,6 @@ class ViewRegistry {
 
   int32_t GetTagInfo(const std::string& tag_name);
 
-  bool HasView(const std::string& tag_name) const;
-
  private:
   ViewRegistry();
 

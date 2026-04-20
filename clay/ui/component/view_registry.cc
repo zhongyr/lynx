@@ -78,8 +78,4 @@ int32_t ViewRegistry::GetTagInfo(const std::string& tag_name) {
   return result;
 }
 
-bool ViewRegistry::HasView(const std::string& tag_name) const {
-  return registry_.find(tag_name) != registry_.end();
-}
-
 }  // namespace clay

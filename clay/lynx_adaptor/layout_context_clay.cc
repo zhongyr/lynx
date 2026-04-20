@@ -163,10 +163,7 @@ int LayoutContextClay::CreateLayoutNode(int id, const std::string& tag,
     if (rule & 0x1) {
       return LayoutNodeType::CUSTOM;
     }
-    if (node && node->IsVirtual()) {
-      return LayoutNodeType::VIRTUAL | LayoutNodeType::CUSTOM;
-    }
-    return LayoutNodeType::CUSTOM;
+    return LayoutNodeType::VIRTUAL | LayoutNodeType::CUSTOM;
   } else if (allow_inline) {
     // update props
     SetAttribute(id, painting_data);

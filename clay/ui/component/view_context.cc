@@ -4,7 +4,6 @@
 
 #include "clay/ui/component/view_context.h"
 
-#include <cstring>
 #include <list>
 #include <map>
 #include <memory>
@@ -123,8 +122,7 @@ bool ViewContext::CreateView(int id, const std::string& tag_name) {
     page_view_->SetID(id);
     return true;
   }
-  BaseView* view = nullptr;
-  view = ViewRegistry::GetInstance()->CreateView(id, tag_name, page_view_);
+  auto view = ViewRegistry::GetInstance()->CreateView(id, tag_name, page_view_);
 
   if (!view) {
     FML_DLOG(ERROR) << "unsupported view type: " << tag_name
@@ -158,9 +156,10 @@ void ViewContext::AddView(int id, int parent_id, int index) {
 
   if (index < 0) {
     parent->second->AddChild(target->second);
-  } else {
-    parent->second->AddChild(target->second, index);
+    return;
   }
+
+  parent->second->AddChild(target->second, index);
 }
 
 void ViewContext::InsertListItemPaintingNode(int list_id, int child_id) {
@@ -1022,14 +1021,8 @@ void ViewContext::SetScrollFluencyMonitorDelegate(
   }
 }
 
-void ViewContext::SyncNativeViewTags(
-    std::unordered_set<std::string> tags,
-    std::unordered_set<std::string> bootstrap_tags) {
+void ViewContext::SyncNativeViewTags(std::unordered_set<std::string> tags) {
   for (const auto& tag : tags) {
-    if (ViewRegistry::GetInstance()->HasView(tag) &&
-        bootstrap_tags.find(tag) == bootstrap_tags.end()) {
-      continue;
-    }
     ViewRegistry::GetInstance()->RegisterView(
         tag,
         [tag](int id, PageView* page_view) {
@@ -1065,12 +1058,6 @@ void ViewContext::ResumeExposure() {
       intersection_manager->ResumeExposure();
     }
   }
-}
-
-void ViewContext::SyncNativeViewCompositionPreferences(
-    std::unordered_map<std::string, NativeViewCompositionPreference>
-        composition_preferences) {
-  native_view_composition_preferences_ = std::move(composition_preferences);
 }
 
 }  // namespace clay
