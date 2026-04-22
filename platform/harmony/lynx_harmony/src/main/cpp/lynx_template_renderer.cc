@@ -151,8 +151,7 @@ void LynxTemplateRenderer::SetUpLynxShell(
           .SetLynxEnvConfig(lynx_env_config)
           .SetEnableElementManagerVsyncMonitor(true)
           .SetEnableNewAnimator(is_host_renderer)
-          .SetEnableNativeList(is_host_renderer ||
-                               ui_delegate_->IsClayUIRenderer())
+          .SetEnableNativeList(is_host_renderer)
           .SetLazyBundleLoader(loader)
           //.SetEnablePreUpdateData(enable_pre_update_data_)
           .SetLayoutContextPlatformImpl(ui_delegate_->CreateLayoutContext())

@@ -125,8 +125,7 @@ void LynxTemplateRenderer::Reset(bool wait_for_runtime_detach) {
           .SetVSyncMonitorPlatformImpl(settings_.vsync_monitor_platform_impl)
           .SetEnableElementManagerVsyncMonitor(true)
           .SetEnableNewAnimator(settings_.enable_new_animator)
-          .SetEnableNativeList(settings_.enable_native_list ||
-                               ui_delegate_->IsClayUIRenderer())
+          .SetEnableNativeList(settings_.enable_native_list)
           .SetLazyBundleLoader(loader)
           .SetLayoutContextPlatformImpl(ui_delegate_->CreateLayoutContext())
           .SetStrategy(static_cast<base::ThreadStrategyForRendering>(
