@@ -185,7 +185,8 @@ class RenderObject : public AbstractNode {
     if (!Visible()) {
       return false;
     }
-    return box_data_.Width() > 0.f && box_data_.Height() > 0.f;
+    return (box_data_.Width() > 0.f && box_data_.Height() > 0.f) ||
+           !HasOverflowClip();
   }
 
   // When the render object has a layer, use this bounds to construct the
