@@ -5,8 +5,10 @@
 #include "core/renderer/dom/fiber/text_element.h"
 
 #include <memory>
+#include <string>
 #include <utility>
 
+#include "base/include/auto_reset.h"
 #include "base/include/value/base_string.h"
 #include "core/renderer/css/css_property.h"
 #include "core/renderer/css/unit_handler.h"
@@ -134,8 +136,10 @@ bool TextElement::ProcessAttributeForLayoutInElement(const base::String& key,
     content_ = std::move(content);
     content_utf16_length_ =
         GetUtf16SizeFromUtf8(content_.c_str(), content_.length());
-    MarkLayoutDirty();
-    element_container_->InvalidateForRedraw();
+    if (!preparing_detached_measurement_) {
+      MarkLayoutDirty();
+      element_container_->InvalidateForRedraw();
+    }
     return true;
   }
 
@@ -154,8 +158,10 @@ bool TextElement::ProcessAttributeForLayoutInElement(const base::String& key,
       EnsureTextProps();
       text_props_->text_max_line = text_max_line;
     }
-    MarkLayoutDirty();
-    element_container_->InvalidateForRedraw();
+    if (!preparing_detached_measurement_) {
+      MarkLayoutDirty();
+      element_container_->InvalidateForRedraw();
+    }
     return true;
   }
   if (is_reset) {
@@ -285,6 +291,67 @@ void TextElement::DispatchLayoutBefore() {
   }
 
   element_manager_->DispatchLayoutBefore(this);
+}
+
+void TextElement::PrepareForDetachedMeasurement() {
+  base::AutoReset<bool> preparation_scope(&preparing_detached_measurement_,
+                                          true);
+  ConsumeAllAttributes();
+
+  // Share CSS resolution (including units, variables and attribute styles),
+  // but not the normal flush pipeline and its layout/animation side effects.
+  auto style = style_resolver_.ResolveBaseStyle(nullptr, computed_css_style());
+  for (const auto& [id, value] : computed_css_style()->GetResolvedValues()) {
+    MarkLayoutInElementTextMeasurerPropertyIfNeeded(id);
+  }
+  for (const auto& [id, value] : style->GetResolvedValues()) {
+    MarkLayoutInElementTextMeasurerPropertyIfNeeded(id);
+  }
+  if (slnode()) {
+    slnode()->SetLayoutStyle(style->GetLayoutComputedStyle());
+  }
+  platform_css_style_ = std::move(style);
+  // The platform cache is recreated for every measurement, including when the
+  // default font size is used or a previously explicit font size was removed.
+  property_bits_.Set(kPropertyIDFontSize);
+  UpdateLayoutNodeFontSize(computed_css_style()->GetFontSize(),
+                           computed_css_style()->GetRootFontSize());
+  ReplayElementSpecificStyleSideEffect(kPropertyIDFontFamily);
+  ClearCachedStylesFromAttributes();
+}
+
+void TextElement::DispatchLayoutAfter() {
+  if (!EnableLayoutInElementMode()) {
+    Element::DispatchLayoutAfter();
+  } else if (!is_inline_element() && has_pending_layout_event_) {
+    // Position-only updates must not resend an event for the same measurement.
+    has_pending_layout_event_ = false;
+    if (!EnableFragmentLayerRender()) {
+      TextFragmentBehavior::DispatchLayoutEvent(
+          this, text_layout_event_size_.width_,
+          text_layout_event_size_.height_);
+    }
+  }
+}
+
+void TextElement::OnEventHandlersChanged(const base::String& name) {
+  if (name.empty() || name.IsEquals("layout")) {
+    UpdateLayoutEventState();
+  }
+}
+
+void TextElement::UpdateLayoutEventState() {
+  BASE_STATIC_STRING_DECL(kLayoutEvent, "layout");
+  const bool has_layout_event = event_map().count(kLayoutEvent) > 0 ||
+                                lepus_event_map().count(kLayoutEvent) > 0;
+  const bool had_layout_event = has_layout_event_;
+  has_layout_event_ = has_layout_event;
+  if (EnableLayoutInElementMode() && !is_inline_element() && has_layout_event &&
+      !had_layout_event) {
+    // A new layout handler needs a fresh measured result before UI
+    // installation.
+    MarkLayoutDirtyLite();
+  }
 }
 
 LayoutResult TextElement::Measure(float width, int32_t width_mode, float height,
