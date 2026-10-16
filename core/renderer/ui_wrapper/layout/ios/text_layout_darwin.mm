@@ -180,7 +180,9 @@ void TextLayoutDarwin::DispatchLayoutBefore(Element* element) {
   textBundle.inlineElementSigns = inlineElementSigns;
   textBundle.textStyle = textStyle;
   [_textRenderManager putAttributedTextBundle:element->impl_id() textBundle:textBundle];
-  if (element->EnableFragmentLayerRender()) {
+  const bool is_detached_root =
+      !element->parent() && !element->render_parent() && element->IsDetached();
+  if (element->EnableFragmentLayerRender() && !is_detached_root) {
     if (auto* manager = element->element_manager(); manager && manager->painting_context()) {
       manager->painting_context()->impl()->CastToNativeCtx()->UpdateTextEventTargetRanges(
           element->impl_id(), std::move(event_target_ranges_));
