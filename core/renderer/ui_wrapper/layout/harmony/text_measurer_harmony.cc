@@ -175,6 +175,15 @@ void ApplyTextStyle(TextElement* element, float density,
     text_style.SetTextDecorationColor(*attributes->text_decoration_color);
   }
   text_style.SetTextDecorationStyle(attributes->text_decoration_style);
+  if (attributes->text_shadow.has_value() &&
+      !attributes->text_shadow->empty()) {
+    const auto& shadow = attributes->text_shadow->front();
+    text_style.SetShadowLayer(
+        harmony::ShadowData{.blur_radius = shadow.blur * density,
+                            .x = shadow.h_offset * density,
+                            .y = shadow.v_offset * density,
+                            .color = shadow.color});
+  }
   text_style.UpdateTextPaint(0.f, 0.f, density);
 }
 
@@ -199,7 +208,6 @@ void ApplyParagraphStyle(TextElement* element, float density,
 
   paragraph_style.SetTextAlignToParagraphStyle(attributes->text_align);
   paragraph_style.SetWhiteSpace(attributes->white_space);
-  paragraph_style.SetTextWordBreakType(attributes->word_break);
 
   int32_t max_lines = starlight::DefaultComputedStyle::DEFAULT_TEXT_MAX_LINE;
   if (const auto* text_props = element->text_props();
@@ -209,6 +217,7 @@ void ApplyParagraphStyle(TextElement* element, float density,
   if (attributes->white_space == starlight::WhiteSpaceType::kNowrap &&
       attributes->text_overflow == starlight::TextOverflowType::kEllipsis) {
     max_lines = 1;
+    paragraph_style.SetTextWordBreakType(starlight::WordBreakType::kBreakAll);
   }
   paragraph_style.SetTextMaxLines(max_lines);
   if (attributes->text_overflow == starlight::TextOverflowType::kEllipsis) {
@@ -349,12 +358,16 @@ void AppendInlineElement(harmony::ParagraphBuilderHarmony& builder,
 }
 
 template <typename PlaceholderInfoList>
-void AppendTextSubtree(
+bool AppendTextSubtree(
     harmony::ParagraphBuilderHarmony& builder, TextElement* element,
     float density, harmony::LynxContext* context,
     const InlineElementSizeList& inline_sizes,
     PlaceholderInfoList& placeholder_infos,
     std::vector<PlatformTextEventTargetRange>& event_ranges) {
+  harmony::TextStyleHarmony text_style;
+  if (text_style.GetRawStruct() == nullptr) {
+    return false;
+  }
   const int32_t start = builder.GetCharCount();
   const bool native_inline_target = !element->EnableFragmentLayerRender() &&
                                     element->is_inline_element() &&
@@ -365,7 +378,6 @@ void AppendTextSubtree(
                                 harmony::LynxEventPropStatus::kUndefined,
                                 harmony::LynxPointerEventsValue::kUnset);
   }
-  harmony::TextStyleHarmony text_style;
   ApplyTextStyle(element, density, context, text_style);
   builder.PushTextStyle(text_style);
 
@@ -373,7 +385,7 @@ void AppendTextSubtree(
   AppendDecodedText(builder, element->content(), decode_property);
 
   auto append_children = [&](auto&& self, Element* parent,
-                             TextElement* inherited_text) -> void {
+                             TextElement* inherited_text) -> bool {
     for (auto* child = parent->first_render_child(); child != nullptr;
          child = child->next_render_sibling()) {
       if (child->is_raw_text()) {
@@ -381,18 +393,25 @@ void AppendTextSubtree(
                           static_cast<RawTextElement*>(child)->content(),
                           DecodePropertyForTextElement(inherited_text));
       } else if (child->is_text()) {
-        AppendTextSubtree(builder, static_cast<TextElement*>(child), density,
-                          context, inline_sizes, placeholder_infos,
-                          event_ranges);
+        if (!AppendTextSubtree(builder, static_cast<TextElement*>(child),
+                               density, context, inline_sizes,
+                               placeholder_infos, event_ranges)) {
+          return false;
+        }
       } else if (child->is_image() || child->is_view()) {
         AppendInlineElement(builder, child, inherited_text, inline_sizes,
                             density, placeholder_infos);
       } else if (child->is_wrapper()) {
-        self(self, child, inherited_text);
+        if (!self(self, child, inherited_text)) {
+          return false;
+        }
       }
     }
+    return true;
   };
-  append_children(append_children, element, element);
+  if (!append_children(append_children, element, element)) {
+    return false;
+  }
   builder.PopTextStyle();
   if (native_inline_target) {
     builder.PopTextEventTarget();
@@ -403,6 +422,7 @@ void AppendTextSubtree(
     // Post-order matches the common event tree's nested target priority.
     event_ranges.push_back({element->impl_id(), start, end});
   }
+  return true;
 }
 
 template <typename PlaceholderInfo>
@@ -520,9 +540,23 @@ void TextMeasurerHarmony::DispatchLayoutBefore(Element* element) {
 LayoutResult TextMeasurerHarmony::Measure(Element* element, float width,
                                           int width_mode, float height,
                                           int height_mode) {
+  return MeasureInternal(element, width, width_mode, height, height_mode)
+      .value_or(LayoutResult{});
+}
+
+std::optional<LayoutResult> TextMeasurerHarmony::MeasureDetached(
+    Element* element, float width, int width_mode, float height,
+    int height_mode) {
+  return MeasureInternal(element, width, width_mode, height, height_mode);
+}
+
+std::optional<LayoutResult> TextMeasurerHarmony::MeasureInternal(
+    Element* element, float width, int width_mode, float height,
+    int height_mode) {
   if (element == nullptr || !element->is_text() ||
-      font_collection_ == nullptr) {
-    return {};
+      element->computed_css_style() == nullptr || font_collection_ == nullptr ||
+      font_collection_->GetRawStruct() == nullptr) {
+    return std::nullopt;
   }
 
   auto* text_element = static_cast<TextElement*>(element);
@@ -538,18 +572,40 @@ LayoutResult TextMeasurerHarmony::Measure(Element* element, float width,
   }
 
   harmony::ParagraphStyleHarmony paragraph_style;
+  if (paragraph_style.GetRawStruct() == nullptr) {
+    return std::nullopt;
+  }
   ApplyParagraphStyle(text_element, density, paragraph_style);
   harmony::ParagraphBuilderHarmony builder(&paragraph_style,
                                            font_collection_.get());
+  if (builder.GetRawStruct() == nullptr) {
+    return std::nullopt;
+  }
   std::vector<InlinePlaceholderInfo> placeholder_infos;
   std::vector<PlatformTextEventTargetRange> event_ranges;
-  AppendTextSubtree(builder, text_element, density, context_, inline_sizes,
-                    placeholder_infos, event_ranges);
+  if (!AppendTextSubtree(builder, text_element, density, context_, inline_sizes,
+                         placeholder_infos, event_ranges)) {
+    return std::nullopt;
+  }
 
   auto paragraph = builder.CreateParagraph(font_collection_, width);
+  if (paragraph == nullptr || paragraph->GetRawStruct() == nullptr) {
+    return std::nullopt;
+  }
   const auto measure_width_mode = static_cast<SLMeasureMode>(width_mode);
   const auto measure_height_mode = static_cast<SLMeasureMode>(height_mode);
-  const float max_width = IsSLIndefiniteMode(measure_width_mode)
+  const auto& attributes =
+      text_element->computed_css_style()->GetTextAttributes();
+  const auto white_space = attributes.has_value()
+                               ? attributes->white_space
+                               : starlight::WhiteSpaceType::kNormal;
+  const auto text_overflow = attributes.has_value()
+                                 ? attributes->text_overflow
+                                 : starlight::TextOverflowType::kClip;
+  // Match native text layout: nowrap with clipping must not soft-wrap.
+  const bool nowrap_clip = white_space == starlight::WhiteSpaceType::kNowrap &&
+                           text_overflow == starlight::TextOverflowType::kClip;
+  const float max_width = IsSLIndefiniteMode(measure_width_mode) || nowrap_clip
                               ? kTextMaxLayoutWidth
                               : width * density;
   paragraph->Layout(max_width);
@@ -573,14 +629,6 @@ LayoutResult TextMeasurerHarmony::Measure(Element* element, float width,
     result.height_ = std::min(result.height_, height);
   }
 
-  const auto& attributes =
-      text_element->computed_css_style()->GetTextAttributes();
-  const auto white_space = attributes.has_value()
-                               ? attributes->white_space
-                               : starlight::WhiteSpaceType::kNormal;
-  const auto text_overflow = attributes.has_value()
-                                 ? attributes->text_overflow
-                                 : starlight::TextOverflowType::kClip;
   if (!IsSLDefiniteMode(measure_width_mode) ||
       white_space == starlight::WhiteSpaceType::kNowrap) {
     float text_width = paragraph->GetLongestLine();
@@ -605,14 +653,19 @@ LayoutResult TextMeasurerHarmony::Measure(Element* element, float width,
   if (element->EnableFragmentLayerRender()) {
     text_element->SetTextBundle(
         reinterpret_cast<intptr_t>(stored_paragraph.get()));
-    if (auto* manager = element->element_manager();
-        manager && manager->painting_context()) {
-      // Send empty ranges too, to remove targets after text or listeners
-      // change.
-      manager->painting_context()
-          ->impl()
-          ->CastToNativeCtx()
-          ->UpdateTextEventTargetRanges(id, std::move(event_ranges));
+    const bool is_detached_root = !element->parent() &&
+                                  !element->render_parent() &&
+                                  element->IsDetached();
+    if (!is_detached_root) {
+      if (auto* manager = element->element_manager();
+          manager && manager->painting_context()) {
+        // Send empty ranges too, to remove targets after text or listeners
+        // change.
+        manager->painting_context()
+            ->impl()
+            ->CastToNativeCtx()
+            ->UpdateTextEventTargetRanges(id, std::move(event_ranges));
+      }
     }
   }
   return result;

@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 4.4.5
+
+- Add `thread-strategy` to `<frame>` typings and declare the `FrameThreadStrategy` enum for rendering thread models.
+
+## 4.4.4
+
+- Add `<transfer-view>` typings with a required string `transfer-id` for Android and iOS.
+
+## 4.4.3
+
+- Add the Android and Harmony `experimental-consume-gesture` property to `<scroll-coordinator-header>`. It defaults to `false` to limit rollout impact and is planned to default to `true` before removal. Keep `android-consume-gesture` as a deprecated Android property.
+
+## 4.4.2
+
+- Add `requestTimeoutMs` to `RequestInit.lynxExtension` for configuring the Fetch request timeout in milliseconds.
+
+## 4.4.1
+
+- Add `lynx.performance.getMemoryUsage()` method.
+
 ## 4.4.0
 
 - Add `experimental-use-new-update-animation` and `experimental-new-update-animation` to `<list>` typings.

@@ -9,7 +9,6 @@
 
 #include "base/include/debug/lynx_error.h"
 #include "core/base/threading/task_runner_manufactor.h"
-#include "core/renderer/dom/fragment/display_list.h"
 #include "core/renderer/ui_wrapper/common/ios/platform_extra_bundle_darwin.h"
 #include "core/renderer/ui_wrapper/layout/ios/text_layout_darwin.h"
 #include "core/renderer/ui_wrapper/layout/textra/text_layout_textra.h"
@@ -22,14 +21,22 @@
 #include "core/renderer/utils/ios/text_utils_ios.h"
 #include "core/shell/dynamic_ui_operation_queue.h"
 #include "core/value_wrapper/value_wrapper_utils.h"
+#include "gfx/public/display_list.h"
 
 #import <Foundation/Foundation.h>
 #import <Lynx/LUIBodyView.h>
 #import <Lynx/LynxComponentRegistry.h>
+#import <Lynx/LynxRendererContext.h>
 #import <Lynx/LynxShadowNodeOwner.h>
 #import <Lynx/LynxUIOwner+Private.h>
 #import <Lynx/LynxURL.h>
 #include <cstdint>
+
+@interface LynxRendererContext (ImageUIMethod)
+
+- (void)markPrimaryImageManager:(int32_t)imageKey forSign:(int32_t)sign;
+
+@end
 
 namespace lynx {
 namespace tasm {
@@ -409,6 +416,9 @@ fml::RefPtr<PaintImage> NativePaintingCtxDarwin::CreateImage(int id, base::Strin
                                            paintInfo:paint_info
                                            eventMask:event_mask
                                             imageKey:image_key];
+  if (!disable_default_resize) {
+    [context_->GetRendererContext() markPrimaryImageManager:image_key forSign:id];
+  }
   return fml::MakeRefCounted<PaintImageDarwin>(image_key, context_->GetRendererContext());
 }
 

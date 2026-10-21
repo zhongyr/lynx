@@ -1664,6 +1664,7 @@ public class LynxEventHandler : NSObject {
   public BOOL LynxEventHandler::enableSimultaneousTap enableSimultaneousTap;
   public BOOL LynxEventHandler::customizedEndEditingStrategy customizedEndEditingStrategy;
   public id<LynxEventTarget> LynxEventHandler::focusedInputTarget focusedInputTarget;
+  public UIView* LynxEventHandler()::touchEventSource touchEventSource;
   public instancetype LynxEventHandler::initWithRootView:(UIView *rootView);
   public instancetype LynxEventHandler::initWithRootView:andFlag:(UIView *rootView,[andFlag] BOOL isFragmentLayerRenderOn);
   public instancetype LynxEventHandler::initWithRootView:withRootUI:(UIView *rootView,[withRootUI] nullable LynxUI *rootUI);
@@ -1692,6 +1693,11 @@ public class LynxEventHandler : NSObject {
   public id< LynxEventTarget > LynxEventHandler::touchTarget();
   public LynxUIOwner * LynxEventHandler::uiOwner();
   public NSInteger LynxEventHandler::eventRootSign();
+  public void LynxEventHandler()::syncConfigWith:(LynxEventHandler *eventHandler);
+  public void LynxEventHandler()::setTouchEventSource:payloadRootView:(nullable UIView *sourceView, [payloadRootView] nullable UIView *rootView);
+  public CGPoint LynxEventHandler()::pagePointFromTouch:(UITouch *touch);
+  public CGPoint LynxEventHandler()::viewPointFromPagePoint:target:(CGPoint point, [target] id< LynxEventTarget > target);
+  public CGPoint LynxEventHandler()::viewPointFromTouch:target:(UITouch *touch, [target] nullable id< LynxEventTarget > target);
   public void LynxEventHandler()::setEnableViewReceiveTouch:(BOOL enable);
   public void LynxEventHandler()::setEnableSimultaneousTap:(BOOL enable);
   public void LynxEventHandler()::setDisableLongpressAfterScroll:(bool value);
@@ -1703,6 +1709,7 @@ public class LynxEventHandler : NSObject {
   public void LynxEventHandler()::dispatchPanEvent:(UIPanGestureRecognizer *sender);
   public void LynxEventHandler()::needCheckConsumeSlideEvent();
   public BOOL LynxEventHandler()::hasConsumeSlideEvent();
+  public void LynxEventHandler()::updatePlatformConsumeSlideEventAngles:(nullable NSArray< NSNumber * > *angles);
   public id< LynxEventTarget > LynxEventHandler()::hitTestInner:withEvent:(CGPoint point, [withEvent] nullable UIEvent *event);
   public NSInteger LynxEventHandler()::checkCanRespondTapOrClick:withSet:(id< LynxEventTarget > ui, [withSet] NSSet *set);
   public void LynxEventHandler()::removeEventGestures();
@@ -1983,6 +1990,7 @@ public class LynxFrameView : UIView, <LUIBodyView> {
   public void LynxFrameView::setPresetWidth:(CGFloat presetWidth);
   public void LynxFrameView::setPresetHeight:(CGFloat presetHeight);
   public void LynxFrameView::setEnableMultiAsyncThread:(nullable NSNumber *enableMultiAsyncThread);
+  public void LynxFrameView::setThreadStrategy:(nullable NSNumber *threadStrategy);
   public UIView< LUIBodyView > *_Nullable LynxFrameView::getRootView();
   public void LynxFrameView::updateFrame:contentFrame:(CGRect frame,[contentFrame] CGRect contentFrame);
   public void LynxFrameView::setEmbeddedMode:(LynxEmbeddedMode embeddedMode);
@@ -2463,6 +2471,7 @@ public class LynxKeyframeAnimator : NSObject typedef enum LynxKFAnimatorState {
   public NSString* LynxKeyframeAnimator::kBackgroundColorStr kBackgroundColorStr;
   public NSMutableDictionary* LynxKeyframeAnimator::propertyOriginValue propertyOriginValue;
   public BOOL LynxKeyframeAnimator::autoResumeAnimation autoResumeAnimation;
+  public LynxPlatformAnimationPlayback* LynxKeyframeAnimator(TypedKeyframes)::platformPlayback platformPlayback;
   public instancetype LynxKeyframeAnimator::initWithUI:(LynxUI *ui);
   public void LynxKeyframeAnimator::apply:(LynxAnimationInfo *info);
   public void LynxKeyframeAnimator::destroy();
@@ -2474,6 +2483,18 @@ public class LynxKeyframeAnimator : NSObject typedef enum LynxKFAnimatorState {
   public void LynxKeyframeAnimator::tryToResumeAnimationOnNextFrame();
   public void LynxKeyframeAnimator::detachFromUI();
   public void LynxKeyframeAnimator::attachToUI:(LynxUI *ui);
+  public void LynxKeyframeAnimator(TypedKeyframes)::detachPlatformAnimation();
+  public void LynxKeyframeAnimator(TypedKeyframes)::applyAnimationInfo:keyframesProvider:reuseKeyframes:generation:(LynxAnimationInfo *info, [keyframesProvider] LynxTypedKeyframesProvider provider, [reuseKeyframes] BOOL reuseKeyframes, [generation] uint32_t generation);
+  public void LynxKeyframeAnimator(TypedKeyframes)::reapply();
+  public nullable LynxKeyframeParsedData * LynxKeyframeAnimator(TypedKeyframes)::buildParsedTransformKeyframes:times:ui:(NSArray< NSArray< LynxTransformRaw * > * > *keyframes, [times] NSArray< NSNumber * > *times, [ui] LynxUI *ui);
+}
+
+public interface LynxKeyframeAnimator(TypedKeyframes) {
+  public LynxPlatformAnimationPlayback* LynxKeyframeAnimator(TypedKeyframes)::platformPlayback platformPlayback;
+  public void LynxKeyframeAnimator(TypedKeyframes)::detachPlatformAnimation();
+  public void LynxKeyframeAnimator(TypedKeyframes)::applyAnimationInfo:keyframesProvider:reuseKeyframes:generation:(LynxAnimationInfo *info,[keyframesProvider] LynxTypedKeyframesProvider provider,[reuseKeyframes] BOOL reuseKeyframes,[generation] uint32_t generation);
+  public void LynxKeyframeAnimator(TypedKeyframes)::reapply();
+  public nullable LynxKeyframeParsedData * LynxKeyframeAnimator(TypedKeyframes)::buildParsedTransformKeyframes:times:ui:(NSArray< NSArray< LynxTransformRaw * > * > *keyframes,[times] NSArray< NSNumber * > *times,[ui] LynxUI *ui);
 }
 
 public class LynxKeyframeManager : NSObject {
@@ -2492,6 +2513,11 @@ public class LynxKeyframeManager : NSObject {
   public void LynxKeyframeManager::resumeAnimation();
   public void LynxKeyframeManager::detachFromUI();
   public void LynxKeyframeManager::attachToUI:(LynxUI *ui);
+  public void LynxKeyframeManager(TypedKeyframes)::applyAnimationInfo:keyframesProvider:reuseKeyframes:animationID:generation:cancel:detach:playback:(nullable LynxAnimationInfo *info, [keyframesProvider] nullable LynxTypedKeyframesProvider provider, [reuseKeyframes] BOOL reuseKeyframes, [animationID] uint64_t animationID, [generation] uint32_t generation, [cancel] BOOL cancel, [detach] BOOL detach, [playback] nullable LynxPlatformAnimationPlayback *playback);
+}
+
+public interface LynxKeyframeManager(TypedKeyframes) {
+  public void LynxKeyframeManager(TypedKeyframes)::applyAnimationInfo:keyframesProvider:reuseKeyframes:animationID:generation:cancel:detach:playback:(nullable LynxAnimationInfo *info,[keyframesProvider] nullable LynxTypedKeyframesProvider provider,[reuseKeyframes] BOOL reuseKeyframes,[animationID] uint64_t animationID,[generation] uint32_t generation,[cancel] BOOL cancel,[detach] BOOL detach,[playback] nullable LynxPlatformAnimationPlayback *playback);
 }
 
 public class LynxKeyframeParsedData : NSObject {
@@ -3377,6 +3403,12 @@ public class LynxPipelineInfo : NSObject {
   public void LynxPipelineInfo::addPipelineOrigin:(NSInteger pipelineOrigin);
 }
 
+public class LynxPlatformAnimationPlayback : NSObject {
+  public NSTimeInterval(^ LynxPlatformAnimationPlayback::currentTime) (void) currentTime;
+  public BOOL(^ LynxPlatformAnimationPlayback::isCurrentExecutor) (void) isCurrentExecutor;
+  public BOOL(^ LynxPlatformAnimationPlayback::claimEvent) (NSString *event) claimEvent;
+}
+
 public class LynxPlatformLength : NSObject, <NSCopying> {
   public LynxPlatformLengthUnit LynxPlatformLength::type type;
   public CGFloat LynxPlatformLength::value value;
@@ -3764,6 +3796,8 @@ public protocol LynxServiceImageProtocol-p : <LynxServiceProtocol> {
   public void LynxServiceImageProtocol-p::handleAnimatedImage:view:loopCount:(UIImage *image,[view] UIImageView *imageView,[loopCount] NSInteger loopCount);
   public void LynxServiceImageProtocol-p::setFrameCacheAutomatically:value:(id view,[value] BOOL frameCacheAutomatically);
   public void LynxServiceImageProtocol-p::registerAnimatedImageCallback:UI:(id view,[UI] LynxUIImage *ui);
+  public void LynxServiceImageProtocol-p::registerAnimatedImageCallback:startCallback:currentLoopCallback:finalLoopCallback:(id view,[startCallback] dispatch_block_t _Nullable startCallback,[currentLoopCallback] dispatch_block_t _Nullable currentLoopCallback,[finalLoopCallback] dispatch_block_t _Nullable finalLoopCallback);
+  public BOOL LynxServiceImageProtocol-p::requiresAnimatedImageCallbackBeforeSettingImage();
   public dispatch_block_t LynxServiceImageProtocol-p::loadImageWithOptions:(LynxImageLoadOptions *options);
   public void LynxServiceImageProtocol-p::loadSVGImageWithURL:size:contextInfo:completed:(LynxURL *requestUrl,[size] CGSize targetSize,[contextInfo] NSDictionary *contextInfo,[completed] LynxImageLoadCompletionBlock completed);
 }
@@ -3977,6 +4011,7 @@ public class LynxTemplateBundle : NSObject, <LynxSecurityTarget> {
   public NSData *_Nullable LynxTemplateBundle::customSectionForKey:(nonnull NSString *key);
   public void LynxTemplateBundle::postJsCacheGenerationTask:(nonnull NSString *bytecodeSourceUrl);
   public void LynxTemplateBundle::postJsCacheGenerationTask:callback:(nonnull NSString *bytecodeSourceUrl,[callback] nullable LynxBytecodeResponseBlock callback);
+  public void LynxTemplateBundle::postJsCacheGenerationTask:callback:continueGeneration:(nonnull NSString *bytecodeSourceUrl,[callback] nullable LynxBytecodeResponseBlock callback,[continueGeneration] nullable LynxBytecodeContinueBlock continueGeneration);
   public BOOL LynxTemplateBundle::preload:bytecode:callback:(nonnull NSString *url,[bytecode] nonnull NSData *bytecode,[callback] nullable dispatch_block_t callback);
   public instancetype _Nullable LynxTemplateBundle::_swiftTemplateBundleWithTemplate:(init(template:) NS_SWIFT_NAME);
   public instancetype _Nullable LynxTemplateBundle::_swiftTemplateBundleWithTemplate:option:(nonnull NSData *tem,[option] init(template:option:) NS_SWIFT_NAME);
@@ -4112,6 +4147,7 @@ public class LynxTemplateRender : NSObject, <LynxTemplateRenderProtocol>, <Templ
   public void LynxTemplateRender()::SetPlatformEventRootActive:active:(NSInteger rootSign, [active] BOOL active);
   public void LynxTemplateRender()::SetPlatformEventRootOffset:offsetX:offsetY:(NSInteger rootSign, [offsetX] CGFloat offsetX, [offsetY] CGFloat offsetY);
   public LynxPlatformEventBehavior LynxTemplateRender()::HitTestAndCachePlatformEventBehavior:point:(NSInteger rootSign, [point] CGPoint point);
+  public NSArray< NSNumber * > * LynxTemplateRender()::GetCachedConsumeSlideEventAngles();
   public lynx::runtime::js::ModuleFactoryDarwin * LynxTemplateRender()::getModuleFactory();
   public LynxLifecycleDispatcher * LynxTemplateRender()::getLifecycleDispatcher();
   public void LynxTemplateRender(Helper)::setUpWithBuilder:screenSize:(LynxViewBuilder *builder, [screenSize] CGSize screenSize);
@@ -4506,6 +4542,7 @@ public class LynxTouchHandler : UIGestureRecognizer {
   public void LynxTouchHandler::touchesEndedInner:withEvent:(NSSet< UITouch * > *touches,[withEvent] UIEvent *event);
   public void LynxTouchHandler::touchesCancelledInner:withEvent:(NSSet< UITouch * > *touches,[withEvent] UIEvent *event);
   public void LynxTouchHandler()::setupVelocityTracker:(UIView *rootView);
+  public void LynxTouchHandler()::syncConfigWith:(LynxTouchHandler *touchHandler);
   public void LynxTouchHandler()::setEnableEndGestureAtLastFingerUp:(BOOL enable);
   public void LynxTouchHandler()::setEnableTouchPseudo:(BOOL enable);
   public void LynxTouchHandler()::setEnableMultiTouch:(BOOL enable);
@@ -4577,12 +4614,17 @@ public class LynxTransformRaw : NSObject {
   public bool LynxTransformRaw::isRotateXY();
   public bool LynxTransformRaw::isMatrix();
   public void LynxTransformRaw::initTransformMatrixWithArray:(NSArray *array);
+  public instancetype LynxTransformRaw(PlatformAnimation)::initWithTranslationX:y:z:(LynxPlatformLength *x, [y] LynxPlatformLength *y, [z] LynxPlatformLength *z);
   public NSArray< LynxTransformRaw * > * LynxTransformRaw::toTransformRaw:(NSArray *arr);
   public bool LynxTransformRaw::hasPercent:(NSArray< LynxTransformRaw * > *arr);
   public bool LynxTransformRaw::hasScaleOrRotate:(NSArray< LynxTransformRaw * > *arr);
   public CGFloat LynxTransformRaw::getRotateZRad:(NSArray< LynxTransformRaw * > *arr);
   public CGFloat LynxTransformRaw::getTranslateX:(NSArray< LynxTransformRaw * > *arr);
   public CGFloat LynxTransformRaw::getTranslateY:(NSArray< LynxTransformRaw * > *arr);
+}
+
+public interface LynxTransformRaw(PlatformAnimation) {
+  public instancetype LynxTransformRaw(PlatformAnimation)::initWithTranslationX:y:z:(LynxPlatformLength *x,[y] LynxPlatformLength *y,[z] LynxPlatformLength *z);
 }
 
 public class LynxTransitionAnimationManager : NSObject {
@@ -4682,6 +4724,7 @@ public class LynxUI : <__covariant V UIView> {
   public BOOL LynxUI()::hasSharedBackingLayer hasSharedBackingLayer;
   public uint32_t LynxUI()::nodeIndex nodeIndex;
   public NSDictionary<NSNumber *, LynxGestureDetectorDarwin *>* _Nullable LynxUI()::gestureMap gestureMap;
+  public UIView* LynxUI()::touchEventSourceView touchEventSourceView;
   public BOOL LynxUI()::useDefaultAccessibilityLabel useDefaultAccessibilityLabel;
   public BOOL LynxUI()::enableAccessibilityByDefault enableAccessibilityByDefault;
   public UIAccessibilityTraits LynxUI()::accessibilityTraitsByDefault accessibilityTraitsByDefault;
@@ -4767,6 +4810,7 @@ public class LynxUI : <__covariant V UIView> {
   public CGRect LynxUI()::getHitTestFrameWithFrame:(CGRect frame);
   public CGPoint LynxUI()::getHitTestPoint:(CGPoint inPoint);
   public UIView * LynxUI()::childrenContainerView();
+  public void LynxUI()::setTouchEventSourceView:(nullable UIView *view);
   public BOOL LynxUI()::enableExposureUIMargin();
   public void LynxUI()::setImplicitAnimation();
   public void LynxUI()::scrollIntoViewWithSmooth:blockType:inlineType:callback:(BOOL isSmooth, [blockType] NSString *blockType, [inlineType] NSString *inlineType, [callback] LynxUIMethodCallbackBlock callback);
@@ -5477,6 +5521,7 @@ public class LynxUIRenderer : NSObject, <LynxUIRendererProtocol> {
   public void LynxUIRenderer::SetPlatformEventRootActive:active:(NSInteger rootSign,[active] BOOL active);
   public void LynxUIRenderer::SetPlatformEventRootOffset:offsetX:offsetY:(NSInteger rootSign,[offsetX] CGFloat offsetX,[offsetY] CGFloat offsetY);
   public LynxPlatformEventBehavior LynxUIRenderer::HitTestAndCachePlatformEventBehavior:point:(NSInteger rootSign,[point] CGPoint point);
+  public NSArray< NSNumber * > * LynxUIRenderer::GetCachedConsumeSlideEventAngles();
 }
 
 public class LynxUIRendererCreator : NSObject, <LynxUIRendererCreatorProtocol> {
@@ -6169,7 +6214,7 @@ public enum LynxFeature {
 }
 
 
-  public std::unique_ptr< lynx::runtime::js::cache::BytecodeGenerateCallback > CreateBytecodeGenerateCallback(LynxBytecodeResponseBlock _Nullable callback);
+  public std::unique_ptr< lynx::runtime::js::cache::BytecodeGenerateCallback > CreateBytecodeGenerateCallback(LynxBytecodeResponseBlock _Nullable callback, LynxBytecodeContinueBlock _Nullable continueGeneration=nil);
 
   public NS_ASSUME_NONNULL_BEGIN FOUNDATION_EXPORT LynxTemplateData * LynxCreateStaticPageTemplateData(NSDictionary< NSString *, id > *dictionary);
   public FOUNDATION_EXPORT BOOL LynxTemplateDataIsForStaticPage(LynxTemplateData *_Nullable data);
@@ -6665,6 +6710,7 @@ public enum LynxPanInterceptScope {
   public FOUNDATION_EXPORT NSString* const kPropThreadMode kPropThreadMode;
   public FOUNDATION_EXPORT NSString* const kPropEnableSSR kPropEnableSSR;
 
+  typedef BOOL(^ LynxBytecodeContinueBlock) (NSString *jsName, NSString *md5)
   public NS_ASSUME_NONNULL_BEGIN typedef void(^ LynxBytecodeResponseBlock) (NSString *_Nullable errorMsg, NSDictionary< NSString *, NSData * > *_Nullable buffers) LynxBytecodeResponseBlock;
 
   public NS_ASSUME_NONNULL_BEGIN FOUNDATION_EXPORT NSString* const kDefaultComponentID kDefaultComponentID;
@@ -7102,6 +7148,8 @@ public enum LynxSizeValueType {
 
 
   public NS_ASSUME_NONNULL_BEGIN typedef void(^ StaticPageTaskDispatcher) (dispatch_block_t task) StaticPageTaskDispatcher;
+
+  typedef LynxKeyframeParsedData *_Nullable(^ LynxTypedKeyframesProvider) (LynxUI *ui)
 
   public static LynxLayerCornerRadii LynxGetLayerCornerRadii(LynxBorderRadii radii, CGSize size, BOOL allowPartialCorners);
   public static void LynxSetLayerCornerRadii(CALayer *layer, LynxLayerCornerRadii radii);

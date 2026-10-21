@@ -25,6 +25,7 @@ export abstract class UIBase {
   builderNode?: BuilderNode<[UIBase]>;
   logicalPixels: boolean = false;
   protected param?: Object;
+  private nodeReadyBlockArray?: (() => void)[];
 
   constructor(context: IContext, param?: Object) {
     this.lynxContext = context;
@@ -52,6 +53,22 @@ export abstract class UIBase {
 
   protected isLayoutPlaceholder(): boolean {
     return false;
+  }
+
+  /**
+   * Whether to observe descendant invalidation, read once at native creation.
+   * Observers must not nest. Descendants must not move to another observer,
+   * including after detaching from their original observer.
+   */
+  protected observeInvalidation(): boolean {
+    return false;
+  }
+
+  /**
+   * Called once on the UI thread after a node-ready batch changes this observer's
+   * descendants, or separately after an asynchronous image update.
+   */
+  invalidate(): void {
   }
 
   focusable(): boolean {
@@ -105,7 +122,7 @@ export abstract class UIBase {
         this.focusChange, this.focusable, this.onNodeReady, this.hasCustomizedLayout(), this.updateExtraData,
         this.needWindowStateChangeEvent(),
         this.onEnterForeground, this.onEnterBackground, this.isScrollable, this.scrollX, this.scrollY,
-        this.isLayoutPlaceholder());
+        this.isLayoutPlaceholder(), this.observeInvalidation(), this.invalidate);
     TraceEvent.endSection(TraceCategory.Lynx, TraceEventDef.UIBASE_CREATE_NATIVE_UI);
     this.nativeUI.setFrameNode(this.getFrameNode(this.uiContext!));
   }
@@ -165,6 +182,7 @@ export abstract class UIBase {
   }
 
   dispose() {
+    this.nodeReadyBlockArray = undefined;
     this.builderNode?.update(undefined);
     this.builderNode?.dispose();
     this.nativeUI = undefined;
@@ -173,7 +191,22 @@ export abstract class UIBase {
   focusChange(focus: boolean, isFocusTransition: boolean) {
   }
 
+  /**
+   * Queues an operation for the next node-ready callback, in insertion order.
+   * Subclasses must call super.onNodeReady() after any required initialization.
+   */
+  protected addNodeReadyBlock(block: () => void): void {
+    if (!this.nodeReadyBlockArray) {
+      this.nodeReadyBlockArray = [];
+    }
+    this.nodeReadyBlockArray.push(block);
+  }
+
   onNodeReady() {
+    const blocks = this.nodeReadyBlockArray;
+    this.nodeReadyBlockArray = undefined;
+    // Operations queued while this batch runs belong to the next callback.
+    blocks?.forEach((block: () => void) => block());
   }
 
   setFocusedUI() {

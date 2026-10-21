@@ -103,6 +103,7 @@ uint32_t PlatformEventHandler::ResolveEventBehavior(
     const fml::RefPtr<PlatformEventTarget>& target_tree,
     const fml::RefPtr<PlatformEventTarget>& hit_target, float root_point[2],
     const PlatformEventThroughConfig& config) {
+  consume_slide_event_angles_.clear();
   if (!target_tree || !hit_target ||
       hit_target->RootId() != target_tree->Sign()) {
     return kEventBehaviorNone;
@@ -126,6 +127,10 @@ uint32_t PlatformEventHandler::ResolveEventBehavior(
     if (current->EnableSimultaneousTouch()) {
       behavior |= kEventBehaviorEnableSimultaneousTouch;
     }
+    for (const auto& range : current->ConsumeSlideEventAngles()) {
+      consume_slide_event_angles_.push_back(range[0]);
+      consume_slide_event_angles_.push_back(range[1]);
+    }
     auto parent = current->ParentTarget();
     if (current->IsRoot() || !parent || parent == current ||
         parent->RootId() != target_tree->Sign()) {
@@ -135,6 +140,9 @@ uint32_t PlatformEventHandler::ResolveEventBehavior(
     helper->ConvertPointFromAncestorToDescendant(target_point, target_tree,
                                                  parent, root_point);
     current = std::move(parent);
+  }
+  if (!consume_slide_event_angles_.empty()) {
+    behavior |= kEventBehaviorHasConsumeSlideEvent;
   }
   return behavior;
 }
@@ -214,7 +222,7 @@ void PlatformEventHandler::SetTapSlop(const std::string& tap_slop) {
   }
   // Pointer coordinates use layout units; tapSlop accepts logical px only.
   tap_slop_ = logical_tap_slop *
-              platform_ref_->GetEventTargetHelper()->GetDevicePixelRatio();
+              platform_ref_->GetEventTargetHelper()->GetLayoutsUnitPerPx();
 }
 
 void PlatformEventHandler::SetHasPointerPseudo(bool has_pointer_pseudo) {

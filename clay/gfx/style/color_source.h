@@ -367,7 +367,7 @@ class GradientColorSourceBase : public MatrixColorSourceBase {
     }
     static_assert(sizeof(colors()[0]) == 4);
     static_assert(sizeof(stops()[0]) == 4);
-    int num_bytes = stop_count_ * 4;
+    size_t num_bytes = static_cast<size_t>(stop_count_) * sizeof(Color);
     return (memcmp(colors(), other_base->colors(), num_bytes) == 0 &&
             memcmp(stops(), other_base->stops(), num_bytes) == 0);
   }
@@ -434,7 +434,7 @@ class LinearGradientColorSource final : public GradientColorSourceBase {
     std::vector<skity::Vec4> skity_colors = colors_vec4();
     auto shader = skity::Shader::MakeLinear(
         pts, skity_colors.data(), stops(), stop_count(),
-        static_cast<skity::TileMode>(tile_mode()));
+        static_cast<skity::TileMode>(tile_mode()), 1);
     skity::Matrix skity_matrix = matrix();
     shader->SetLocalMatrix(skity_matrix);
     return shader;
@@ -510,7 +510,7 @@ class RadialGradientColorSource final : public GradientColorSourceBase {
     std::vector<skity::Vec4> skity_colors = colors_vec4();
     auto shader = skity::Shader::MakeRadial(
         center, radius_, skity_colors.data(), stops(), stop_count(),
-        static_cast<skity::TileMode>(tile_mode()));
+        static_cast<skity::TileMode>(tile_mode()), 1);
     if (shader) {
       skity::Matrix skity_matrix = matrix();
       shader->SetLocalMatrix(skity_matrix);
@@ -676,9 +676,9 @@ class SweepGradientColorSource final : public GradientColorSourceBase {
                                        end_, 0, &sk_matrix);
 #else
     std::vector<skity::Vec4> skity_colors = colors_vec4();
-    auto shader =
-        skity::Shader::MakeSweep(center_.x, center_.y, start_, end_,
-                                 skity_colors.data(), stops(), stop_count());
+    auto shader = skity::Shader::MakeSweep(
+        center_.x, center_.y, start_, end_, skity_colors.data(), stops(),
+        stop_count(), skity::TileMode::kClamp, 1);
     skity::Matrix skity_matrix = matrix();
     shader->SetLocalMatrix(skity_matrix);
     return shader;

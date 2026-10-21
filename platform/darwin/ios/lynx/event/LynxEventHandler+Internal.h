@@ -10,6 +10,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface LynxEventHandler ()
 
+@property(nonatomic, weak, readonly, nullable) UIView *touchEventSource;
+
+- (void)syncConfigWith:(LynxEventHandler *)eventHandler;
+- (void)setTouchEventSource:(nullable UIView *)sourceView
+            payloadRootView:(nullable UIView *)rootView;
+- (CGPoint)pagePointFromTouch:(UITouch *)touch;
+- (CGPoint)viewPointFromPagePoint:(CGPoint)point target:(id<LynxEventTarget>)target;
+- (CGPoint)viewPointFromTouch:(UITouch *)touch target:(nullable id<LynxEventTarget>)target;
+
 - (void)setEnableViewReceiveTouch:(BOOL)enable;
 - (void)setEnableSimultaneousTap:(BOOL)enable;
 - (void)setDisableLongpressAfterScroll:(bool)value;
@@ -21,6 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)dispatchPanEvent:(UIPanGestureRecognizer *)sender;
 - (void)needCheckConsumeSlideEvent;
 - (BOOL)hasConsumeSlideEvent;
+- (void)updatePlatformConsumeSlideEventAngles:(nullable NSArray<NSNumber *> *)angles;
 
 - (id<LynxEventTarget>)hitTestInner:(CGPoint)point withEvent:(nullable UIEvent *)event;
 - (NSInteger)checkCanRespondTapOrClick:(id<LynxEventTarget>)ui withSet:(NSSet *)set;

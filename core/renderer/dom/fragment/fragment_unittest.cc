@@ -22,7 +22,6 @@
 #include "core/renderer/dom/fiber/text_element.h"
 #include "core/renderer/dom/fiber/view_element.h"
 #include "core/renderer/dom/fragment/display_list_builder.h"
-#include "core/renderer/dom/fragment/display_list_reader.h"
 #include "core/renderer/dom/fragment/event/platform_pointer_event.h"
 #include "core/renderer/dom/fragment/fragment_behavior.h"
 #include "core/renderer/dom/fragment/image_fragment_behavior.h"
@@ -35,6 +34,7 @@
 #include "core/renderer/ui_wrapper/painting/platform_renderer_impl.h"
 #include "core/shell/testing/mock_tasm_delegate.h"
 #include "gfx/geometry/matrix44.h"
+#include "gfx/public/display_list_reader.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -246,8 +246,16 @@ class TestNativePaintingCtxPlatformRef : public NativePaintingCtxPlatformRef {
   int get_text_event_target_regions_call_count{0};
   std::vector<int32_t> destroyed_image_keys;
   std::vector<tasm::PipelineID> paint_end_pipeline_ids;
+  std::vector<std::pair<int32_t, size_t>> ready_child_counts;
 
  protected:
+  void NotifyNodeReady(const std::vector<int32_t>& signs) override {
+    for (int32_t sign : signs) {
+      ready_child_counts.emplace_back(
+          sign, renderers_.find(sign)->second->Children().size());
+    }
+  }
+
   void DestroyImageOnPlatformThread(int32_t image_key) override {
     destroyed_image_keys.push_back(image_key);
   }
@@ -1575,13 +1583,13 @@ TEST_F(FragmentTest,
   auto root_target = fml::MakeRefCounted<PlatformEventTarget>(
       platform_ref.GetEventTargetHelper(), kRootId, kRootId, 0.f, 0.f, 100.f,
       100.f);
-  auto device_px = [](float value) {
-    PlatformEventTarget::EventThroughSizeValue result;
+  auto css_px = [](float value) {
+    PlatformEventTarget::EventRegionSizeValue result;
     result.value = value;
     return result;
   };
-  PlatformEventTarget::EventThroughRegion region{
-      device_px(0.f), device_px(0.f), device_px(50.f), device_px(100.f)};
+  PlatformEventTarget::EventRegion region{css_px(0.f), css_px(0.f),
+                                          css_px(50.f), css_px(100.f)};
   root_target->SetEventThroughActiveRegions({region});
 
   PlatformEventThroughConfig config;
@@ -3416,6 +3424,38 @@ TEST_F(FragmentDrawTest, FragmentLayerRenderFinishesLayoutAfterDisplayList) {
   EXPECT_THAT(native_ref->paint_end_pipeline_ids,
               ::testing::ElementsAre(options->pipeline_id,
                                      additional_options->pipeline_id));
+}
+
+TEST_F(FragmentDrawTest, NativeReadyObservesChildrenAfterDisplayListBatch) {
+  auto page = manager->CreateFiberPage("0", 0);
+  auto parent = manager->CreateFiberNode("native-parent");
+  auto child = manager->CreateFiberNode("native-child");
+  page->InsertNode(parent);
+  parent->InsertNode(child);
+  page->FlushActionsAsRoot();
+  auto* context = static_cast<NativeMockPaintingContext*>(
+      manager->painting_context()->impl());
+  auto* platform_ref = context->GetNativePlatformRef();
+  platform_ref->ready_child_counts.clear();
+  page->Layout(std::make_shared<PipelineOptions>());
+  EXPECT_TRUE(platform_ref->ready_child_counts.empty());
+
+  manager->Repaint();
+  EXPECT_THAT(
+      platform_ref->ready_child_counts,
+      ::testing::Contains(std::make_pair(parent->impl_id(), size_t{1})));
+  EXPECT_THAT(platform_ref->ready_child_counts,
+              ::testing::Contains(std::make_pair(child->impl_id(), size_t{0})));
+
+  // A property update without layout still needs a ready callback after draw.
+  platform_ref->ready_child_counts.clear();
+  parent->fragment_impl()->MarkNodeReadyIfNeeded();
+  page->fragment_impl()->UpdateLayoutWithoutChange();
+  EXPECT_TRUE(platform_ref->ready_child_counts.empty());
+  manager->Repaint();
+  EXPECT_THAT(
+      platform_ref->ready_child_counts,
+      ::testing::ElementsAre(std::make_pair(parent->impl_id(), size_t{1})));
 }
 
 TEST_F(FragmentDrawTest, RedrawInvalidationStopsAtNearestPaintRoot) {

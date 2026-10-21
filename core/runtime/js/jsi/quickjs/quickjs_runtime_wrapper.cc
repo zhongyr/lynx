@@ -117,9 +117,10 @@ LepusIdContainer& QuickjsRuntimeInstance::GetFunctionIdContainer() {
 }
 
 void QuickjsRuntimeInstance::InitQuickjsRuntime(bool is_sync,
-                                                uint32_t runtime_mode) {
+                                                uint32_t runtime_mode,
+                                                bool force_reference_counting) {
   LEPUSRuntime* rt;
-  bool gc_mode = LEPUS_IsGCModeDefault() &&
+  bool gc_mode = !force_reference_counting && LEPUS_IsGCModeDefault() &&
                  !tasm::LynxEnv::GetInstance().IsDisableTracingGC();
 
   per_instance_memory_track_ = tasm::performance::MemoryMonitor::Enable();
@@ -274,7 +275,7 @@ void QuickjsRuntimeInstance::ReportMemoryForTrace(bool is_full_gc) {
         ctx.event()->add_debug_annotations("ptr",
                                            static_cast<VMInstance*>(this));
 
-        if (per_instance_memory_track_) {
+        if (rt_ && per_instance_memory_track_) {
           size_t memory_size_slots[LEPUS_MEMORY_SIZE_SLOTS];
           auto max_slot = LEPUS_DumpMemorySlots(rt_, memory_size_slots);
           for (int i = 0; i <= max_slot; i++) {

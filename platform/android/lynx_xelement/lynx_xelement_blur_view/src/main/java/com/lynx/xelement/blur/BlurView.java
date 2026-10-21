@@ -44,6 +44,10 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   private boolean setHasRadiusIfRadiusChanged = false;
   private int[] mRootLocation;
   private int[] mBlurViewLocation;
+  private int mCaptureOffsetX;
+  private int mCaptureOffsetY;
+  private int mCaptureTargetWidth;
+  private int mCaptureTargetHeight;
   private LynxUIBlurView mLynxUI;
   private View mTargetView;
   private final Rect mCaptureClipBounds = new Rect();
@@ -51,7 +55,9 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   private boolean mPreDrawRegistered;
   private boolean mExperimentalUpdateBlurRadius = true;
   private boolean mPreDrawListenerDetached;
+  private boolean mAutoBlurPaused;
   private final Object mRenderScriptLock = new Object();
+  private boolean mHasValidBlurContent = false;
 
   private volatile RenderScript mRenderScript;
 
@@ -215,21 +221,41 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
       return;
     }
     View captureTargetView = mLynxUI.getCaptureTargetView();
-    if (captureTargetView != null) {
-      mTargetView = captureTargetView;
-      TraceEvent.endSection(TraceEventDef.BLUR_VIEW_GET_TARGET_PARENT);
-      return;
+    if (captureTargetView != null || getRenderer() != null) {
+      setTargetView(captureTargetView);
+    } else {
+      clearCaptureClipBounds();
+      LynxBaseUI lynxBaseUI = mLynxUI.getTargetParent();
+      setTargetBlurParent(lynxBaseUI);
     }
-    clearCaptureClipBounds();
-    LynxBaseUI lynxBaseUI = mLynxUI.getTargetParent();
-    setTargetBlurParent(lynxBaseUI);
+    updateCaptureGeometry();
     TraceEvent.endSection(TraceEventDef.BLUR_VIEW_GET_TARGET_PARENT);
+  }
+
+  private void updateCaptureGeometry() {
+    if (mRootLocation != null && mBlurViewLocation != null) {
+      int offsetX = mBlurViewLocation[0] - mRootLocation[0];
+      int offsetY = mBlurViewLocation[1] - mRootLocation[1];
+      // Compare only after both locations are updated: moving together preserves the sampled area.
+      if (mCaptureOffsetX != offsetX || mCaptureOffsetY != offsetY) {
+        mHasValidBlurContent = false;
+      }
+      mCaptureOffsetX = offsetX;
+      mCaptureOffsetY = offsetY;
+    }
+    int targetWidth = mTargetView != null ? mTargetView.getWidth() : 0;
+    int targetHeight = mTargetView != null ? mTargetView.getHeight() : 0;
+    if (mCaptureTargetWidth != targetWidth || mCaptureTargetHeight != targetHeight) {
+      mHasValidBlurContent = false;
+    }
+    mCaptureTargetWidth = targetWidth;
+    mCaptureTargetHeight = targetHeight;
   }
 
   @Override
   protected void onLayout(boolean changed, int l, int t, int r, int b) {
     super.onLayout(changed, l, t, r, b);
-    if (mEnableBlurAutoUpdate) {
+    if (isAutoBlurActive()) {
       getTargetParent();
     }
   }
@@ -238,7 +264,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oleHeight) {
     super.onSizeChanged(width, height, oldWidth, oleHeight);
-    if (mEnableBlurAutoUpdate) {
+    if (isAutoBlurActive()) {
       if (setHasRadiusIfRadiusChanged && getBackground() != null) {
         getBackground().setBounds(0, 0, width, height);
       }
@@ -262,7 +288,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
     mIsAttachToWindow = true;
-    if (mEnableBlurAutoUpdate) {
+    if (isAutoBlurActive()) {
       if (!isHardwareAccelerated()) {
         // if view set to LAYER_TYPE_SOFTWARE,may cause stackoverflow error
         LLog.e(TAG, "BlurView can't be used in not hardware-accelerated window!");
@@ -280,9 +306,16 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
       return;
     }
     if (rootBaseUI.isFlatten() && rootBaseUI.getDrawParent() instanceof LynxUI) {
-      mTargetView = ((LynxUI<?>) rootBaseUI.getDrawParent()).getView();
+      setTargetView(((LynxUI<?>) rootBaseUI.getDrawParent()).getView());
     } else if (rootBaseUI instanceof LynxUI) {
-      mTargetView = ((LynxUI<?>) rootBaseUI).getView();
+      setTargetView(((LynxUI<?>) rootBaseUI).getView());
+    }
+  }
+
+  private void setTargetView(@Nullable View targetView) {
+    if (mTargetView != targetView) {
+      mTargetView = targetView;
+      mHasValidBlurContent = false;
     }
   }
 
@@ -311,6 +344,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
       }
     }
     mInitialized = true;
+    mHasValidBlurContent = false;
   }
 
   private void clipRadius(Canvas canvas) {
@@ -358,6 +392,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
     mLynxUI = null;
     mBlurCanvas = null;
     mInitialized = false;
+    mHasValidBlurContent = false;
     TraceEvent.endSection(TraceEventDef.BLUR_VIEW_DESTORY);
   }
 
@@ -386,7 +421,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
 
   // blur backdrop
   private void updateBlur() {
-    if (!mEnableBlurAutoUpdate || !mInitialized) {
+    if (!isAutoBlurActive() || !mInitialized) {
       return;
     }
     if (mHasCaptureClipBounds) {
@@ -412,6 +447,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
       canvas.drawBitmap(mBlurBitmap, 0, 0, null);
       mRenderNode.endRecording();
     }
+    mHasValidBlurContent = mTargetView != null;
     TraceEvent.endSection(TraceEventDef.BLUR_VIEW_BLUR);
   }
 
@@ -454,19 +490,32 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   }
 
   void setRootLocation(int[] rootLocation) {
-    this.mRootLocation = rootLocation;
+    if (mRootLocation == null) {
+      mRootLocation = new int[2];
+    }
+    System.arraycopy(rootLocation, 0, mRootLocation, 0, 2);
   }
 
   void setBlurViewLocation(int[] blurViewLocation) {
-    this.mBlurViewLocation = blurViewLocation;
+    if (mBlurViewLocation == null) {
+      mBlurViewLocation = new int[2];
+    }
+    System.arraycopy(blurViewLocation, 0, mBlurViewLocation, 0, 2);
   }
 
   void setCaptureClipBounds(int left, int top, int right, int bottom) {
+    if (!mHasCaptureClipBounds || mCaptureClipBounds.left != left || mCaptureClipBounds.top != top
+        || mCaptureClipBounds.right != right || mCaptureClipBounds.bottom != bottom) {
+      mHasValidBlurContent = false;
+    }
     mCaptureClipBounds.set(left, top, right, bottom);
     mHasCaptureClipBounds = true;
   }
 
   void clearCaptureClipBounds() {
+    if (mHasCaptureClipBounds) {
+      mHasValidBlurContent = false;
+    }
     mCaptureClipBounds.setEmpty();
     mHasCaptureClipBounds = false;
   }
@@ -509,6 +558,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
     }
     if (this.mBlurRadius != radius) {
       this.mBlurRadius = radius;
+      mHasValidBlurContent = false;
       postInvalidate();
     }
   }
@@ -524,7 +574,7 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
         @Override
         public void run() {
           mEnableBlurAutoUpdate = finalEnabled;
-          if (finalEnabled) {
+          if (isAutoBlurActive()) {
             getTargetParent();
             updateBlurViewSize(getWidth(), getHeight());
           } else {
@@ -536,17 +586,40 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
     }
   }
 
+  void pauseBlurAutoUpdate() {
+    if (!mAutoBlurPaused) {
+      mAutoBlurPaused = true;
+      mNeedsBlurUpdate = false;
+      unregisterForPreDraw();
+    }
+  }
+
+  void resumeBlurAutoUpdate() {
+    if (mAutoBlurPaused) {
+      mAutoBlurPaused = false;
+      if (isAutoBlurActive()) {
+        getTargetParent();
+        updateBlurViewSize(getWidth(), getHeight());
+        updateBlur();
+        invalidate();
+      }
+    }
+  }
+
   void setExperimentalUpdateBlurRadius(boolean experimentalUpdateBlurRadius) {
     mExperimentalUpdateBlurRadius = experimentalUpdateBlurRadius;
   }
 
   void updateBlurTarget() {
-    if (!mEnableBlurAutoUpdate) {
+    if (!isAutoBlurActive()) {
       return;
     }
     post(new Runnable() {
       @Override
       public void run() {
+        if (!isAutoBlurActive()) {
+          return;
+        }
         getTargetParent();
         updateBlurViewSize(getWidth(), getHeight());
         updateBlur();
@@ -556,10 +629,14 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   }
 
   private void registerForPreDraw() {
-    if (!mPreDrawRegistered && mEnableBlurAutoUpdate) {
+    if (!mPreDrawRegistered && isAutoBlurActive()) {
       getViewTreeObserver().addOnPreDrawListener(this);
       mPreDrawRegistered = true;
     }
+  }
+
+  private boolean isAutoBlurActive() {
+    return mEnableBlurAutoUpdate && !mAutoBlurPaused;
   }
 
   private void unregisterForPreDraw() {
@@ -571,7 +648,14 @@ public class BlurView extends AndroidView implements ViewTreeObserver.OnPreDrawL
   @Override
   public boolean onPreDraw() {
     TraceEvent.beginSection(TraceEventDef.BLUR_VIEW_UPDATE_BLUR);
-    if (mTargetView != null && mTargetView.isDirty()) {
+    if (!isAutoBlurActive()) {
+      TraceEvent.endSection(TraceEventDef.BLUR_VIEW_UPDATE_BLUR);
+      return true;
+    }
+    if (getRenderer() != null) {
+      getTargetParent();
+    }
+    if (mTargetView != null && (!mHasValidBlurContent || mTargetView.isDirty())) {
       mNeedsBlurUpdate = true;
       post(new Runnable() {
         @Override

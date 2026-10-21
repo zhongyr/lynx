@@ -39,8 +39,9 @@ namespace tasm {
 namespace harmony {
 
 int64_t UIFlattenImage::GetMemoryUsageBytes() const {
-  return UIBase::GetMemoryUsageBytes() +
-         EstimateRasterMemoryUsageBytes(image_width_, image_height_);
+  return AddMemoryUsageBytes(
+      UIBase::GetMemoryUsageBytes(),
+      EstimateRasterMemoryUsageBytes(image_width_, image_height_));
 }
 
 using ImagePropSetter = void (UIFlattenImage::*)(const lepus::Value& value);
@@ -598,6 +599,7 @@ void UIFlattenImage::HandleImageWithProcessor(
           ui_image->placeholder_image_drawable_->UpdateDrawCurrent(
               std::move(response.data));
         }
+        ui_image->NotifyInvalidationObserver();
       },
       LynxImageEffectProcessor(effect_type, params));
 }

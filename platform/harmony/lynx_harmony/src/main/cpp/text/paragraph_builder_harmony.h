@@ -70,7 +70,8 @@ class ParagraphBuilderHarmony {
         OH_Drawing_CreateTypography(builder_), font_collection,
         std::move(event_roots_), std::move(placeholder_signs_),
         std::move(inline_emojis_), std::move(effects_));
-    if (paragraph_style_->GetTextIndent()) {
+    if (paragraph->GetRawStruct() != nullptr &&
+        paragraph_style_->GetTextIndent()) {
       float indent = paragraph_style_->GetTextIndent()->GetValue(width);
       paragraph->SetIndent(indent);
     }
@@ -92,8 +93,7 @@ class ParagraphBuilderHarmony {
   void SetRichType(std::string_view rich_type);
 
  private:
-  static constexpr std::string_view kObjectReplacementCharacter =
-      "\xEF\xBF\xBC";
+  static constexpr std::string_view kObjectReplacementCharacter = u8"\uFFFC";
 
   struct EmojiParseRule {
     char left_delimiter{0};

@@ -4,6 +4,7 @@
 #ifndef PLATFORM_EMBEDDER_LYNX_VIEW_BUILDER_PRIV_H_
 #define PLATFORM_EMBEDDER_LYNX_VIEW_BUILDER_PRIV_H_
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -30,7 +31,9 @@ struct lynx_view_builder_t {
     float height = 0;
   } frame;
   float font_scale = 1.0;
+  std::optional<uint32_t> default_background_color;
   bool enable_js_runtime = true;
+  bool enable_software_rendering = false;
   std::string icu_data_path;
   std::string webview2_fixed_runtime_path;
   lynx_group_t* group = nullptr;

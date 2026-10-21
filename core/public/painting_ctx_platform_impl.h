@@ -8,6 +8,7 @@
 #include <array>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -60,6 +61,9 @@ class PaintingCtxPlatformRef {
   virtual void UpdateNodeReloadPatching(std::vector<int32_t> reload_ids) {}
   virtual void UpdateEventInfo(bool has_touch_pseudo) {}
   virtual void SetTapSlop(const std::string& tap_slop) {}
+  // The page's configured screen width in layout units, for event-region rpx.
+  // This is independent of the physical window used by exposure checks.
+  virtual void SetEventScreenWidth(float screen_width) {}
   virtual void SetEventThroughConfig(
       bool enable_event_through, bool enable_event_through_inherit_from_page) {}
   virtual void UpdateFlattenStatus(int id, bool flatten) {}
@@ -258,7 +262,9 @@ class PaintingCtxPlatformImpl {
   }
 
   virtual void DispatchLayoutBefore(Element* element) {
-    text_layout_impl_->DispatchLayoutBefore(element);
+    if (text_layout_impl_) {
+      text_layout_impl_->DispatchLayoutBefore(element);
+    }
   }
 
   virtual void AlignText(Element* element) {
@@ -276,6 +282,18 @@ class PaintingCtxPlatformImpl {
   virtual void DestroyTextBundle(int id) {}
 
   virtual NativePaintingContext* CastToNativeCtx() { return nullptr; }
+
+  virtual std::optional<LayoutResult> MeasureDetached(Element* element,
+                                                      float width,
+                                                      int width_mode,
+                                                      float height,
+                                                      int height_mode) {
+    if (!text_layout_impl_) {
+      return std::nullopt;
+    }
+    return text_layout_impl_->MeasureDetached(element, width, width_mode,
+                                              height, height_mode);
+  }
 
   void MarkUIOperationQueueFlushForRecreateEngine(bool enable);
 

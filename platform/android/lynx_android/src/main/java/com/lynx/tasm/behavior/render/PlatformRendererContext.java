@@ -86,6 +86,19 @@ public class PlatformRendererContext implements TextMeasurerProvider {
 
   HashMap<Integer, IRendererHost> mViewHolder = new HashMap<>();
 
+  private static final class ImageUIMethodTarget {
+    final int imageKey;
+    final LynxImageManager imageManager;
+
+    ImageUIMethodTarget(int imageKey, LynxImageManager imageManager) {
+      this.imageKey = imageKey;
+      this.imageManager = imageManager;
+    }
+  }
+
+  private final HashMap<Integer, ImageUIMethodTarget> mImageUIMethodTargets = new HashMap<>();
+  private final HashMap<Integer, Integer> mImageUIMethodSignsByKey = new HashMap<>();
+
   @Nullable private PlatformFocusTarget mFocusedTarget = null;
 
   private LynxContext mContext;
@@ -192,6 +205,10 @@ public class PlatformRendererContext implements TextMeasurerProvider {
         if (host != null && host.invokeUIMethod(method, params, callback)) {
           return;
         }
+        ImageUIMethodTarget imageTarget = mImageUIMethodTargets.get(sign);
+        if (imageTarget != null && invokeImageUIMethod(imageTarget, method, params, callback)) {
+          return;
+        }
         LynxBaseUI ui = findUIMethodTarget(sign);
         if (ui != null) {
           LynxUIMethodsExecutor.invokeMethod(ui, method, params,
@@ -226,6 +243,26 @@ public class PlatformRendererContext implements TextMeasurerProvider {
       nativeInvokeUIMethodCallback(
           nativePtr, callbackId, LynxUIMethodConstants.SUCCESS, JavaOnlyArray.of(args));
     };
+  }
+
+  private boolean invokeImageUIMethod(
+      ImageUIMethodTarget target, String method, ReadableMap params, Callback callback) {
+    switch (method) {
+      case "pauseAnimation":
+        target.imageManager.pauseAnimation(params, callback);
+        return true;
+      case "resumeAnimation":
+        target.imageManager.resumeAnimation(params, callback);
+        return true;
+      case "stopAnimation":
+        target.imageManager.stopAnimation(params, callback);
+        return true;
+      case "startAnimate":
+        target.imageManager.startAnimate(params, callback);
+        return true;
+      default:
+        return false;
+    }
   }
 
   private LynxBaseUI findUIMethodTarget(int sign) {
@@ -458,7 +495,7 @@ public class PlatformRendererContext implements TextMeasurerProvider {
           host.setRenderer(renderer);
           mViewHolder.put(sign, host);
           host.getView().invalidate();
-          renderer.updateAttributes(initData);
+          updateRendererAttributes(host, initData);
           return;
         }
       }
@@ -490,7 +527,7 @@ public class PlatformRendererContext implements TextMeasurerProvider {
         host.setWillNotDrawForRenderer(false);
         host.setClipChildrenForRenderer(false);
         host.invalidateForRenderer();
-        renderer.updateAttributes(initData);
+        updateRendererAttributes(host, initData);
         return;
       }
       owner.cleanupCreatedView(sign, tagName, initialProps);
@@ -505,6 +542,7 @@ public class PlatformRendererContext implements TextMeasurerProvider {
     view.setRenderer(renderer);
     mViewHolder.put(sign, view);
     view.invalidate();
+    updateRendererAttributes(view, initData);
   }
 
   @Nullable
@@ -756,10 +794,13 @@ public class PlatformRendererContext implements TextMeasurerProvider {
           sign, false, props != null ? new StylesDiffMap(props) : null, listeners, detectors);
     }
 
-    // Get the renderer
+    updateRendererAttributes(host, propBundle);
+  }
+
+  private void updateRendererAttributes(IRendererHost host, PropBundle propBundle) {
     Renderer renderer = host.getRenderer();
     if (renderer != null) {
-      renderer.updateAttributes(propBundle);
+      renderer.applyAttributes(propBundle);
     }
   }
 
@@ -830,6 +871,14 @@ public class PlatformRendererContext implements TextMeasurerProvider {
     if (rootView != null) {
       rootView.registerImageAccordingToNodeIndex(imageKey, imageManager);
     }
+    if (!disableDefaultResize) {
+      ImageUIMethodTarget previousTarget =
+          mImageUIMethodTargets.put(sign, new ImageUIMethodTarget(imageKey, imageManager));
+      if (previousTarget != null) {
+        mImageUIMethodSignsByKey.remove(previousTarget.imageKey);
+      }
+      mImageUIMethodSignsByKey.put(imageKey, sign);
+    }
     imageManager.onNodeReady();
   }
 
@@ -840,6 +889,19 @@ public class PlatformRendererContext implements TextMeasurerProvider {
     if (rootView != null) {
       rootView.obtainImageAccordingToNodeIndex(imageKey);
     }
+    Integer sign = mImageUIMethodSignsByKey.remove(imageKey);
+    if (sign != null) {
+      ImageUIMethodTarget target = mImageUIMethodTargets.get(sign);
+      if (target != null && target.imageKey == imageKey) {
+        mImageUIMethodTargets.remove(sign);
+      }
+    }
+  }
+
+  @Nullable
+  LynxImageManager getImageUIMethodTarget(int sign) {
+    ImageUIMethodTarget target = mImageUIMethodTargets.get(sign);
+    return target != null ? target.imageManager : null;
   }
 
   Page getTextBundle(int sign) {
@@ -1090,6 +1152,13 @@ public class PlatformRendererContext implements TextMeasurerProvider {
     return new float[0];
   }
 
+  @Override
+  public void destroyText(int sign) {
+    if (mTextMeasurer != null) {
+      mTextMeasurer.releaseLayoutObject(sign);
+    }
+  }
+
   native long nativeCreateEmbeddedViewContext(PlatformRendererContext jThis);
 
   private native ByteBuffer nativeGetDisplayListItemsBuffer(
@@ -1114,6 +1183,8 @@ public class PlatformRendererContext implements TextMeasurerProvider {
     mNativePtr = 0;
     mFocusedTarget = null;
     mViewHolder.clear();
+    mImageUIMethodTargets.clear();
+    mImageUIMethodSignsByKey.clear();
 
     for (Object value : mExtraDatas.values()) {
       if (value instanceof Page) {

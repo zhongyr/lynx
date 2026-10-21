@@ -171,10 +171,16 @@ bool ParseComposeElementKind(const lepus::Value& value, const char* function,
     case ComposeElementKind::kView:
     case ComposeElementKind::kText:
     case ComposeElementKind::kImage:
+    case ComposeElementKind::kList:
+    case ComposeElementKind::kSvg:
+    case ComposeElementKind::kOverlay:
+    case ComposeElementKind::kCustom:
       *result = kind;
       return true;
     default:
-      ElementAPIError("%s kind should be View, Text or Image", function);
+      ElementAPIError(
+          "%s kind should be View, Text, Image, List, Svg, Overlay or Custom",
+          function);
       return false;
   }
 }
@@ -2883,14 +2889,67 @@ RENDERER_FUNCTION_CC(FiberCreateCompose) {
   if (!ParseComposeElementKind(*arg1, "FiberCreateCompose", &kind)) {
     RETURN_UNDEFINED();
   }
+  // Custom elements supply their tag as argument 2. Existing built-in calls
+  // continue to use only the parent id and kind.
+  base::String tag;
+  if (kind == ComposeElementKind::kCustom) {
+    if (argc < 3) {
+      ElementAPIError("FiberCreateCompose Custom requires a tag");
+      RETURN_UNDEFINED();
+    }
+    CONVERT_ARG_AND_CHECK_FOR_ELEMENT_API(arg2, 2, String, FiberCreateCompose);
+    tag = arg2->String();
+    if (tag.empty()) {
+      ElementAPIError("FiberCreateCompose Custom tag should not be empty");
+      RETURN_UNDEFINED();
+    }
+  }
   auto& manager = GET_TASM_POINTER()->page_proxy()->element_manager();
   auto handle = fml::AdoptRef<ComposeElementHandle>(
-      new ComposeElementHandle(manager.get(), kind));
+      new ComposeElementHandle(manager.get(), kind, tag, GET_TASM_POINTER()));
   auto content_element = handle->content_element();
   content_element->SetParentComponentUniqueIdForFiber(
       static_cast<int64_t>(arg0->Number()));
   ON_NODE_CREATE(content_element);
   RETURN(lepus::Value(std::move(handle)));
+}
+
+RENDERER_FUNCTION_CC(FiberMeasureTextElement) {
+  if (argc != 5) {
+    ElementAPIError("__MeasureTextElement requires five arguments");
+    RETURN_UNDEFINED();
+  }
+  // Never cast an arbitrary RefCounted value to a Compose handle.
+  if (!argv[0].IsRefCounted() || argv[0].RefCounted()->GetRefType() !=
+                                     lepus::RefType::kComposeElementHandle) {
+    ElementAPIError("__MeasureTextElement requires a ComposeElementRef");
+    RETURN_UNDEFINED();
+  }
+  for (size_t i = 1; i < 5; ++i) {
+    if (!argv[i].IsNumber()) {
+      ElementAPIError("__MeasureTextElement constraints must be numbers");
+      RETURN_UNDEFINED();
+    }
+  }
+  auto handle =
+      fml::static_ref_ptr_cast<ComposeElementHandle>(argv[0].RefCounted());
+  const char* error = nullptr;
+  auto result = handle->MeasureText(
+      GET_TASM_POINTER()->page_proxy()->element_manager().get(),
+      argv[1].Number(), argv[2].Number(), argv[3].Number(), argv[4].Number(),
+      &error);
+  if (!result) {
+    ElementAPIError("__MeasureTextElement: %s", error);
+    RETURN_UNDEFINED();
+  }
+  BASE_STATIC_STRING_DECL(kBaseline, "baseline");
+  lepus::Value snapshot(lepus::Dictionary::Create());
+  snapshot.SetProperty(BASE_STATIC_STRING(kWidth),
+                       lepus::Value(result->width_));
+  snapshot.SetProperty(BASE_STATIC_STRING(kHeight),
+                       lepus::Value(result->height_));
+  snapshot.SetProperty(kBaseline, lepus::Value(result->baseline_));
+  RETURN(snapshot);
 }
 
 RENDERER_FUNCTION_CC(FiberCreateList) {
@@ -4167,8 +4226,8 @@ RENDERER_FUNCTION_CC(FiberGetElementUniqueID) {
   CONVERT_ARG(arg0, 0);
   int64_t unique_id = -1;
   if (arg0->IsRefCounted()) {
-    auto element = fml::static_ref_ptr_cast<Element>(arg0->RefCounted());
-    unique_id = element->impl_id();
+    auto element = GetComposeContentOrFiberElementFromValue(*arg0);
+    if (element) unique_id = element->impl_id();
   }
   RETURN(lepus::Value(unique_id));
 }
@@ -5166,7 +5225,14 @@ RENDERER_FUNCTION_CC(FiberUpdateListCallbacks) {
     CONVERT_ARG(arg3, 3);
     component_at_indexes = *arg3;
   }
-  auto list_element = fml::static_ref_ptr_cast<ListElement>(arg0->RefCounted());
+  auto element = GetComposeContentOrFiberElementFromValue(*arg0);
+  if (!element || !element->is_list()) {
+    ElementAPIError(
+        "FiberUpdateListCallbacks requires a List Element or Compose List "
+        "handle");
+    RETURN_UNDEFINED();
+  }
+  auto* list_element = static_cast<ListElement*>(element.get());
   list_element->set_tasm(GET_TASM_POINTER());
   list_element->UpdateCallbacks(*arg1, *arg2, component_at_indexes);
   RETURN_UNDEFINED();
@@ -5318,7 +5384,14 @@ RENDERER_FUNCTION_CC(FiberFlushElementTree) {
   if (argc >= 1) {
     CONVERT_ARG(arg0, 0);
     if (arg0->IsRefCounted()) {
-      element = fml::static_ref_ptr_cast<Element>(arg0->RefCounted()).get();
+      // A Compose subtree includes its physical Modifier wrappers. Lazy item
+      // commits still pass raw list-item roots with their own operation IDs.
+      element = GetComposeMountRootOrFiberElementFromValue(*arg0).get();
+      if (!element) {
+        ElementAPIError(
+            "FiberFlushElementTree requires an Element or Compose handle");
+        RETURN_UNDEFINED();
+      }
     }
   }
 

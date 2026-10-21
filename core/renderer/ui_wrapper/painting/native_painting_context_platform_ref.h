@@ -17,13 +17,13 @@
 #include "base/include/vector.h"
 #include "core/public/painting_ctx_platform_impl.h"
 #include "core/public/prop_bundle.h"
-#include "core/renderer/dom/fragment/display_list.h"
 #include "core/renderer/dom/fragment/event/platform_event_bundle.h"
 #include "core/renderer/dom/fragment/event/platform_event_emitter.h"
 #include "core/renderer/dom/fragment/event/platform_event_handler.h"
 #include "core/renderer/dom/fragment/event/platform_event_target_helper.h"
 #include "core/renderer/dom/fragment/event/platform_text_event_target.h"
 #include "core/renderer/ui_wrapper/painting/platform_renderer.h"
+#include "gfx/public/display_list.h"
 
 namespace lynx {
 
@@ -70,6 +70,7 @@ class NativePaintingCtxPlatformRef
   void DestroyPaintingNode(int parent, int child, int index) override;
   void UpdateEventInfo(bool has_touch_pseudo) override;
   void SetTapSlop(const std::string &tap_slop) override;
+  void SetEventScreenWidth(float screen_width) override;
   void UpdateAttributes(int id, const fml::RefPtr<PropBundle> &attributes);
   void UpdateNodeReadyPatching(
       std::vector<int32_t> ready_ids, std::vector<int32_t> remove_ids,
@@ -86,6 +87,9 @@ class NativePaintingCtxPlatformRef
   // Returns behavior cached for the current or next pointer sequence.
   uint32_t GetCachedPlatformEventBehavior() const {
     return event_handler_->EventBehavior();
+  }
+  const std::vector<float> &GetCachedConsumeSlideEventAngles() const {
+    return event_handler_->ConsumeSlideEventAngles();
   }
   // Dispatch a longpress recognized by the platform layer. The event payload is
   // derived from the active platform pointer state in PlatformEventHandler.

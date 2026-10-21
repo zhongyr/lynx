@@ -41,8 +41,9 @@ namespace tasm {
 namespace harmony {
 
 int64_t UIImage::GetMemoryUsageBytes() const {
-  return UIBase::GetMemoryUsageBytes() +
-         EstimateRasterMemoryUsageBytes(image_width_, image_height_);
+  return AddMemoryUsageBytes(
+      UIBase::GetMemoryUsageBytes(),
+      EstimateRasterMemoryUsageBytes(image_width_, image_height_));
 }
 
 using ImagePropSetter = void (UIImage::*)(const lepus::Value& value);
@@ -201,6 +202,7 @@ void UIImage::OnNodeEvent(ArkUI_NodeEvent* event) {
 
 void UIImage::HandleImageSuccessCallback(float image_width,
                                          float image_height) {
+  NotifyInvalidationObserver();
   image_width_ = image_width;
   image_height_ = image_height;
   load_finish_ = lynx::base::CurrentSystemTimeMilliseconds();

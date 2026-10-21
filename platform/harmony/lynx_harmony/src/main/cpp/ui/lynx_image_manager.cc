@@ -92,7 +92,11 @@ ImageDrawable::ImageMode ToImageDrawableMode(ImageFitMode mode) {
 LynxImageManager::LynxImageManager(std::weak_ptr<LynxContext> context)
     : context_(std::move(context)) {}
 
-LynxImageManager::~LynxImageManager() = default;
+LynxImageManager::~LynxImageManager() {
+  if (drawable_) {
+    drawable_->RemoveImageAnimationListener(this);
+  }
+}
 
 void LynxImageManager::UpdatePaintInfo(const ImagePaintInfo& paint_info) {
   paint_info_ = paint_info;
@@ -137,6 +141,9 @@ void LynxImageManager::RequestImage(int32_t sign, std::string src, float width,
           }
         }
         self->ApplyImage();
+        if (self->drawable_) {
+          self->drawable_->NotifyInvalidationObserver();
+        }
       },
       [weak_self = weak_from_this(), width, height](float image_width,
                                                     float image_height) {
@@ -157,6 +164,9 @@ void LynxImageManager::SetTarget(const std::weak_ptr<UIBase>& target) {
     return;
   }
   drawable_ = std::make_unique<ImageDrawable>(target);
+  if ((event_mask_ & image::kFlagImageAnimationEvent) != 0) {
+    drawable_->AddImageAnimationListener(this);
+  }
   ApplyPaintInfo();
   ApplyImage();
 }
@@ -189,6 +199,37 @@ uint32_t LynxImageManager::GetImageWidth() const {
 
 uint32_t LynxImageManager::GetImageHeight() const {
   return drawable_ && drawable_->HasContent() ? drawable_->GetImageHeight() : 0;
+}
+
+void LynxImageManager::onAnimationStart() {
+  auto context = context_.lock();
+  if (context && (event_mask_ & image::kFlagImageStartPlayEvent) != 0) {
+    context->SendEvent(CustomEvent{sign_, image::kStartPlayEventName, "detail",
+                                   lepus_value()});
+  }
+}
+
+void LynxImageManager::onAnimationRepeat() {
+  auto context = context_.lock();
+  if (context && (event_mask_ & image::kFlagImageCurrentLoopEvent) != 0) {
+    context->SendEvent(CustomEvent{sign_, image::kCurrentLoopEventName,
+                                   "detail", lepus_value()});
+  }
+}
+
+void LynxImageManager::onAnimationStop() {
+  auto context = context_.lock();
+  if (!context) {
+    return;
+  }
+  if ((event_mask_ & image::kFlagImageCurrentLoopEvent) != 0) {
+    context->SendEvent(CustomEvent{sign_, image::kCurrentLoopEventName,
+                                   "detail", lepus_value()});
+  }
+  if ((event_mask_ & image::kFlagImageFinalLoopEvent) != 0) {
+    context->SendEvent(CustomEvent{sign_, image::kFinalLoopEventName, "detail",
+                                   lepus_value()});
+  }
 }
 
 void LynxImageManager::ApplyPaintInfo() {

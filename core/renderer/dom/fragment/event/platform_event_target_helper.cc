@@ -15,10 +15,10 @@
 #include "base/include/float_comparison.h"
 #include "base/include/string/string_number_convert.h"
 #include "base/include/value/array.h"
-#include "core/renderer/dom/fragment/display_list_reader.h"
 #include "core/renderer/dom/lynx_get_ui_result.h"
 #include "core/renderer/ui_wrapper/painting/native_painting_context_platform_ref.h"
 #include "core/renderer/ui_wrapper/painting/platform_renderer_impl.h"
+#include "gfx/public/display_list_reader.h"
 
 namespace lynx {
 namespace tasm {
@@ -51,26 +51,22 @@ void MapPointWithTransform(float point[2],
   }
 }
 
-void MapPointWithInverseTransform(
+bool MapPointWithInverseTransform(
     float point[2], const fml::RefPtr<PlatformEventTarget>& target) {
   if (target == nullptr || target->Transform() == nullptr) {
-    return;
+    return true;
   }
   gfx::Matrix44 inverse;
-  if (target->Transform()->invert(&inverse)) {
-    inverse.mapPoint(point, point);
+  if (!target->Transform()->invert(&inverse)) {
+    return false;
   }
+  inverse.mapPoint(point, point);
+  return true;
 }
 
 void SetUserInteractionEnabled(PlatformEventTarget* target,
                                const lepus::Value& value) {
   target->SetUserInteractionEnabled(
-      !base::IsZero(EventPropValueToFloat(value)));
-}
-
-void SetNativeInteractionEnabled(PlatformEventTarget* target,
-                                 const lepus::Value& value) {
-  target->SetNativeInteractionEnabled(
       !base::IsZero(EventPropValueToFloat(value)));
 }
 
@@ -166,27 +162,108 @@ bool ParseEventRegionSizeValue(
   }
 
   const auto string_value = value.StdString();
-  const bool percentage = !string_value.empty() && string_value.back() == '%';
-  const bool pixel =
-      string_value.size() >= 2 &&
-      string_value.compare(string_value.size() - 2, 2, "px") == 0;
-  if (!percentage && !pixel) {
-    return false;
+  using Type = PlatformEventTarget::EventRegionSizeValue::Type;
+  Type type = Type::kPlatformUnit;
+  size_t suffix_length = 0;
+  if (string_value.size() > 3 &&
+      string_value.compare(string_value.size() - 3, 3, "rpx") == 0) {
+    type = Type::kRpx;
+    suffix_length = 3;
+  } else if (string_value.size() > 3 &&
+             string_value.compare(string_value.size() - 3, 3, "ppx") == 0) {
+    type = Type::kPhysicalPx;
+    suffix_length = 3;
+  } else if (!string_value.empty() && string_value.back() == '%') {
+    type = Type::kPercentage;
+    suffix_length = 1;
+  } else if (string_value.size() >= 2 &&
+             string_value.compare(string_value.size() - 2, 2, "px") == 0) {
+    type = Type::kCssPx;
+    suffix_length = 2;
   }
 
   const auto number_string =
-      string_value.substr(0, string_value.size() - (percentage ? 1 : 2));
+      string_value.substr(0, string_value.size() - suffix_length);
   float number = 0.f;
   if (!base::StringToFloat(number_string, number, true) ||
       !std::isfinite(number)) {
     return false;
   }
 
-  result->type =
-      percentage ? PlatformEventTarget::EventRegionSizeValue::Type::kPercentage
-                 : PlatformEventTarget::EventRegionSizeValue::Type::kDevicePx;
-  result->value = percentage ? number / 100.f : number;
+  result->type = type;
+  result->value = type == Type::kPercentage ? number / 100.f : number;
   return true;
+}
+
+void MergeHitSlopEventProp(PlatformEventBundle* bundle,
+                           const PlatformEventBundle* previous) {
+  if (bundle == nullptr || previous == nullptr) {
+    return;
+  }
+  const auto current_it =
+      bundle->EventProps().find(PlatformEventPropName::kHitSlop);
+  if (current_it == bundle->EventProps().end()) {
+    return;
+  }
+  const auto previous_it =
+      previous->EventProps().find(PlatformEventPropName::kHitSlop);
+  if (previous_it == previous->EventProps().end()) {
+    return;
+  }
+  const auto& value = current_it->second;
+  if (value.IsNil() || value.IsUndefined()) {
+    return;
+  }
+  PlatformEventTarget::EventRegionSizeValue parsed;
+  if (!value.IsObject()) {
+    if (!ParseEventRegionSizeValue(value, &parsed)) {
+      bundle->SetEventProp(PlatformEventPropName::kHitSlop,
+                           previous_it->second);
+    }
+    return;
+  }
+
+  const auto& previous_value = previous_it->second;
+  auto merged = lepus::Dictionary::Create();
+  for (const auto* name : {"left", "top", "right", "bottom"}) {
+    const base::String key(name);
+    const auto old_side = previous_value.IsObject()
+                              ? previous_value.GetProperty(key)
+                              : previous_value;
+    if (ParseEventRegionSizeValue(old_side, &parsed)) {
+      merged->SetValue(key, old_side);
+    }
+    const auto new_side = value.GetProperty(key);
+    if (ParseEventRegionSizeValue(new_side, &parsed)) {
+      merged->SetValue(key, new_side);
+    }
+  }
+  bundle->SetEventProp(PlatformEventPropName::kHitSlop, lepus::Value(merged));
+}
+
+void SetHitSlop(PlatformEventTarget* target, const lepus::Value& value) {
+  if (value.IsNil() || value.IsUndefined()) {
+    target->ResetHitSlop();
+    return;
+  }
+  auto hit_slop = target->HitSlop();
+  bool has_valid_value = false;
+  if (value.IsObject()) {
+    const char* names[] = {"left", "top", "right", "bottom"};
+    for (size_t i = 0; i < hit_slop.size(); ++i) {
+      has_valid_value |= ParseEventRegionSizeValue(
+          value.GetProperty(base::String(names[i])), &hit_slop[i]);
+    }
+  } else {
+    PlatformEventTarget::EventRegionSizeValue uniform;
+    if (ParseEventRegionSizeValue(value, &uniform)) {
+      hit_slop.fill(uniform);
+      has_valid_value = true;
+    }
+  }
+  if (has_valid_value) {
+    target->SetHitSlop(std::move(hit_slop));
+  }
 }
 
 void ParseEventRegions(const lepus::Value& value,
@@ -247,6 +324,43 @@ void SetEnableSimultaneousTouch(PlatformEventTarget* target,
       !base::IsZero(EventPropValueToFloat(value)));
 }
 
+void SetPointerEvents(PlatformEventTarget* target, const lepus::Value& value) {
+  auto pointer_events = LynxPointerEventsValue::kUnset;
+  if (value.IsNumber()) {
+    const int int_value = static_cast<int>(value.Number());
+    if (int_value >= static_cast<int>(LynxPointerEventsValue::kAuto) &&
+        int_value < static_cast<int>(LynxPointerEventsValue::kUnset)) {
+      pointer_events = static_cast<LynxPointerEventsValue>(int_value);
+    }
+  }
+  target->SetPointerEvents(pointer_events);
+}
+
+void SetConsumeSlideEvent(PlatformEventTarget* target,
+                          const lepus::Value& value) {
+  std::vector<std::array<float, 2>> angles;
+  if (value.IsArrayOrJSArray()) {
+    for (int i = 0; i < value.GetLength(); ++i) {
+      const auto& range = value.GetProperty(static_cast<uint32_t>(i));
+      if (!range.IsArrayOrJSArray() || range.GetLength() != 2) {
+        continue;
+      }
+      const auto& begin = range.GetProperty(0);
+      const auto& end = range.GetProperty(1);
+      if (begin.IsNumber() && end.IsNumber() && std::isfinite(begin.Number()) &&
+          std::isfinite(end.Number())) {
+        const float begin_angle = static_cast<float>(begin.Number());
+        const float end_angle = static_cast<float>(end.Number());
+        if (std::isfinite(begin_angle) && std::isfinite(end_angle) &&
+            begin_angle <= end_angle) {
+          angles.push_back({begin_angle, end_angle});
+        }
+      }
+    }
+  }
+  target->SetConsumeSlideEventAngles(std::move(angles));
+}
+
 void SetEventsPassThrough(PlatformEventTarget* target,
                           const lepus::Value& value) {
   target->SetEventsPassThrough(EventPropValueToStatus(value));
@@ -291,8 +405,6 @@ GetEventPropSetterMap() {
       map = {
           {PlatformEventPropName::kUserInteractionEnabled,
            &SetUserInteractionEnabled},
-          {PlatformEventPropName::kNativeInteractionEnabled,
-           &SetNativeInteractionEnabled},
           {PlatformEventPropName::kExposureScreenMarginLeft,
            &SetExposureScreenMarginLeft},
           {PlatformEventPropName::kExposureScreenMarginRight,
@@ -321,6 +433,7 @@ GetEventPropSetterMap() {
            &SetEventThroughActiveRegions},
           {PlatformEventPropName::kEventsPassThrough, &SetEventsPassThrough},
           {PlatformEventPropName::kIgnoreFocus, &SetIgnoreFocus},
+          {PlatformEventPropName::kHitSlop, &SetHitSlop},
           {PlatformEventPropName::kEnableTouchPseudoPropagation,
            &SetTouchPseudoPropagation},
           {PlatformEventPropName::kBlockNativeEvent, &SetBlockNativeEvent},
@@ -328,6 +441,8 @@ GetEventPropSetterMap() {
            &SetBlockNativeEventAreas},
           {PlatformEventPropName::kEnableSimultaneousTouch,
            &SetEnableSimultaneousTouch},
+          {PlatformEventPropName::kPointerEvents, &SetPointerEvents},
+          {PlatformEventPropName::kConsumeSlideEvent, &SetConsumeSlideEvent},
       };
   return map;
 }
@@ -729,12 +844,12 @@ fml::RefPtr<PlatformEventTarget> PlatformEventTargetHelper::GetTreeRoot(
   return GetEventRootTree(root_id);
 }
 
-void PlatformEventTargetHelper::ConvertPointFromAncestorToDescendant(
+bool PlatformEventTargetHelper::ConvertPointFromAncestorToDescendant(
     float res[2], const fml::RefPtr<PlatformEventTarget>& ancestor,
     const fml::RefPtr<PlatformEventTarget>& descendant, float point[2]) {
   if (!descendant || !ancestor || descendant == ancestor) {
     CopyPoint(res, point);
-    return;
+    return true;
   }
 
   base::InlineVector<fml::RefPtr<PlatformEventTarget>, 3> target_chain;
@@ -755,9 +870,12 @@ void PlatformEventTargetHelper::ConvertPointFromAncestorToDescendant(
     res[1] -= current_target->Top();
     res[0] += current_target->OffsetXForCalcPosition();
     res[1] += current_target->OffsetYForCalcPosition();
-    MapPointWithInverseTransform(res, current_target);
+    if (!MapPointWithInverseTransform(res, current_target)) {
+      return false;
+    }
     current_ancestor = current_target;
   }
+  return true;
 }
 
 void PlatformEventTargetHelper::ConvertPointFromDescendantToAncestor(
@@ -1073,12 +1191,13 @@ void PlatformEventTargetHelper::InvokeMethod(
       ret->SetValue(kDataset, dataset.IsEmpty()
                                   ? lepus::Value(lepus::Dictionary::Create())
                                   : dataset);
-      ret->SetValue(kLeft, result[0] / device_pixel_ratio_);
-      ret->SetValue(kTop, result[1] / device_pixel_ratio_);
-      ret->SetValue(kRight, result[2] / device_pixel_ratio_);
-      ret->SetValue(kBottom, result[3] / device_pixel_ratio_);
-      ret->SetValue(kWidth, (result[2] - result[0]) / device_pixel_ratio_);
-      ret->SetValue(kHeight, (result[3] - result[1]) / device_pixel_ratio_);
+      // Geometry is in layout units; boundingClientRect returns CSS px.
+      ret->SetValue(kLeft, result[0] / layouts_unit_per_px_);
+      ret->SetValue(kTop, result[1] / layouts_unit_per_px_);
+      ret->SetValue(kRight, result[2] / layouts_unit_per_px_);
+      ret->SetValue(kBottom, result[3] / layouts_unit_per_px_);
+      ret->SetValue(kWidth, (result[2] - result[0]) / layouts_unit_per_px_);
+      ret->SetValue(kHeight, (result[3] - result[1]) / layouts_unit_per_px_);
       callback(LynxGetUIResult::SUCCESS, lepus::Value(ret));
     } else {
       callback(LynxGetUIResult::NODE_NOT_FOUND,

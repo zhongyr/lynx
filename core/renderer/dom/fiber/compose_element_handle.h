@@ -6,9 +6,11 @@
 #define CORE_RENDERER_DOM_FIBER_COMPOSE_ELEMENT_HANDLE_H_
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 #include "base/include/fml/memory/ref_ptr.h"
+#include "base/include/value/base_string.h"
 #include "base/include/value/ref_counted_class.h"
 #include "core/renderer/dom/element.h"
 
@@ -17,19 +19,28 @@ namespace tasm {
 
 class ComposeModifierApplicator;
 class ElementManager;
+class TemplateAssembler;
 
 enum class ComposeElementKind : int32_t {
+  // Reserve zero for custom tags; positive ids are dedicated element kinds.
+  kCustom = 0,
   kView = 1,
   kText = 2,
   kImage = 3,
+  kList = 4,
+  kSvg = 5,
+  kOverlay = 6,
 };
 
 // Stable, opaque identity for one Compose-owned Fiber subtree. The concrete
-// Element always owns view/text/image behavior; mount_root_ only describes the
+// Element owns the built-in or custom-tag behavior; mount_root_ describes the
 // physical node that should be inserted into its external parent.
 class ComposeElementHandle final : public lepus::RefCounted {
  public:
-  ComposeElementHandle(ElementManager* manager, ComposeElementKind kind);
+  // tag is used only for kCustom; tasm supplies the runtime for kList.
+  ComposeElementHandle(ElementManager* manager, ComposeElementKind kind,
+                       const base::String& tag = base::String(),
+                       TemplateAssembler* tasm = nullptr);
 
   void ReleaseSelf() const override { delete this; }
   lepus::RefType GetRefType() const override {
@@ -40,6 +51,12 @@ class ComposeElementHandle final : public lepus::RefCounted {
     return content_element_;
   }
   const fml::RefPtr<Element>& mount_root() const { return mount_root_; }
+
+  // Engine-owner-thread only; validation failures do not prepare the node.
+  std::optional<LayoutResult> MeasureText(ElementManager* manager, double width,
+                                          double width_mode, double height,
+                                          double height_mode,
+                                          const char** error);
 
  private:
   friend class ComposeModifierApplicator;

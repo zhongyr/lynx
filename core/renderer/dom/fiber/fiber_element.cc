@@ -934,6 +934,7 @@ void Element::FiberAddPiperEvent(
     const base::String &type, const base::String &name,
     std::vector<std::pair<base::String, lepus::Value>> piper_event_content) {
   data_model_->SetStaticEvent(type, name, piper_event_content);
+  OnEventHandlersChanged(name);
 
   auto *manager = element_manager();
   if (manager == nullptr || !manager->EnableEventHandleRefactor()) {
@@ -4191,13 +4192,8 @@ void Element::RecursivelyMarkChildrenCSSVariableDirty(
     const lepus::Value &css_variable_updated) {
   for (const auto &child : scoped_children_) {
     auto *fiber_child = child.get();
-    if (IsCSSInlineVariablesEnabled()) {
-      // Entering RecursivelyMarkChildrenCSSVariableDirty means current
-      // element's CSS variables changed.
-      // Mark children's custom_properties dirty so CollectCustomProperties can
-      // pick up the latest values.
-      fiber_child->MarkCustomPropertiesDirty();
-    }
+    // Queries can populate the cache even when inline variables are disabled.
+    fiber_child->MarkCustomPropertiesDirty();
     if (fiber_child->is_raw_text()) {
       continue;
     }
@@ -5749,8 +5745,8 @@ void Element::UpdateLayoutInfo() {
   if (IsShadowNodeCustom()) {
     element_manager_->layout_context()->OnLayout(id_, left_, top_, width_,
                                                  height_, paddings_, borders_);
-    customized_layout_node_->OnLayoutAfter();
   }
+  DispatchLayoutAfter();
   if (EnableFragmentLayerRender()) {
     static_cast<Fragment *>(element_container())->UpdateLayout(layout_result);
   }
@@ -5790,6 +5786,12 @@ void Element::DispatchLayoutBeforeRecursively() {
 void Element::DispatchLayoutBefore() {
   if (customized_layout_node_) {
     customized_layout_node_->OnLayoutBefore();
+  }
+}
+
+void Element::DispatchLayoutAfter() {
+  if (customized_layout_node_) {
+    customized_layout_node_->OnLayoutAfter();
   }
 }
 

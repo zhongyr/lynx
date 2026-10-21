@@ -831,6 +831,11 @@ void ElementManager::UpdateScreenMetrics(float width, float height) {
   LOGI(GetLogContext() << " ElementManager::UpdateScreenMetrics width:" << width
                        << ",height:" << height);
   GetLynxEnvConfig().UpdateScreenSize(width, height);
+  if (IsFragmentLayerRenderModeOn()) {
+    // Use the final page metrics, including any screen-metrics override, rather
+    // than querying the physical display from the UI thread.
+    painting_context()->SetEventScreenWidth(GetLynxEnvConfig().ScreenWidth());
+  }
   // 0.update layout unit for computed_css_style template
   platform_computed_css_->SetLayoutUnit(
       GetLynxEnvConfig().PhysicalPixelsPerLayoutUnit(),
@@ -1197,6 +1202,15 @@ LayoutResult ElementManager::MeasureText(Element *element, float width,
                                          height_mode);
 }
 
+std::optional<LayoutResult> ElementManager::MeasureDetached(Element *element,
+                                                            float width,
+                                                            int width_mode,
+                                                            float height,
+                                                            int height_mode) {
+  return painting_context()->MeasureDetached(element, width, width_mode, height,
+                                             height_mode);
+}
+
 void ElementManager::DispatchLayoutBefore(Element *element) {
   painting_context()->DispatchLayoutBefore(element);
 }
@@ -1229,6 +1243,7 @@ void ElementManager::SetConfig(const std::shared_ptr<PageConfig> &config) {
   config_ = config;
 
   if (IsFragmentLayerRenderModeOn()) {
+    painting_context()->SetEventScreenWidth(GetLynxEnvConfig().ScreenWidth());
     painting_context()->SetEventThroughConfig(
         config_ != nullptr && config_->GetEnableEventThrough(),
         config_ != nullptr && config_->GetEnableEventThroughInheritFromPage());
@@ -1285,14 +1300,29 @@ void ElementManager::StopAnimationVsync() {
   }
 }
 
+void ElementManager::SetElementVsyncPaused(bool paused) {
+  if (animation_vsync_stopped_ || element_vsync_paused_ == paused) {
+    return;
+  }
+  element_vsync_paused_ = paused;
+  if (element_vsync_proxy_) {
+    if (!paused) {
+      element_vsync_proxy_->CancelBackgroundFrame();
+    }
+    if (!animation_element_set_.empty()) {
+      element_vsync_proxy_->RequestNextFrame();
+    }
+  }
+}
+
 void ElementManager::RequestNextFrame(Element *element) {
   if (animation_vsync_stopped_) {
     return;
   }
   animation_element_set_.insert(element);
   if (element_vsync_proxy_ == nullptr) {
-    element_vsync_proxy_ = std::make_shared<ElementVsyncProxy>(
-        ElementVsyncProxy(this, vsync_monitor_));
+    element_vsync_proxy_ =
+        std::make_shared<ElementVsyncProxy>(this, vsync_monitor_);
   }
   element_vsync_proxy_->SetPreferredFps(config_->GetPreferredFps());
   element_vsync_proxy_->RequestNextFrame();
@@ -1301,6 +1331,24 @@ void ElementManager::RequestNextFrame(Element *element) {
 void ElementManager::NotifyElementDestroy(Element *element) {
   animation_element_set_.erase(element);
   paused_animation_element_set_.erase(element);
+}
+
+fml::TimePoint ElementManager::ProcessAnimationEvents(
+    fml::TimePoint &frame_time, bool dispatch_events) {
+  auto next = fml::TimePoint::Max();
+  // Retain elements while dispatching events, without consuming pending frames.
+  std::vector<fml::RefPtr<Element>> elements;
+  elements.reserve(animation_element_set_.size());
+  for (auto *element : animation_element_set_) {
+    elements.emplace_back(element);
+  }
+  for (const auto &element : elements) {
+    if (!element->IsDetached()) {
+      next = std::min(
+          next, element->ProcessAnimationEvents(frame_time, dispatch_events));
+    }
+  }
+  return next;
 }
 
 void ElementManager::TickAllElement(fml::TimePoint &frame_time) {
@@ -1814,9 +1862,14 @@ void ElementManager::Repaint() {
   auto *native_context = painting_context()->impl()->CastToNativeCtx();
   DCHECK(native_context != nullptr);
   auto *root_fragment = root()->element_container()->CastToFragment();
-  NativePaintingContext::ScopedDisplayListBatch display_list_batch(
-      native_context, root_fragment->PlatformLayerCount());
-  root_fragment->Draw();
+  {
+    NativePaintingContext::ScopedDisplayListBatch display_list_batch(
+        native_context, root_fragment->PlatformLayerCount());
+    root_fragment->Draw();
+  }
+  // Native children are attached while applying display lists. Publish ready
+  // callbacks only after the complete batch has been submitted.
+  painting_context()->UpdateNodeReadyPatching();
 }
 
 void ElementManager::EnqueueLevelOrderTask(

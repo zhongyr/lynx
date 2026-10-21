@@ -6,9 +6,12 @@ package com.lynx.xelement.blur;
 
 import android.content.Context;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.lynx.react.bridge.ReadableMap;
+import com.lynx.tasm.behavior.ForegroundListener;
 import com.lynx.tasm.behavior.LynxBehavior;
 import com.lynx.tasm.behavior.LynxContext;
 import com.lynx.tasm.behavior.LynxGeneratorName;
@@ -23,7 +26,7 @@ import com.lynx.tasm.utils.UnitUtils;
 
 @LynxGeneratorName(packageName = "com.lynx.xelement.blur")
 @LynxBehavior(tagName = "blur-view", isCreateAsync = false)
-public class LynxUIBlurView<T extends BlurView> extends UIView {
+public class LynxUIBlurView<T extends BlurView> extends UIView implements ForegroundListener {
   private static final String ANDROID_CAPTURE_TARGET = "android-capture-target";
 
   private int[] mChildLocation = new int[2];
@@ -160,11 +163,16 @@ public class LynxUIBlurView<T extends BlurView> extends UIView {
 
   @Nullable
   View getCaptureTargetView() {
-    if (mView == null || mCaptureTargetId == null || mCaptureTargetId.isEmpty()
-        || mContext.getLynxView() == null) {
+    if (mView == null) {
       return null;
     }
-    View targetView = mContext.getLynxView().findViewByIdSelector(mCaptureTargetId);
+    View targetView = null;
+    if (mCaptureTargetId != null && !mCaptureTargetId.isEmpty() && mContext.getLynxView() != null) {
+      targetView = mContext.getLynxView().findViewByIdSelector(mCaptureTargetId);
+    }
+    if (targetView == null && mView.getRenderer() != null) {
+      targetView = getRendererCaptureTargetView();
+    }
     if (targetView == null) {
       return null;
     }
@@ -174,6 +182,27 @@ public class LynxUIBlurView<T extends BlurView> extends UIView {
     ((BlurView) mView).setRootLocation(mCaptureTargetLocation);
     updateCaptureTargetClipBounds(targetView);
     return targetView;
+  }
+
+  @Nullable
+  private View getRendererCaptureTargetView() {
+    // FLR attaches renderer hosts through the native view tree without a LynxUI parent.
+    getUIViewLocation(this, mChildLocation);
+    ViewParent parent = mView.getParent();
+    while (parent instanceof ViewGroup) {
+      ViewGroup target = (ViewGroup) parent;
+      target.getLocationOnScreen(mCaptureTargetLocation);
+      int left = mCaptureTargetLocation[0];
+      int top = mCaptureTargetLocation[1];
+      boolean containsBlurView = mChildLocation[0] >= left && mChildLocation[1] >= top
+          && mChildLocation[0] + mView.getWidth() <= left + target.getWidth()
+          && mChildLocation[1] + mView.getHeight() <= top + target.getHeight();
+      if (containsBlurView || target.getClipChildren() || target instanceof UIBody.UIBodyView) {
+        return target;
+      }
+      parent = target.getParent();
+    }
+    return null;
   }
 
   private void updateCaptureTargetClipBounds(@NonNull View targetView) {
@@ -218,6 +247,20 @@ public class LynxUIBlurView<T extends BlurView> extends UIView {
     super.onBorderRadiusUpdated(index);
     if (mView != null) {
       ((BlurView) mView).setHasRadiusIfRadiusChanged(getHasRadius());
+    }
+  }
+
+  @Override
+  public void onLynxViewEnterForeground() {
+    if (mView != null) {
+      ((BlurView) mView).resumeBlurAutoUpdate();
+    }
+  }
+
+  @Override
+  public void onLynxViewEnterBackground() {
+    if (mView != null) {
+      ((BlurView) mView).pauseBlurAutoUpdate();
     }
   }
 

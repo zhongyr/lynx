@@ -6,6 +6,7 @@
 #define CORE_RENDERER_UI_WRAPPER_PAINTING_PAINTING_CONTEXT_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -236,6 +237,7 @@ class PaintingContext {
 
   void UpdateEventInfo(bool has_touch_pseudo);
   void SetTapSlop(const std::string& tap_slop);
+  void SetEventScreenWidth(float screen_width);
   void SetEventThroughConfig(bool enable_event_through,
                              bool enable_event_through_inherit_from_page);
   void UpdateFlattenStatus(int id, bool flatten);
@@ -270,6 +272,13 @@ class PaintingContext {
                            float height, int height_mode) {
     return platform_impl_->MeasureText(element, width, width_mode, height,
                                        height_mode);
+  }
+
+  std::optional<LayoutResult> MeasureDetached(Element* element, float width,
+                                              int width_mode, float height,
+                                              int height_mode) {
+    return platform_impl_->MeasureDetached(element, width, width_mode, height,
+                                           height_mode);
   }
 
   void DispatchLayoutBefore(Element* element) {

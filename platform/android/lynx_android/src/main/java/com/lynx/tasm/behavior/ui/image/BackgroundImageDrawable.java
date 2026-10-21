@@ -31,6 +31,7 @@ public class BackgroundImageDrawable extends BackgroundLayerDrawable {
   private int mHeight;
 
   private boolean mAttached = false;
+  private boolean mNeedsReloadAfterDetach;
 
   public BackgroundImageDrawable(Context context, String url) {
     this.mContext = ContextUtils.toLynxContext(context);
@@ -100,6 +101,11 @@ public class BackgroundImageDrawable extends BackgroundLayerDrawable {
   }
 
   @Override
+  protected long getMemoryUsageBytes() {
+    return mLynxImageManager.getBitmapMemorySizeBytes();
+  }
+
+  @Override
   public void setBitmapConfig(@Nullable Bitmap.Config config) {
     mLynxImageManager.setImageConfig(config);
   }
@@ -113,11 +119,17 @@ public class BackgroundImageDrawable extends BackgroundLayerDrawable {
   public void onDetach() {
     mAttached = false;
     mLynxImageManager.destroy();
+    mNeedsReloadAfterDetach = true;
   }
 
   private void attachIfNeeded() {
     if (!mAttached) {
       mAttached = true;
+      if (mNeedsReloadAfterDetach) {
+        // The source is unchanged, but detach released its drawable and request.
+        mLynxImageManager.markSrcDirty();
+        mNeedsReloadAfterDetach = false;
+      }
       if (mWidth > 0 && mHeight > 0) {
         mLynxImageManager.updateNodeProps();
       }

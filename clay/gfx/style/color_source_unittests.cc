@@ -5,6 +5,7 @@
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
 
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -16,6 +17,26 @@
 #include "third_party/skia/include/core/SkSurface.h"
 namespace clay {
 namespace testing {
+
+TEST(DisplayListColorSource, RejectsGradientAllocationOverflowOn32Bit) {
+  if constexpr (sizeof(size_t) == 4) {
+    const uint32_t count = std::numeric_limits<uint32_t>::max();
+    const Color color = Color::kRed();
+    const skity::Vec2 point{0, 0};
+    EXPECT_EQ(ColorSource::MakeLinear(point, point, count, &color, nullptr,
+                                      TileMode::kClamp, nullptr),
+              nullptr);
+    EXPECT_EQ(ColorSource::MakeRadial(point, 1, count, &color, nullptr,
+                                      TileMode::kClamp, nullptr),
+              nullptr);
+    EXPECT_EQ(ColorSource::MakeConical(point, 1, point, 2, count, &color,
+                                       nullptr, TileMode::kClamp, nullptr),
+              nullptr);
+    EXPECT_EQ(ColorSource::MakeSweep(point, 0, 1, count, &color, nullptr,
+                                     TileMode::kClamp, nullptr),
+              nullptr);
+  }
+}
 
 static fml::RefPtr<DlImage> MakeTestImage(int w, int h, SkColor color) {
   sk_sp<SkSurface> surface;
@@ -433,6 +454,33 @@ TEST(DisplayListColorSource, AlphaLinearGradientContents) {
   ASSERT_EQ(source->asLinearGradient()->matrix(), kTestMatrix1);
   ASSERT_EQ(source->is_opaque(), false);
 }
+
+#ifdef ENABLE_SKITY
+TEST(DisplayListColorSource, GradientInterpolationPolicy) {
+  std::shared_ptr<DlColorSource> linear = DlColorSource::MakeLinear(
+      kTestPoints[0], kTestPoints[1], kTestStopCount, kTestAlphaColors,
+      kTestStops, DlTileMode::kClamp);
+  skity::Shader::GradientInfo linear_info;
+  ASSERT_EQ(linear->gr_object()->AsGradient(&linear_info),
+            skity::Shader::kLinear);
+  EXPECT_EQ(linear_info.gradientFlags, 1);
+
+  std::shared_ptr<DlColorSource> radial = DlColorSource::MakeRadial(
+      kTestPoints[0], 10.0, kTestStopCount, kTestAlphaColors, kTestStops,
+      DlTileMode::kClamp);
+  skity::Shader::GradientInfo radial_info;
+  ASSERT_EQ(radial->gr_object()->AsGradient(&radial_info),
+            skity::Shader::kRadial);
+  EXPECT_EQ(radial_info.gradientFlags, 1);
+
+  std::shared_ptr<DlColorSource> sweep = DlColorSource::MakeSweep(
+      kTestPoints[0], 0, 360, kTestStopCount, kTestAlphaColors, kTestStops,
+      DlTileMode::kClamp);
+  skity::Shader::GradientInfo sweep_info;
+  ASSERT_EQ(sweep->gr_object()->AsGradient(&sweep_info), skity::Shader::kSweep);
+  EXPECT_EQ(sweep_info.gradientFlags, 1);
+}
+#endif
 
 TEST(DisplayListColorSource, LinearGradientEquals) {
   std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeLinear(

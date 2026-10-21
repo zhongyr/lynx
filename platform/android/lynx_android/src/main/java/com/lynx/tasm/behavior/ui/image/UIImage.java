@@ -12,6 +12,7 @@ import com.lynx.react.bridge.ReadableMap;
 import com.lynx.tasm.behavior.LynxContext;
 import com.lynx.tasm.behavior.LynxUIMethod;
 import com.lynx.tasm.behavior.StylesDiffMap;
+import com.lynx.tasm.behavior.ui.LynxBaseUI;
 import com.lynx.tasm.behavior.ui.MeaningfulPaintingArea;
 import com.lynx.tasm.behavior.ui.UIParams;
 import com.lynx.tasm.behavior.ui.ViewInfo;
@@ -78,7 +79,7 @@ public class UIImage extends UIView {
     if (mLynxImageManager == null) {
       return size;
     }
-    return mLynxImageManager.getBitmapMemorySizeBytes() + size;
+    return addMemoryUsageBytes(size, mLynxImageManager.getBitmapMemorySizeBytes());
   }
 
   @Override
@@ -183,6 +184,18 @@ public class UIImage extends UIView {
   }
 
   @Override
+  public void copyPropFromOldUiInUpdateFlatten(LynxBaseUI oldUI) {
+    super.copyPropFromOldUiInUpdateFlatten(oldUI);
+    if (mView.getRenderer() != null) {
+      return;
+    }
+    ensureLynxImageManager();
+    // Layout has been restored, but the new image manager has not received its size.
+    mLynxImageManager.onLayoutUpdated(getWidth(), getHeight(), getPaddingLeft(), getPaddingRight(),
+        getPaddingTop(), getPaddingBottom());
+  }
+
+  @Override
   public void destroy() {
     super.destroy();
     if (mLynxImageManager != null) {
@@ -193,8 +206,8 @@ public class UIImage extends UIView {
   }
 
   @Override
-  public void beforeDraw(Canvas canvas) {
-    super.beforeDraw(canvas);
+  public void beforeDispatchDraw(Canvas canvas) {
+    super.beforeDispatchDraw(canvas);
     // The Fragment display list owns image content when this UI hosts a Renderer.
     if (mView.getRenderer() != null) {
       return;
@@ -241,6 +254,9 @@ public class UIImage extends UIView {
     super.onLayoutUpdated();
     mLynxImageManager.onLayoutUpdated(getWidth(), getHeight(), getPaddingLeft(), getPaddingRight(),
         getPaddingTop(), getPaddingBottom());
+    if (mView.getRenderer() == null) {
+      mLynxImageManager.updateDrawingBoundsIfNeeded();
+    }
   }
 
   @Override

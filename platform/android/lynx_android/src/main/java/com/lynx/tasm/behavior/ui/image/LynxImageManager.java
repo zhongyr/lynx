@@ -88,6 +88,9 @@ public class LynxImageManager implements Drawable.Callback {
 
   public static final int kFlagImageLoadEvent = 1;
   public static final int kFlagImageErrorEvent = 1 << 1;
+  private static final int kFlagImageStartPlayEvent = 1 << 2;
+  private static final int kFlagImageCurrentLoopEvent = 1 << 3;
+  private static final int kFlagImageFinalLoopEvent = 1 << 4;
 
   private long dirtyFlags = 0;
 
@@ -408,7 +411,7 @@ public class LynxImageManager implements Drawable.Callback {
       onImageLoadSuccess(mImageWidth, mImageHeight);
       reportImageSuccess(imageInfo);
       invalidate();
-      onImageRequestFinished(requestInfo, 0, null);
+      onImageRequestFinished(requestInfo, 0, null, imageInfo.getOrigin());
     }
 
     @Override
@@ -428,7 +431,7 @@ public class LynxImageManager implements Drawable.Callback {
       onImageLoadError(lynxError, categoryCode, errorCode);
       reportImageFailure(errorCode, error);
       if (mCurImageRequest != null) {
-        onImageRequestFinished(mCurImageRequest, errorCode, throwable);
+        onImageRequestFinished(mCurImageRequest, errorCode, throwable, IMAGE_ORIGIN_UNKNOWN);
       }
     }
 
@@ -467,14 +470,14 @@ public class LynxImageManager implements Drawable.Callback {
   private final AnimationListener mAnimationListener = new AnimationListener() {
     @Override
     public void onAnimationStart(Drawable drawable) {
-      if (mEnableStartPlayEvent) {
+      if (shouldEmitStartPlayEvent()) {
         sendCustomEvent(EVENT_START_PLAY);
       }
     }
 
     @Override
     public void onAnimationFinalLoop(Drawable drawable) {
-      if (mEnableAllLoopEvent) {
+      if (shouldEmitFinalLoopEvent()) {
         // It needs to send EVENT_CURRENT_LOOP_COMPLETE to ensure that both ends are consistent
         sendCustomEvent(EVENT_ALL_LOOP_COMPLETE);
       }
@@ -482,7 +485,7 @@ public class LynxImageManager implements Drawable.Callback {
 
     @Override
     public void onAnimationCurrentLoop(Drawable drawable) {
-      if (mEnableCurrentLoopEvent) {
+      if (shouldEmitCurrentLoopEvent()) {
         sendCustomEvent(EVENT_CURRENT_LOOP_COMPLETE);
       }
     }
@@ -549,6 +552,10 @@ public class LynxImageManager implements Drawable.Callback {
 
   String getSrc() {
     return mSrc;
+  }
+
+  void markSrcDirty() {
+    dirtyFlags |= SRC_CHANGED;
   }
 
   public void setPlaceholder(String placeholder) {
@@ -717,6 +724,27 @@ public class LynxImageManager implements Drawable.Callback {
       return (mEventMask & kFlagImageErrorEvent) != 0;
     }
     return mEnableOnError;
+  }
+
+  private boolean shouldEmitStartPlayEvent() {
+    if (mEventMask >= 0) {
+      return (mEventMask & kFlagImageStartPlayEvent) != 0;
+    }
+    return mEnableStartPlayEvent;
+  }
+
+  private boolean shouldEmitCurrentLoopEvent() {
+    if (mEventMask >= 0) {
+      return (mEventMask & kFlagImageCurrentLoopEvent) != 0;
+    }
+    return mEnableCurrentLoopEvent;
+  }
+
+  private boolean shouldEmitFinalLoopEvent() {
+    if (mEventMask >= 0) {
+      return (mEventMask & kFlagImageFinalLoopEvent) != 0;
+    }
+    return mEnableAllLoopEvent;
   }
 
   void setIsPixelated(boolean isPixelated) {
@@ -1068,17 +1096,7 @@ public class LynxImageManager implements Drawable.Callback {
       updateImageSource();
     }
     if (isDirty(LAYOUT_CHANGED) || isDirty(BORDER_CHANGED) || isDirty(BORDER_RADIUS_CHANGED)) {
-      configureBounds(mImageDrawable);
-      configureBounds(mPlaceholderDrawable);
-      if (mBorderRadius != null && mBorderRadius.length > 0) {
-        if (mInnerClipPathForBorderRadius == null) {
-          mInnerClipPathForBorderRadius = new BackgroundDrawable.RoundRectPath();
-        }
-        mInnerClipPathForBorderRadius.updateValue(
-            new Rect(mPaddingLeft, mPaddingTop, mViewWidth - mPaddingRight,
-                mViewHeight - mPaddingBottom),
-            mBorderRadius, mBorderWidthRect, 1.0f, false);
-      }
+      updateDrawingBounds();
     }
 
     if (mNeedRetryAutoSize) {
@@ -1170,7 +1188,7 @@ public class LynxImageManager implements Drawable.Callback {
 
   public void tryFetchImageFromService(int width, int height) {
     AnimationListener animationListener =
-        (mEnableAllLoopEvent || mEnableStartPlayEvent || mEnableCurrentLoopEvent)
+        (shouldEmitFinalLoopEvent() || shouldEmitStartPlayEvent() || shouldEmitCurrentLoopEvent())
         ? mAnimationListener
         : null;
     ImageRequestInfo requestInfo = createImageRequest(width, height, mSrc, true);
@@ -1193,13 +1211,13 @@ public class LynxImageManager implements Drawable.Callback {
     }
   }
 
-  private void onImageRequestFinished(
-      @NonNull ImageRequestInfo requestInfo, int errorCode, @Nullable Throwable throwable) {
+  private void onImageRequestFinished(@NonNull ImageRequestInfo requestInfo, int errorCode,
+      @Nullable Throwable throwable, int imageOrigin) {
     if (mImageRequestDelegate == null || !isHttpImageRequest(requestInfo)) {
       return;
     }
     mImageRequestDelegate.onImageRequestFinished(
-        requestInfo, new LynxImageRequestResult(errorCode, throwable));
+        requestInfo, new LynxImageRequestResult(errorCode, throwable, imageOrigin));
   }
 
   private static boolean isHttpImageRequest(@NonNull ImageRequestInfo requestInfo) {
@@ -1267,9 +1285,6 @@ public class LynxImageManager implements Drawable.Callback {
     if (mInnerClipPathForBorderRadius != null && mInnerClipPathForBorderRadius.path != null) {
       canvas.clipPath(mInnerClipPathForBorderRadius.path);
     }
-    if (mPlaceholderDrawable != null) {
-      mPlaceholderDrawable.draw(canvas);
-    }
     drawImageWithTransition(canvas);
     canvas.restore();
   }
@@ -1284,6 +1299,9 @@ public class LynxImageManager implements Drawable.Callback {
 
   private void drawImageWithTransition(Canvas canvas) {
     if (mImageDrawable == null) {
+      if (mPlaceholderDrawable != null) {
+        mPlaceholderDrawable.draw(canvas);
+      }
       return;
     }
     if (mImageFadeStartTimeMs < 0 || mFadeDurationMs <= 0) {
@@ -1299,11 +1317,39 @@ public class LynxImageManager implements Drawable.Callback {
       return;
     }
 
+    // Keep the placeholder only during the fade, not behind a loaded transparent image.
+    if (mPlaceholderDrawable != null) {
+      mPlaceholderDrawable.draw(canvas);
+    }
     int alpha = (int) (255 * elapsedMs / mFadeDurationMs);
     mImageDrawable.setAlpha(alpha);
     mImageDrawable.draw(canvas);
     mImageDrawable.setAlpha(255);
     invalidate();
+  }
+
+  void updateDrawingBoundsIfNeeded() {
+    if (!isDirty(LAYOUT_CHANGED)) {
+      return;
+    }
+    // Some layout updates are not followed by onNodeReady. Keep requests deferred.
+    updateDrawingBounds();
+    dirtyFlags &= ~LAYOUT_CHANGED;
+    invalidate();
+  }
+
+  private void updateDrawingBounds() {
+    configureBounds(mImageDrawable);
+    configureBounds(mPlaceholderDrawable);
+    if (mBorderRadius != null && mBorderRadius.length > 0) {
+      if (mInnerClipPathForBorderRadius == null) {
+        mInnerClipPathForBorderRadius = new BackgroundDrawable.RoundRectPath();
+      }
+      mInnerClipPathForBorderRadius.updateValue(
+          new Rect(
+              mPaddingLeft, mPaddingTop, mViewWidth - mPaddingRight, mViewHeight - mPaddingBottom),
+          mBorderRadius, mBorderWidthRect, 1.0f, false);
+    }
   }
 
   private void configureBounds(Drawable drawable) {

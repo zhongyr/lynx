@@ -68,8 +68,10 @@ fml::RefPtr<PlatformEventTarget> PlatformEventTarget::HitTest(float point[2]) {
     if (!child->ShouldHitTest()) {
       continue;
     }
-    child->GetPointInTarget(child_point, fml::RefPtr<PlatformEventTarget>(this),
-                            point);
+    if (!child->GetPointInTarget(
+            child_point, fml::RefPtr<PlatformEventTarget>(this), point)) {
+      continue;
+    }
     if (child->ContainsPoint(child_point)) {
       memcpy(target_point, child_point, sizeof(float) * 2);
       target_idx = i;
@@ -93,8 +95,10 @@ fml::RefPtr<PlatformEventTarget> PlatformEventTarget::HitTest(float point[2]) {
         continue;
       }
       float sibling_point[2] = {0.f};
-      sibling_target->GetPointInTarget(
-          sibling_point, fml::RefPtr<PlatformEventTarget>(this), point);
+      if (!sibling_target->GetPointInTarget(
+              sibling_point, fml::RefPtr<PlatformEventTarget>(this), point)) {
+        continue;
+      }
       if (!sibling_target->ContainsPoint(sibling_point)) {
         continue;
       }
@@ -109,19 +113,74 @@ fml::RefPtr<PlatformEventTarget> PlatformEventTarget::HitTest(float point[2]) {
   if (hit_target) {
     return hit_target;
   }
-  return is_layout_only_ ? nullptr : fml::RefPtr<PlatformEventTarget>(this);
+  return is_layout_only_ || PointerEvents() == LynxPointerEventsValue::kNone
+             ? nullptr
+             : fml::RefPtr<PlatformEventTarget>(this);
 }
 
 bool PlatformEventTarget::ShouldHitTest() const {
   return user_interaction_enabled_;
 }
 
-void PlatformEventTarget::GetPointInTarget(
+bool PlatformEventTarget::GetPointInTarget(
     float target_point[2], fml::RefPtr<PlatformEventTarget> parent_target,
     float point[2]) {
-  target_helper_->ConvertPointFromAncestorToDescendant(
+  return target_helper_->ConvertPointFromAncestorToDescendant(
       target_point, parent_target, fml::RefPtr<PlatformEventTarget>(this),
       point);
+}
+
+void PlatformEventTarget::SetHitSlop(EventRegion hit_slop) {
+  NormalizeEventRegionUnits(&hit_slop, 1);
+  *hit_slop_ = std::move(hit_slop);
+}
+
+void PlatformEventTarget::SetEventThroughActiveRegions(
+    std::vector<EventRegion> regions) {
+  if (regions.empty()) {
+    event_through_active_regions_.reset();
+    return;
+  }
+  NormalizeEventRegionUnits(regions.data(), regions.size());
+  *event_through_active_regions_ = std::move(regions);
+}
+
+void PlatformEventTarget::SetBlockNativeEventAreas(
+    std::vector<EventRegion> areas) {
+  if (areas.empty()) {
+    block_native_event_areas_.reset();
+    return;
+  }
+  NormalizeEventRegionUnits(areas.data(), areas.size());
+  *block_native_event_areas_ = std::move(areas);
+}
+
+void PlatformEventTarget::NormalizeEventRegionUnits(EventRegion* regions,
+                                                    size_t region_count) {
+  using Type = EventRegionSizeValue::Type;
+  const float physical_pixels_per_layout_unit =
+      target_helper_ ? target_helper_->GetPhysicalPixelsPerLayoutUnit() : 1.f;
+  for (size_t i = 0; i < region_count; ++i) {
+    for (auto& value : regions[i]) {
+      switch (value.type) {
+        case Type::kPhysicalPx:
+          // ppx denotes physical pixels even when layout uses points or vp.
+          value.value /= physical_pixels_per_layout_unit;
+          value.type = Type::kLayoutUnit;
+          break;
+        case Type::kPlatformUnit:
+          // Unitless strings use native coordinates, matching pointer events
+          // and display-list geometry without any density conversion.
+          value.type = Type::kLayoutUnit;
+          break;
+        default:
+          // Keep CSS px, rpx and percentages for conversion at hit time so page
+          // metrics and target-size changes also affect existing regions.
+          // Normalized sides may be reused by partial hit-slop updates.
+          break;
+      }
+    }
+  }
 }
 
 bool PlatformEventTarget::ContainsPoint(float point[2]) {
@@ -136,13 +195,23 @@ bool PlatformEventTarget::ContainsPoint(float point[2]) {
     }
     return false;
   }
-  if (x >= 0.f && x <= Width() && y >= 0.f && y <= Height()) {
+  float left = 0.f;
+  float top = 0.f;
+  float right = Width();
+  float bottom = Height();
+  if (hit_slop_) {
+    left = -ConvertEventRegionSizeValue((*hit_slop_)[0], true);
+    top = -ConvertEventRegionSizeValue((*hit_slop_)[1], false);
+    right = Width() + ConvertEventRegionSizeValue((*hit_slop_)[2], true);
+    bottom = Height() + ConvertEventRegionSizeValue((*hit_slop_)[3], false);
+  }
+  if (x >= left && x <= right && y >= top && y <= bottom) {
     return true;
   }
-  if (overflow_x_ && !overflow_y_ && (y < 0.f || y > Height())) {
+  if (overflow_x_ && !overflow_y_ && (y < top || y > bottom)) {
     return false;
   }
-  if (overflow_y_ && !overflow_x_ && (x < 0.f || x > Width())) {
+  if (overflow_y_ && !overflow_x_ && (x < left || x > right)) {
     return false;
   }
   if (overflow_x_ || overflow_y_) {
@@ -253,19 +322,19 @@ bool PlatformEventTarget::IsVisibleForExposure(
 }
 
 void PlatformEventTarget::GetExposureTargetRect(float rect[4]) const {
-  float device_pixel_ratio = target_helper_->GetDevicePixelRatio();
-  rect[0] -= exposure_ui_margin_left_ * device_pixel_ratio;
-  rect[1] -= exposure_ui_margin_top_ * device_pixel_ratio;
-  rect[2] += exposure_ui_margin_right_ * device_pixel_ratio;
-  rect[3] += exposure_ui_margin_bottom_ * device_pixel_ratio;
+  float layouts_unit_per_px = target_helper_->GetLayoutsUnitPerPx();
+  rect[0] -= exposure_ui_margin_left_ * layouts_unit_per_px;
+  rect[1] -= exposure_ui_margin_top_ * layouts_unit_per_px;
+  rect[2] += exposure_ui_margin_right_ * layouts_unit_per_px;
+  rect[3] += exposure_ui_margin_bottom_ * layouts_unit_per_px;
 }
 
 void PlatformEventTarget::GetExposureWindowRect(float rect[4]) const {
-  float device_pixel_ratio = target_helper_->GetDevicePixelRatio();
-  rect[0] -= exposure_screen_margin_left_ * device_pixel_ratio;
-  rect[1] -= exposure_screen_margin_top_ * device_pixel_ratio;
-  rect[2] += exposure_screen_margin_right_ * device_pixel_ratio;
-  rect[3] += exposure_screen_margin_bottom_ * device_pixel_ratio;
+  float layouts_unit_per_px = target_helper_->GetLayoutsUnitPerPx();
+  rect[0] -= exposure_screen_margin_left_ * layouts_unit_per_px;
+  rect[1] -= exposure_screen_margin_top_ * layouts_unit_per_px;
+  rect[2] += exposure_screen_margin_right_ * layouts_unit_per_px;
+  rect[3] += exposure_screen_margin_bottom_ * layouts_unit_per_px;
 }
 
 void PlatformEventTarget::OnResponseChain() {}
@@ -345,7 +414,16 @@ float PlatformEventTarget::ConvertEventRegionSizeValue(
   if (value.type == EventRegionSizeValue::Type::kPercentage) {
     return value.value * (is_horizontal ? Width() : Height());
   }
-  return value.value * target_helper_->GetDevicePixelRatio();
+  if (value.type == EventRegionSizeValue::Type::kLayoutUnit) {
+    return value.value;
+  }
+  if (value.type == EventRegionSizeValue::Type::kRpx) {
+    // The UI-thread cache avoids platform queries in the hit-test path.
+    return target_helper_ ? value.value * target_helper_->GetLayoutsUnitPerRpx()
+                          : 0.f;
+  }
+  return target_helper_ ? value.value * target_helper_->GetLayoutsUnitPerPx()
+                        : value.value;
 }
 
 bool PlatformEventTarget::IgnoreFocus() const {
@@ -370,7 +448,12 @@ bool PlatformEventTarget::IgnoreFocus() const {
 }
 
 LynxPointerEventsValue PlatformEventTarget::PointerEvents() const {
-  return LynxPointerEventsValue::kAuto;
+  if (pointer_events_ != LynxPointerEventsValue::kUnset) {
+    return pointer_events_;
+  }
+  auto parent = ParentTarget();
+  return parent && parent.get() != this ? parent->PointerEvents()
+                                        : LynxPointerEventsValue::kAuto;
 }
 
 bool PlatformEventTarget::BlockNativeEvent(float point[2]) const {
@@ -379,8 +462,13 @@ bool PlatformEventTarget::BlockNativeEvent(float point[2]) const {
           HitEventRegions(*block_native_event_areas_, point));
 }
 
-LynxConsumeSlideDirection PlatformEventTarget::ConsumeSlideEvent() const {
-  return LynxConsumeSlideDirection::kNone;
+bool PlatformEventTarget::ConsumeSlideEvent(float angle) const {
+  for (const auto& range : ConsumeSlideEventAngles()) {
+    if (angle >= range[0] && angle <= range[1]) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace tasm

@@ -2377,7 +2377,8 @@ public class LynxUIOwner {
    * register listener for LynxUI which implement `ForegroundListener` interface
    * @param listener triggered when lynxview enter/exit foreground
    */
-  void registerForegroundListener(@NonNull ForegroundListener listener) {
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void registerForegroundListener(@NonNull ForegroundListener listener) {
     if (mForegroundListeners != null) {
       mForegroundListeners.add(listener);
     }
@@ -2484,5 +2485,11 @@ public class LynxUIOwner {
 
   public float[] align(int sign) {
     return mTextMeasurer.align(sign);
+  }
+
+  public void destroyText(int sign) {
+    if (mTextMeasurer != null) {
+      mTextMeasurer.releaseLayoutObject(sign);
+    }
   }
 }
